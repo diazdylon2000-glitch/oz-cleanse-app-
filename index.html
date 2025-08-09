@@ -378,15 +378,61 @@
 // Dashboard
 const Dashboard = ({ templates, days, setDays, recipes }) => {
   const [idx, setIdx] = React.useState(0);
+
+  // current day
+  const day = days[idx] || days[0];
+
+  // helper: build next-ingredients (today+tomorrow, else next recipe days)
+  function nextTwoDayIngredients(currentDay){
+    const tryDays = (d1, d2) => {
+      const want = new Set([d1, d2]);
+      const bag = {};
+      (recipes || []).forEach(r => {
+        if (!r.day || !want.has(r.day)) return;
+        (r.ingredients || []).forEach(it => {
+          const key = (it.key || it.name || "").toLowerCase();
+          if (!bag[key]) bag[key] = { name: it.name, qtyList: [], days: new Set() };
+          if (it.qty) bag[key].qtyList.push(it.qty);
+          bag[key].days.add(r.day);
+        });
+      });
+      Object.keys(bag).forEach(k => bag[k].days = Array.from(bag[k].days).sort((a,b)=>a-b));
+      return Object.values(bag).sort((a,b)=>(a.name||"").localeCompare(b.name||""));
+    };
+
+    // strict: today + tomorrow
+    const strict = tryDays(currentDay.day, currentDay.day + 1);
+    if (strict.length) return { items: strict, label: "Today + Tomorrow — Ingredients" };
+
+    // fallback: first two future recipe days
+    const futureDays = Array.from(new Set(
+      (recipes||[]).filter(r => r.day >= currentDay.day).map(r => r.day)
+    )).sort((a,b)=>a-b);
+
+    const pool = futureDays.slice(0,2);
+    if (pool.length === 0) return { items: [], label: "Upcoming Ingredients" };
+
+    const fallback = tryDays(pool[0], pool[1] || pool[0]);
+    const label = pool.length === 2
+      ? `Upcoming Ingredients — Day ${pool[0]} & ${pool[1]}`
+      : `Upcoming Ingredients — Day ${pool[0]}`;
+    return { items: fallback, label };
+  }
+
+  // get next-ingredients + label
   const { items: nextItems, label: nextLabel } = nextTwoDayIngredients(day);
+
+  // template + checklist
   const templateIds = templates[day.phase] || [];
   const activeIds = (day.order && day.order.length ? day.order : templateIds);
   const items = activeIds.map(id => ({ id, label: GOAL_LIBRARY[id] || id }));
   const checks = day.checks || {};
+
   const doneCount = items.reduce((a, it) => a + (checks[it.id] ? 1 : 0), 0);
   const totalCount = Math.max(1, items.length);
   const progress = (doneCount / totalCount) * 100;
-  const weightSeries = days.map(d => d.weight == null ? null : d.weight);
+
+  const weightSeries = days.map(d => (d.weight == null ? null : d.weight));
 
   // celebrate on 100%
   React.useEffect(() => {
@@ -396,45 +442,7 @@ const Dashboard = ({ templates, days, setDays, recipes }) => {
     }
   }, [progress]);
 
-  // helpers
-function nextTwoDayIngredients(currentDay){
-  // First try strict: today + tomorrow
-  const tryDays = (d1, d2) => {
-    const want = new Set([d1, d2]);
-    const bag = {};
-    (recipes || []).forEach(r => {
-      if (!r.day || !want.has(r.day)) return;
-      (r.ingredients || []).forEach(it => {
-        const key = (it.key || it.name || "").toLowerCase();
-        if (!bag[key]) bag[key] = { name: it.name, qtyList: [], days: new Set() };
-        if (it.qty) bag[key].qtyList.push(it.qty);
-        bag[key].days.add(r.day);
-      });
-    });
-    Object.keys(bag).forEach(k => bag[k].days = Array.from(bag[k].days).sort((a,b)=>a-b));
-    return Object.values(bag).sort((a,b)=>(a.name||"").localeCompare(b.name||""));
-  };
-
-  const strict = tryDays(currentDay.day, currentDay.day+1);
-  if (strict.length) return { items: strict, label: nextLabel };
-
-  // Fallback: find the next two future days that actually have recipes
-  const futureDaysWithRecipes = Array.from(
-    new Set((recipes||[]).filter(r => r.day >= currentDay.day).map(r => r.day))
-  ).sort((a,b)=>a-b);
-
-  const pool = futureDaysWithRecipes.slice(0,2);
-  if (pool.length === 0) return { items: [], label: "Upcoming Ingredients" };
-
-  const fallback = tryDays(pool[0], pool[1] || pool[0]);
-  const label = pool.length === 2
-    ? `Upcoming Ingredients — Day ${pool[0]} & ${pool[1]}`
-    : `Upcoming Ingredients — Day ${pool[0]}`;
-  return { items: fallback, label };
-}
-
-  const nextItems = nextTwoDayIngredients(day, true); // today + tomorrow
-
+  // interactions
   function toggleCheck(id){
     setDays(prev => {
       const next = prev.slice();
@@ -451,19 +459,6 @@ function nextTwoDayIngredients(currentDay){
       const next = prev.slice();
       const d = { ...next[idx] };
       d.phase = p;
-      next[idx] = d;
-      return next;
-    });
-  }
-  function lmntQuickAdd(){
-    if (activeIds.indexOf("lmnt") !== -1) { alert("LMNT is already on today’s checklist."); return; }
-    setDays(prev => {
-      const next = prev.slice();
-      const d = { ...next[idx] };
-      const base = (d.order && d.order.length ? d.order.slice() : templateIds.slice());
-      base.push("lmnt");
-      d.order = base; d.custom = true;
-      const c = { ...(d.checks || {}) }; c.lmnt = false; d.checks = c;
       next[idx] = d;
       return next;
     });
@@ -501,8 +496,7 @@ function nextTwoDayIngredients(currentDay){
   function addGoal(){
     const pool = Object.keys(GOAL_LIBRARY).filter(id => localIds.indexOf(id) === -1);
     if (pool.length === 0) { alert("All goals already included"); return; }
-    const id = prompt("Add goal by ID:\n"+pool.join(", "));
-    if (!id || pool.indexOf(id) === -1) return;
+    const id = prompt("Add goal by ID:\n"+pool.join(", ")); if (!id || pool.indexOf(id) === -1) return;
     setLocalIds(prev => prev.concat([id]));
   }
   function handleDragStart(i,ev){ setDragIndex(i); try{ ev.dataTransfer.setData("text/plain", String(i)); }catch(e){} }
@@ -539,7 +533,7 @@ function nextTwoDayIngredients(currentDay){
             e("option",{value:"cleanse"},"Cleanse"),
             e("option",{value:"rebuild"},"Rebuild")
           )
-        ),
+        )
       )
     ),
 
@@ -549,35 +543,36 @@ function nextTwoDayIngredients(currentDay){
     // checklist
     e(Checklist,{items, state:checks, onToggle:toggleCheck}),
 
-   // INGREDIENTS CARD
-e("div",{className:"card",style:{marginTop:16}},
-  e("h2", null, nextLabel),
-  nextItems.length === 0
-    ? e("p",{style:{color:"#64748b"}},"No recipes scheduled soon.")
-    : e("ul",{style:{listStyle:"none",padding:0,marginTop:8}},
-        nextItems.map(item =>
-          e("li",{
-              key:item.name,
-              style:{
-                display:"flex",
-                justifyContent:"space-between",
-                padding:"6px 0",
-                borderBottom:"1px solid #f3d0e1"
-              }
-            },
-            e("span", null,
-              item.name, " ",
-              e("span",{className:"badge"},
-                item.days.length === 1
-                  ? ("Day " + item.days[0])
-                  : ("Day " + item.days[0] + "–" + item.days[item.days.length - 1])
+    // Next-ingredients card
+    e("div",{className:"card",style:{marginTop:16}},
+      e("h2", null, nextLabel),
+      nextItems.length === 0
+        ? e("p",{style:{color:"#64748b"}},"No recipes scheduled soon.")
+        : e("ul",{style:{listStyle:"none",padding:0,marginTop:8}},
+            nextItems.map(item =>
+              e("li",{
+                  key:item.name,
+                  style:{
+                    display:"flex",
+                    justifyContent:"space-between",
+                    padding:"6px 0",
+                    borderBottom:"1px solid #f3d0e1"
+                  }
+                },
+                e("span", null,
+                  item.name, " ",
+                  e("span",{className:"badge"},
+                    item.days.length === 1
+                      ? ("Day " + item.days[0])
+                      : ("Day " + item.days[0] + "–" + item.days[item.days.length - 1])
+                  )
+                ),
+                e("span",{style:{color:"#64748b",fontSize:12}}, item.qtyList.join(" + ") || "")
               )
-            ),
-            e("span",{style:{color:"#64748b",fontSize:12}}, item.qtyList.join(" + ") || "")
+            )
           )
-        )
-      )
-),
+    ),
+
     // weight card
     e("div",{className:"card",style:{marginTop:16}},
       e("h2",null,"Weight"),
