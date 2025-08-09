@@ -6,11 +6,22 @@
   <title>Oz Cleanse Companion — V14+</title>
   <meta name="theme-color" content="#f9c2a7"/>
 
-  <!-- React + Chart.js + Confetti -->
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<!-- React + Chart.js + Confetti (mobile-safe with fallbacks) -->
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"
+        crossorigin
+        onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js'"></script>
+
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"
+        crossorigin
+        onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js'"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"
+        crossorigin
+        onerror="this.onerror=null;this.src='https://unpkg.com/chart.js@4.4.3/dist/chart.umd.js'"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"
+        crossorigin
+        onerror="this.onerror=null;this.src='https://unpkg.com/canvas-confetti@1.6.0/dist/confetti.browser.min.js'"></script>
 
   <!-- V14 look & feel -->
   <style>
@@ -80,6 +91,39 @@
       if(s) s.classList.add("fadeOut"); if(bb) bb.classList.add("fadeOut");
       setTimeout(function(){ if(s) s.style.display="none"; if(bb) bb.style.display="none"; }, 620);
     }, 1100);
+  });
+})();
+</script>
+  <script>
+(function(){
+  function banner(msg){
+    var el = document.getElementById('errorBanner');
+    if (!el) return;
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  // If a CDN fails, iOS Safari throws generic "Script error."
+  // This shows a friendly, actionable message.
+  var issues = [];
+  if (!window.React) issues.push("React failed to load");
+  if (!window.ReactDOM) issues.push("ReactDOM failed to load");
+  if (!window.Chart) issues.push("Chart.js failed to load");
+  if (!window.confetti) issues.push("Confetti failed to load");
+
+  if (issues.length) {
+    banner("CDN problem on this device: " + issues.join(" • ") +
+           " — try another network or reload. (We added fallbacks.)");
+  }
+
+  // Guard confetti calls on older Safari
+  window.safeConfetti = function(opts){
+    try { if (window.confetti) window.confetti(opts); } catch (e) { /* ignore */ }
+  };
+
+  // Also catch unhandled promise rejections (iOS sometimes throws here)
+  window.addEventListener('unhandledrejection', function(e){
+    banner("Promise error: " + (e.reason && e.reason.message ? e.reason.message : "unhandled rejection"));
   });
 })();
 </script>
@@ -435,7 +479,7 @@ const Dashboard = ({ templates, days, setDays, recipes }) => {
   // celebrate on 100%
   React.useEffect(() => {
     if (Math.round(progress) === 100 && window.confetti) {
-      window.confetti({ particleCount: 80, spread: 70, origin: { y: .6 } });
+      window.safeConfetti({ particleCount: 80, spread: 70, origin: { y: .6 } });
       console.log(["Paw-some job! 🐾","You nailed it today! 💪","Oz is proud of you! 🐶","100% — You’re unstoppable! 🌟","Way to crush it! 🎉"][Math.floor(Math.random()*5)]);
     }
   }, [progress]);
