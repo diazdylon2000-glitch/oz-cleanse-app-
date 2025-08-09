@@ -367,7 +367,7 @@
   };
 
   // Dashboard
-  const Dashboard = ({ templates, days, setDays }) => {
+  const Dashboard = ({ templates, days, setDays, recipes }) => {
     const [idx, setIdx] = useState(0);
     const day = days[idx] || days[0];
     const templateIds = templates[day.phase] || [];
@@ -389,6 +389,27 @@
         console.log(phrases[Math.floor(Math.random()*phrases.length)]);
       }
     }, [progress]);
+function nextTwoDayIngredients(currentDay, includeToday){
+  const target = [];
+  const d1 = includeToday ? currentDay.day : currentDay.day+1;
+  const d2 = includeToday ? currentDay.day+1 : currentDay.day+2;
+  const want = new Set([d1,d2]);
+  const bag = {};
+  (recipes||[]).forEach(r=>{
+    if(!r.day || !want.has(r.day)) return;
+    (r.ingredients||[]).forEach(it=>{
+      const key=(it.key||it.name||"").toLowerCase();
+      if(!bag[key]){
+        bag[key]={ name: it.name, qtyList: [], days: new Set() };
+      }
+      if(it.qty) bag[key].qtyList.push(it.qty);
+      bag[key].days.add(r.day);
+    });
+  });
+  Object.keys(bag).forEach(k=> bag[k].days = Array.from(bag[k].days).sort((a,b)=>a-b));
+  return Object.values(bag).sort((a,b)=> (a.name||"").localeCompare(b.name||""));
+}
+const nextItems = nextTwoDayIngredients(day, true); // today + tomorrow
 
     function toggleCheck(id){
       setDays(prev=>{
@@ -453,28 +474,36 @@
     }
     function changeDay(dir){ setIdx(cur=>{ let n=cur+dir; if(n<0) n=days.length-1; if(n>=days.length) n=0; return n; }); }
 
-    return e("div",{className:"wrap"},
-      e("header",{className:"hdr",style:{gap:8}},
-        e("h1",null,"Dashboard"),
-        e("div",{className:"badge"}, (day.custom?"Custom • ":"Template • ")+day.phase.toUpperCase()),
-        e("div",null,
-          e("button",{className:"btn",onClick:()=>changeDay(-1)},"◀"),
-          e("span",{className:"badge",style:{margin:"0 8px"}},"Day "+day.day),
-          e("button",{className:"btn",onClick:()=>changeDay(1)},"▶")
-        ),
-        e("div",null,
-          e("select",{value:day.phase,onChange:(ev)=>setPhase(ev.target.value),className:"btn"},
-            e("option",{value:"fast"},"Fast"),
-            e("option",{value:"cleanse"},"Cleanse"),
-            e("option",{value:"rebuild"},"Rebuild")
-          )
-        ),
-        e("div",null,
-          e("button",{className:"btn peach",onClick:()=>setEditing(true)},"Customize Day"),
-          day.custom && e("button",{className:"btn",style:{marginLeft:8},onClick:resetToTemplate},"Reset to Template"),
-          e("button",{className:"btn",style:{marginLeft:8},onClick:lmntQuickAdd},"Add LMNT Today")
-        )
-      ),
+e("div",{className:"mast card"},
+  e("div",{className:"mastRow"},
+    e("div",{className:"mastLeft"},
+      e("img",{src:"oz.png",alt:"Oz"}),
+      e("div",{className:"mastTitle"},
+        e("b",null,"Oz Cleanse Companion"),
+        e("small",null,(day.custom?"Custom • ":"Template • ")+day.phase.toUpperCase())
+      )
+    ),
+    e("div",null,
+      e("button",{className:"btn",onClick:()=>changeDay(-1)},"◀"),
+      e("span",{className:"badge",style:{margin:"0 8px"}},"Day "+day.day),
+      e("button",{className:"btn",onClick:()=>changeDay(1)},"▶")
+    )
+  ),
+  e("div",{className:"mastRow",style:{marginTop:8}},
+    e("div",null,
+      e("select",{value:day.phase,onChange:(ev)=>setPhase(ev.target.value),className:"btn"},
+        e("option",{value:"fast"},"Fast"),
+        e("option",{value:"cleanse"},"Cleanse"),
+        e("option",{value:"rebuild"},"Rebuild")
+      )
+    ),
+    e("div",null,
+      e("button",{className:"btn peach",onClick:()=>setEditing(true)},"Customize Day"),
+      day.custom && e("button",{className:"btn",style:{marginLeft:8},onClick:resetToTemplate},"Reset to Template"),
+      e("button",{className:"btn",style:{marginLeft:8},onClick:lmntQuickAdd},"Add LMNT Today")
+    )
+  )
+),
 
       e(ProgressBar,{value:progress}),
 
@@ -552,7 +581,7 @@
     }
 
     return e("div", {},
-      tab==="dash"      && e(Dashboard, { templates: settings.phaseTemplates, days, setDays }),
+  tab==="dash" && e(Dashboard, { templates: settings.phaseTemplates, days, setDays, recipes }),
       tab==="groceries" && e(GroceryList, { groceries, setGroceries }),
       tab==="calendar"  && e(Calendar, { days, recipes, settings }),
       tab==="photos"    && e(Photos),
