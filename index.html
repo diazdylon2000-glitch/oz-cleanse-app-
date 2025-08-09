@@ -425,7 +425,8 @@ const Dashboard = ({ templates, days, setDays, recipes }) => {
 
   // current day
   const day = days[idx] || days[0];
-
+const { items: nextItems, label: nextLabel } = nextTwoDayIngredients(day);
+  
   // helper: build next-ingredients (today+tomorrow, else next recipe days)
   function nextTwoDayIngredients(currentDay){
     const { items: nextItems, label: nextLabel } = nextTwoDayIngredients(day);
