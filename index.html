@@ -1,310 +1,338 @@
 <!DOCTYPE html>
 <html lang="en">
-  <style>
-  html,body{background:#fff7f1;color:#334155;margin:0}
-  .card{background:#fff;border:1px solid #f3d0e1;border-radius:16px;box-shadow:0 8px 24px rgba(236,72,153,.08)}
-  .pill{border-radius:9999px;padding:.4rem .75rem;border:1px solid #ffd8be;background:#fff;transition:transform .12s}
-  .pill.on{background:linear-gradient(90deg,#ffc79d,#ffd8be)}
-  .paw-check{display:inline-flex;align-items:center;justify-content:center;height:36px;width:36px;border-radius:9999px;border:1px solid #f0cbb0;background:#fff;transition:transform .12s, background .2s; cursor:pointer}
-  .paw-check.on{background:linear-gradient(90deg,#f9d49a,#ffd2c8);transform:scale(1.02)}
-  .badge{display:inline-block;border-radius:9999px;padding:2px 8px;border:1px solid #e7ccd7;background:#fff;font-size:12px}
-  .prog-wrap{height:10px;border-radius:9999px;background:#fde7e0;overflow:hidden}
-  .prog-fill{height:100%;background:linear-gradient(90deg,#ffa56e,#ec4899);width:0;transition:width .35s ease}
-  .tabs{position:fixed;left:0;right:0;bottom:0;display:flex;gap:8px;padding:8px;background:#fff;border-top:1px solid #f3d0e1}
-  .btn{border-radius:14px;border:1px solid #f3d0e1;background:#fff;padding:8px 12px;cursor:pointer}
-  .toast>div{background:linear-gradient(90deg,#ffe4ef,#e9d5ff);border:1px solid #f3d0e1;border-radius:16px;padding:10px;box-shadow:0 12px 30px rgba(236,72,153,.15)}
-</style>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Oz Cleanse App</title>
-  <link rel="icon" type="image/png" href="oz.png" />
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>Oz Cleanse Companion — V14</title>
+  <meta name="theme-color" content="#f9c2a7"/>
 
-  <!-- React and Chart.js with fallbacks -->
+  <!-- React + Chart.js with fallbacks (do not change) -->
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"
-    crossorigin
-    onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js'"></script>
+          crossorigin
+          onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js'"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"
-    crossorigin
-    onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js'"></script>
+          crossorigin
+          onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js'"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"
-    onerror="this.onerror=null;this.src='https://unpkg.com/chart.js@4.4.3/dist/chart.umd.js'"></script>
+          onerror="this.onerror=null;this.src='https://unpkg.com/chart.js@4.4.3/dist/chart.umd.js'"></script>
 
+  <!-- V14 look & feel -->
   <style>
-    /* Inline essentials for splash and affirmations */
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background-color: #fff8f4;
-      color: #333;
-      -webkit-font-smoothing: antialiased;
+    :root{
+      --peach:#ffb08f; --peach-200:#ffd8c8; --peach-100:#fff1ea;
+      --rose:#ec4899; --ink:#334155; --line:#f3d0e1; --chip:#ffe4ef;
+      --cream:#fff7f1; --shadow:0 8px 24px rgba(236,72,153,.08);
     }
-    #splash {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background-color: #ffe4d9;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-      animation: fadeIn 0.6s ease;
-    }
-    #splash img {
-      width: 180px;
-      height: 180px;
-      border-radius: 50%;
-      object-fit: cover;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-    }
-    .speech-bubble {
-      position: relative;
-      background: #fff;
-      border-radius: .4em;
-      padding: 12px 16px;
-      margin-bottom: 20px;
-      font-size: 1.1em;
-      max-width: 250px;
-      text-align: center;
-      animation: fadeIn 1.2s ease;
-    }
-    .speech-bubble:after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 50%;
-      width: 0;
-      height: 0;
-      border: 12px solid transparent;
-      border-top-color: #fff;
-      border-bottom: 0;
-      margin-left: -12px;
-      margin-bottom: -12px;
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-    @keyframes fadeOut {
-      from { opacity: 1; }
-      to { opacity: 0; }
-    }
-    #errorBanner {
-      display: none;
-      position: fixed;
-      top: 0;
-      width: 100%;
-      background: #ff4d4d;
-      color: white;
-      padding: 10px;
-      font-size: 0.9em;
-      z-index: 10000;
-      text-align: center;
-    }
+    *{box-sizing:border-box}
+    html,body{margin:0;background:var(--cream);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+    h1,h2{margin:0 0 8px 0}
+    .wrap{max-width:940px;margin:16px auto 96px;padding:0 16px}
+    .card{background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:16px}
+    .badge{display:inline-block;padding:2px 10px;border:1px solid #e7ccd7;background:#fff;border-radius:9999px;font-size:12px}
+    .btn{border:1px solid var(--line);background:#fff;padding:10px 12px;border-radius:14px;cursor:pointer}
+    .btn.peach{background:linear-gradient(90deg,#ffc7a9,#ffe1d6);border-color:#ffd9c8}
+    .grid{display:grid;gap:16px}
+    @media(min-width:760px){.grid-3{grid-template-columns:repeat(3,1fr)}}
+
+    /* Pills + paw checks */
+    .pill{border-radius:9999px;padding:.45rem .8rem;border:1px solid #ffd8be;background:#fff;transition:transform .12s}
+    .pill.on{background:linear-gradient(90deg,#ffc79d,#ffd8be)}
+    .paw{display:inline-flex;align-items:center;justify-content:center;height:36px;width:36px;border-radius:9999px;border:1px solid #f0cbb0;background:#fff;transition:transform .12s, background .2s;cursor:pointer}
+    .paw.on{background:linear-gradient(90deg,#f9d49a,#ffd2c8);transform:scale(1.02)}
+
+    /* Progress bars */
+    .prog{height:10px;border-radius:9999px;background:#fde7e0;overflow:hidden}
+    .fill{height:100%;background:linear-gradient(90deg,#ffa56e,#ec4899);width:0;transition:width .35s ease}
+
+    /* Bottom tabs */
+    .tabs{position:fixed;left:0;right:0;bottom:0;display:flex;gap:8px;padding:8px;background:#fff;border-top:1px solid var(--line)}
+    .tabs .btn{flex:1}
+    .tabs .btn.active{background:var(--chip)}
+
+    /* Toast + snack */
+    .toast{position:fixed;left:12px;right:12px;top:18px;z-index:60}
+    .toast>div{background:linear-gradient(90deg,#ffe4ef,#e9d5ff);border:1px solid var(--line);border-radius:16px;padding:10px;box-shadow:0 12px 30px rgba(236,72,153,.15)}
+    .snack{position:fixed;left:12px;right:12px;bottom:16px;z-index:70}
+    .snack>div{background:#1f2937;color:#fff;border-radius:14px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between}
+
+    /* Splash with Oz + speech bubble */
+    #errorBanner{display:none;position:fixed;top:0;left:0;right:0;background:#ff4d4d;color:#fff;padding:10px;font-size:14px;z-index:10000;text-align:center}
+    .splash{position:fixed;inset:0;background:#fef3ec;display:flex;align-items:center;justify-content:center;z-index:80}
+    .splash img{width:170px;height:170px;border-radius:9999px;object-fit:cover;border:6px solid #fff;box-shadow:0 24px 60px rgba(149,92,51,.25)}
+    .bubble{position:fixed;left:50%;top:54%;transform:translateX(92px);max-width:260px;z-index:81;background:#fff;border:2px solid var(--line);border-radius:16px;box-shadow:0 10px 32px rgba(236,72,153,.15);padding:10px 12px;font-size:13px;line-height:1.25}
+    .bubble:after{content:'';position:absolute;left:-10px;top:28px;border:10px solid transparent;border-right-color:var(--line)}
+    .bubble:before{content:'';position:absolute;left:-8px;top:28px;border:10px solid transparent;border-right-color:#fff;z-index:1}
+    .fadeOut{animation:fadeOut .6s ease forwards}
+    @keyframes fadeOut{to{opacity:0;visibility:hidden}}
+
+    /* Header row */
+    header.hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+    header.hdr img{height:36px;width:36px;border-radius:9999px;object-fit:cover}
   </style>
 </head>
 <body>
+  <!-- Error banner shows any JS crash with line:col -->
   <div id="errorBanner"></div>
 
-  <!-- Splash Screen -->
-  <div id="splash">
-    <div class="speech-bubble" id="affirmationText">Loading...</div>
-    <img src="oz.png" alt="Oz the Dog" />
-  </div>
+  <!-- Splash -->
+  <div id="ozSplash" class="splash"><img id="ozImg" alt="Oz"/></div>
+  <div id="ozBubble" class="bubble">Loading…</div>
 
-  <!-- Main App Root -->
-  <div id="root" style="display:none;"></div>
+  <!-- App root -->
+  <div id="root" style="display:none"></div>
 
+  <!-- Splash failsafe + error capture -->
   <script>
     (function(){
-      try {
-        var affirmations = [
-          "You’ve got this, one sip at a time!",
-          "Strong body, strong mind — keep going!",
-          "Oz says: hydration is happiness!",
-          "Your energy is blooming like spring.",
-          "Cleansing today for a brighter tomorrow.",
-          "Every step forward counts, no matter how small.",
-          "Oz believes in your journey!",
-          "Your dedication inspires paws and people alike.",
-          "Each juice is fuel for the new you.",
-          "You are glowing from the inside out!",
-          "Oz says: stay playful, stay strong.",
-          "One more glass, one more win.",
-          "Every good choice stacks toward your goal.",
-          "Your willpower is your superpower.",
-          "Keep moving, you’re unstoppable!",
-          "Hydrate like a champion today.",
-          "This is your moment — own it.",
-          "You’re lighter, brighter, and stronger every day.",
-          "Oz is wagging his tail for you!",
-          "Small habits create big change.",
-          "You’re doing amazing — keep going.",
-          "Fuel, flush, flourish.",
-          "Strong today, stronger tomorrow.",
-          "One choice at a time, you’re winning.",
-          "Your body thanks you with every sip.",
-          "Oz says: healthy looks good on you.",
-          "Breathe deep, move freely.",
-          "Progress is in motion — so are you.",
-          "Cheers to your health!",
-          "Your goals are in sight — keep your pace."
-        ];
-        // Shuffle without repeats until all shown
-        var usedAffirmations = JSON.parse(localStorage.getItem("usedAffirmations") || "[]");
-        var available = affirmations.filter(function(a){ return usedAffirmations.indexOf(a) === -1; });
-        if(available.length === 0){ available = affirmations; usedAffirmations = []; }
-        var pick = available[Math.floor(Math.random() * available.length)];
-        usedAffirmations.push(pick);
-        localStorage.setItem("usedAffirmations", JSON.stringify(usedAffirmations));
-        document.getElementById("affirmationText").textContent = pick;
-      } catch(e) {
-        document.getElementById("errorBanner").style.display = 'block';
-        document.getElementById("errorBanner").textContent = "Affirmation Error: " + e.message;
-      }
+      // Always hide splash after 3s even if React fails
+      setTimeout(function(){
+        var s=document.getElementById('ozSplash'); if(s) s.classList.add('fadeOut');
+        var b=document.getElementById('ozBubble'); if(b) b.classList.add('fadeOut');
+        setTimeout(function(){
+          if(s) s.style.display='none';
+          if(b) b.style.display='none';
+          var root=document.getElementById('root'); if(root) root.style.display='block';
+        },620);
+      },3000);
+      // Show errors on screen
+      window.addEventListener('error',function(e){
+        var el=document.getElementById('errorBanner');
+        el.textContent='Error: '+(e.error&&e.error.message?e.error.message:e.message);
+        el.style.display='block';
+      });
     })();
   </script>
+
+  <!-- Affirmations + Oz image init -->
   <script>
-    // Splash hide after short delay
-    window.addEventListener('load', function(){
-      setTimeout(function(){
-        var splash = document.getElementById('splash');
-        splash.style.animation = "fadeOut 0.6s ease forwards";
+    (function(){
+      try{
+        var oz=document.getElementById('ozImg');
+        oz.src='oz.png'; // replace with your real Oz photo filename later if different
+
+        var A=[
+          "You’ve got this, one sip at a time!",
+          "Strong body, strong mind—keep going!",
+          "Hydration is happiness. 🐾",
+          "Fuel today, flourish tomorrow.",
+          "Every sip is a promise kept.",
+          "Gentle and steady wins.",
+          "You’re lighter and brighter each day.",
+          "Small habits, big change.",
+          "Proud of you already.",
+          "Your willpower is glowing.",
+          "Keep moving; you’re unstoppable!",
+          "Oz is rooting for you!",
+          "Cleansing with kindness.",
+          "Sip, breathe, reset.",
+          "You crave what nourishes you.",
+          "Consistency over intensity.",
+          "You’re building momentum.",
+          "Energy rising, mind clear.",
+          "Hydrate like a champ.",
+          "Today’s choices shape tomorrow.",
+          "Progress, not perfection.",
+          "Tiny wins stack up.",
+          "You’re doing amazing.",
+          "Cheers to your health.",
+          "Own your routine.",
+          "Steady heart, steady steps.",
+          "Let it be simple.",
+          "Flow with it; you’re good.",
+          "Trust your pace.",
+          "Shine from within."
+        ];
+        // Cycle without repeats
+        var used=JSON.parse(localStorage.getItem('oz_aff_used')||'[]');
+        var avail=A.filter(function(t){return used.indexOf(t)===-1;});
+        if(avail.length===0){avail=A;used=[];}
+        var pick=avail[Math.floor(Math.random()*avail.length)];
+        used.push(pick); localStorage.setItem('oz_aff_used',JSON.stringify(used));
+        var bubble=document.getElementById('ozBubble'); if(bubble) bubble.textContent=pick;
+      }catch(err){
+        var el=document.getElementById('errorBanner');
+        el.textContent='Init error: '+err.message;
+        el.style.display='block';
+      }
+      // Hide splash a bit earlier when window fully loads
+      window.addEventListener('load',function(){
         setTimeout(function(){
-          splash.style.display = 'none';
-          document.getElementById('root').style.display = 'block';
-        }, 600);
-      }, 2200);
-    });
-
-    // Error handler
-    window.onerror = function(message, source, lineno, colno, error) {
-      var banner = document.getElementById('errorBanner');
-      banner.textContent = "Error: " + message + " at " + lineno + ":" + colno;
-      banner.style.display = 'block';
-    };
+          var s=document.getElementById('ozSplash'); var b=document.getElementById('ozBubble');
+          if(s) s.classList.add('fadeOut'); if(b) b.classList.add('fadeOut');
+          setTimeout(function(){
+            if(s) s.style.display='none'; if(b) b.style.display='none';
+            var root=document.getElementById('root'); if(root) root.style.display='block';
+          },620);
+        },1400);
+      });
+    })();
   </script>
-
+  <!-- React App -->
   <script>
-    // Your React app code starts here
     const e = React.createElement;
+    const { useState, useEffect } = React;
 
-    function App() {
-      const [activeTab, setActiveTab] = React.useState('dashboard');
+    // Sample checklist items for each phase
+    const PHASES = {
+      fast: [
+        { id: "water", label: "💧 Drink 120–150 oz water" },
+        { id: "tea", label: "🍵 Tea" },
+        { id: "coffee", label: "☕ Coffee" },
+        { id: "lmnt", label: "🧂 LMNT Electrolytes" },
+        { id: "exercise", label: "🏃 Exercise" },
+        { id: "weight", label: "👣 Weight check-in" }
+      ],
+      cleanse: [
+        { id: "water", label: "💧 Drink 120–150 oz water" },
+        { id: "tea", label: "🍵 Tea" },
+        { id: "coffee", label: "☕ Coffee" },
+        { id: "juice", label: "🧃 Juices" },
+        { id: "lmnt", label: "🧂 LMNT Electrolytes" },
+        { id: "exercise", label: "🏃 Exercise" },
+        { id: "weight", label: "👣 Weight check-in" }
+      ],
+      rebuild: [
+        { id: "water", label: "💧 Drink 120–150 oz water" },
+        { id: "lmnt", label: "🧂 LMNT Electrolytes" },
+        { id: "exercise", label: "🏃 Exercise" },
+        { id: "wholefood", label: "🥗 Whole food meals" },
+        { id: "weight", label: "👣 Weight check-in" }
+      ]
+    };
 
-      return e('div', { className: 'app-container' },
-        e('nav', { className: 'tab-nav' },
-          e('button', { onClick: () => setActiveTab('dashboard') }, 'Dashboard'),
-          e('button', { onClick: () => setActiveTab('groceries') }, 'Groceries'),
-          e('button', { onClick: () => setActiveTab('calendar') }, 'Calendar'),
-          e('button', { onClick: () => setActiveTab('recipes') }, 'Recipes'),
-          e('button', { onClick: () => setActiveTab('photos') }, 'Progress Photos')
-        ),
-        e('main', null,
-          activeTab === 'dashboard' && e(Dashboard, null),
-          activeTab === 'groceries' && e(Groceries, null),
-          activeTab === 'calendar' && e(Calendar, null),
-          activeTab === 'recipes' && e(Recipes, null),
-          activeTab === 'photos' && e(Photos, null)
+    // Animated progress bar
+    const ProgressBar = ({ value }) =>
+      e("div", { className: "prog" },
+        e("div", { className: "fill", style: { width: value + "%" } })
+      );
+
+    // Checklist with paw toggles
+    const Checklist = ({ items, state, setState }) =>
+      e("ul", { style: { listStyle: "none", padding: 0 } },
+        items.map(item =>
+          e("li", { key: item.id, style: { margin: "8px 0", display: "flex", alignItems: "center" } },
+            e("div", {
+              className: "paw" + (state[item.id] ? " on" : ""),
+              onClick: () => setState({ ...state, [item.id]: !state[item.id] })
+            }, "🐾"),
+            e("span", { style: { marginLeft: "8px" } }, item.label)
+          )
         )
       );
-    }
 
-    function Dashboard() {
-      return e('div', { className: 'dashboard' },
-        e('h1', null, 'Daily Checklist'),
-        e('ul', { className: 'checklist' },
-          ['💧 Drink 120-150 oz water',
-           '🍵 Tea (fast / cleanse)',
-           'Coffee (fast / cleanse)',
-           '🧃 Juices (cleanse)',
-           '🧂 LMNT Electrolytes (Daily)',
-           '🏃 Exercise',
-           '🚫 Avoid processed food',
-           '👣 Weight check in'
-          ].map((item, idx) =>
-            e('li', { key: idx },
-              e('input', { type: 'checkbox', id: 'chk' + idx }),
-              e('label', { htmlFor: 'chk' + idx }, item)
+    // Mini weight chart
+    const WeightChart = ({ data }) => {
+      const ref = React.useRef();
+      useEffect(() => {
+        if (ref.current) {
+          new Chart(ref.current, {
+            type: "line",
+            data: {
+              labels: data.map((_, i) => "Day " + (i + 1)),
+              datasets: [{
+                label: "Weight (lbs)",
+                data,
+                borderColor: "#ec4899",
+                backgroundColor: "rgba(236,72,153,.2)",
+                tension: 0.3
+              }]
+            },
+            options: { responsive: true, plugins: { legend: { display: false } } }
+          });
+        }
+      }, [data]);
+      return e("canvas", { ref });
+    };
+
+    // Grocery list with day tags + total
+    const GroceryList = ({ items }) => {
+      const [checked, setChecked] = useState({});
+      const total = items.reduce((sum, it) => sum + (checked[it.name] ? 0 : it.price), 0);
+      return e("div", {},
+        e("div", { style: { fontWeight: "bold", marginBottom: "8px" } }, `Total: $${total.toFixed(2)}`),
+        e("ul", { style: { listStyle: "none", padding: 0 } },
+          items.map(it =>
+            e("li", { key: it.name, style: { display: "flex", alignItems: "center", margin: "6px 0" } },
+              e("input", {
+                type: "checkbox",
+                checked: !!checked[it.name],
+                onChange: () => setChecked({ ...checked, [it.name]: !checked[it.name] })
+              }),
+              e("span", { style: { flex: 1, marginLeft: "8px" } }, `${it.name} — Day ${it.day}`),
+              e("span", { style: { fontSize: "0.85em", color: "#666" } }, `$${it.price.toFixed(2)}`)
             )
           )
         )
       );
-    }
+    };
 
-    function Groceries() {
-      return e('div', { className: 'groceries' },
-        e('h1', null, 'Grocery List'),
-        e('p', null, 'Grouped by day to reduce spoilage'),
-        e('ul', null,
-          e('li', null, 'Day 1-2: Oranges, Carrots, Kale'),
-          e('li', null, 'Day 3-4: Spinach, Cucumbers, Apples'),
-          e('li', null, 'Day 5-6: Ginger, Lemon, Mint')
+    // Dashboard
+    const Dashboard = () => {
+      const [phase, setPhase] = useState("fast");
+      const [checkState, setCheckState] = useState({});
+      const [weightData, setWeightData] = useState([170,169,168.5,168,167.8]);
+      const doneCount = Object.values(checkState).filter(Boolean).length;
+      const totalCount = PHASES[phase].length;
+      return e("div", { className: "wrap" },
+        e("header", { className: "hdr" },
+          e("h1", null, "Dashboard"),
+          e("div", { className: "badge" }, phase.toUpperCase())
+        ),
+        e(ProgressBar, { value: (doneCount / totalCount) * 100 }),
+        e(Checklist, { items: PHASES[phase], state: checkState, setState: setCheckState }),
+        e("div", { className: "card", style: { marginTop: "16px" } },
+          e("h2", null, "Weight Trend"),
+          e(WeightChart, { data: weightData })
         )
       );
-    }
+    };
 
-    function Calendar() {
-      return e('div', { className: 'calendar' },
-        e('h1', null, 'Cleanse Calendar'),
-        e('p', null, 'View recipes and goals by day')
+    // Simple Calendar placeholder (drag/drop recipes can be wired)
+    const Calendar = () => e("div", { className: "wrap" }, e("h1", null, "Calendar View"));
+
+    // Photos
+    const Photos = () => {
+      const [photos, setPhotos] = useState([]);
+      const handleUpload = (e) => {
+        const files = Array.from(e.target.files);
+        const urls = files.map(f => URL.createObjectURL(f));
+        setPhotos([...photos, ...urls]);
+      };
+      return e("div", { className: "wrap" },
+        e("h1", null, "Progress Photos"),
+        e("input", { type: "file", multiple: true, onChange: handleUpload }),
+        e("div", { style: { display: "flex", gap: "8px", flexWrap: "wrap", marginTop: "12px" } },
+          photos.map((url, i) =>
+            e("img", { key: i, src: url, style: { width: "100px", height: "100px", objectFit: "cover", borderRadius: "8px" } })
+          )
+        )
       );
-    }
+    };
 
-    function Recipes() {
-      return e('div', { className: 'recipes' },
-        e('h1', null, 'Recipes'),
-        e('p', null, 'Preloaded juice & meal recipes will appear here.')
+    // Main App
+    const App = () => {
+      const [tab, setTab] = useState("dash");
+      return e("div", {},
+        tab === "dash" && e(Dashboard),
+        tab === "groceries" && e(GroceryList, {
+          items: [
+            { name: "Carrots", day: 4, price: 2.5 },
+            { name: "Spinach", day: 2, price: 3.0 },
+            { name: "Apples", day: 1, price: 4.0 }
+          ]
+        }),
+        tab === "calendar" && e(Calendar),
+        tab === "photos" && e(Photos),
+        e("div", { className: "tabs" },
+          e("button", { className: "btn" + (tab === "dash" ? " active" : ""), onClick: () => setTab("dash") }, "Dashboard"),
+          e("button", { className: "btn" + (tab === "groceries" ? " active" : ""), onClick: () => setTab("groceries") }, "Groceries"),
+          e("button", { className: "btn" + (tab === "calendar" ? " active" : ""), onClick: () => setTab("calendar") }, "Calendar"),
+          e("button", { className: "btn" + (tab === "photos" ? " active" : ""), onClick: () => setTab("photos") }, "Photos")
+        )
       );
-    }
+    };
 
-    function Photos() {
-      return e('div', { className: 'photos' },
-        e('h1', null, 'Progress Photos'),
-        e('input', { type: 'file', accept: 'image/*' })
-      );
-    }
-
-    ReactDOM.render(e(App), document.getElementById('root'));
+    ReactDOM.render(e(App), document.getElementById("root"));
   </script>
-  <style>
-    .tab-nav {
-      display: flex;
-      justify-content: space-around;
-      background: #ffd6c9;
-      padding: 8px;
-      position: sticky;
-      top: 0;
-    }
-    .tab-nav button {
-      background: #fff;
-      border: none;
-      padding: 10px 14px;
-      border-radius: 8px;
-      font-size: 0.95em;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    .tab-nav button:hover {
-      background: #ffe8e0;
-    }
-    .dashboard, .groceries, .calendar, .recipes, .photos {
-      padding: 16px;
-    }
-    .checklist {
-      list-style: none;
-      padding: 0;
-    }
-    .checklist li {
-      margin: 10px 0;
-      display: flex;
-      align-items: center;
-    }
-    .checklist input[type="checkbox"] {
-      margin-right: 10px;
-      transform: scale(1.3);
-    }
-  </style>
-
 </body>
 </html>
