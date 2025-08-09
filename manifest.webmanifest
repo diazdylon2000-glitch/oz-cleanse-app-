@@ -1,0 +1,9 @@
+{
+  "name": "Oz Cleanse Companion",
+  "short_name": "Oz Cleanse",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fff7f1",
+  "theme_color": "#ec4899",
+  "icons": []
+}
