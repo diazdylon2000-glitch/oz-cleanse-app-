@@ -379,6 +379,7 @@ body{ padding-top:env(safe-area-inset-top); padding-bottom:env(safe-area-inset-b
               ),
               e("div", { style:{ display:"flex", gap:6, flexWrap:"wrap", minHeight:24 }},
                 dRecipes.length ? dRecipes.map(r=> e("span", { key:r.id, className:"badge" }, (r.type==="juice"?"🧃 ":"🍽️ "), r.name)) :
+                (d.note ? e("span",{className:"badge",style:{marginLeft:6}},"📝 Note") : null)
                 e("span", { style:{ fontSize:12, color:"#64748b" } }, "—")
               )
             )
@@ -646,6 +647,27 @@ e("div",{className:"mast card dash-header"},
 
     // checklist
     e(Checklist,{items, state:checks, onToggle:toggleCheck}),
+
+           // Daily Notes
+e("div",{className:"card",style:{marginTop:16}},
+  e("h2",null,"Daily Notes"),
+  e("textarea",{
+    value: day.note || "",
+    onChange:(ev)=>{
+      const val = ev.target.value;
+      setDays(prev=>{
+        const next = prev.slice();
+        const d = {...next[idx]};
+        d.note = val;
+        next[idx] = d;
+        return next;
+      });
+    },
+    rows:3,
+    style:{width:"100%",resize:"vertical",border:"1px solid #f3d0e1",borderRadius:12,padding:"8px"}
+  })
+),
+
 
     // Next-ingredients card
     e("div",{className:"card",style:{marginTop:16}},
