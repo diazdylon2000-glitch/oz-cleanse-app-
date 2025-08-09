@@ -607,17 +607,16 @@ e("div",{className:"mast card dash-header"},
     e("img",{src:"oz.png",alt:"Oz",className:"oz-icon"}),
     e("div",null,
       e("h2",{className:"dash-title"},"Oz Cleanse Companion"),
-      e("div",{className:"dash-subtitle"},
-        (day.custom ? "Custom • " : "Template • "), day.phase.toUpperCase()
-      )
+      e("div",{className:"dash-subtitle"}, day.phase.toUpperCase())
     )
   ),
   e("div",{className:"day-nav"},
     e("button",{className:"day-btn",onClick:()=>changeDay(-1)},"◀"),
-    e("span",{className:"day-label"},"Day "+day.day),
+    e("div",{className:"day-label"},"Day "+day.day),
     e("button",{className:"day-btn",onClick:()=>changeDay(1)},"▶")
   )
 ),
+
 
     // progress
     e(ProgressBar,{value:progress}),
