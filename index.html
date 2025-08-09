@@ -1,565 +1,296 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-<title>Oz Cleanse Companion</title>
-<meta name="theme-color" content="#ec4899"/>
-<link rel="manifest" href="/manifest.webmanifest">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oz Cleanse App</title>
+  <link rel="icon" type="image/png" href="oz.png" />
+  <link rel="stylesheet" href="style.css" />
 
-<style>
-  html,body{background:#fff7f1;color:#334155;margin:0}
-  .card{background:#fff;border:1px solid #f3d0e1;border-radius:16px;box-shadow:0 8px 24px rgba(236,72,153,.08)}
-  .pill{border-radius:9999px;padding:.4rem .75rem;border:1px solid #ffd8be;background:#fff;transition:transform .12s}
-  .pill.on{background:linear-gradient(90deg,#ffc79d,#ffd8be)}
-  .ring{width:28px;height:28px;position:relative}
-  .ring svg{position:absolute;inset:0}
-  .ring .txt{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px}
-  .toast{position:fixed;left:12px;right:12px;top:18px;z-index:60}
-  .toast>div{background:linear-gradient(90deg,#ffe4ef,#e9d5ff);border:1px solid #f3d0e1;border-radius:16px;padding:10px;box-shadow:0 12px 30px rgba(236,72,153,.15)}
-  .coach{background:#fffdf7;border:1px dashed #f6cf92;border-radius:12px;padding:10px}
-  .paw-check{display:inline-flex;align-items:center;justify-content:center;height:36px;width:36px;border-radius:9999px;border:1px solid #f0cbb0;background:#fff;transition:transform .12s, background .2s; cursor:pointer}
-  .paw-check.on{background:linear-gradient(90deg,#f9d49a,#ffd2c8);transform:scale(1.02)}
-  .prog-wrap{height:10px;border-radius:9999px;background:#fde7e0;overflow:hidden}
-  .prog-fill{height:100%;background:linear-gradient(90deg,#ffa56e,#ec4899);width:0;transition:width .35s ease}
-  .snack{position:fixed;left:12px;right:12px;bottom:16px;z-index:70}
-  .snack > div{background:#1f2937;color:#fff;border-radius:14px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between}
-  .oz-splash{position:fixed;inset:0;background:#fef8f1;display:flex;align-items:center;justify-content:center;z-index:80;animation:ozfade 1.2s ease 0.6s forwards}
-  .oz-splash img{width:160px;height:160px;border-radius:9999px;box-shadow:0 24px 60px rgba(149, 92, 51, .25);object-fit:cover;border:6px solid #fff}
-  .oz-speech{position:fixed;left:50%;top:54%;transform:translateX(90px);max-width:260px;z-index:81;background:#fff;border:2px solid #f3d0e1;border-radius:16px;box-shadow:0 10px 32px rgba(236,72,153,.15);padding:10px 12px;font-size:13px;line-height:1.25}
-  .oz-speech:after{content:'';position:absolute;left:-10px;top:28px;border:10px solid transparent;border-right-color:#f3d0e1}
-  .oz-speech:before{content:'';position:absolute;left:-8px;top:28px;border:10px solid transparent;border-right-color:#fff;z-index:1}
-  @keyframes ozfade{to{opacity:0;visibility:hidden}}
-  .grid{display:grid;gap:16px}
-  @media(min-width:768px){.grid-3{grid-template-columns:repeat(3,1fr)}}
-  .btn{border-radius:14px;border:1px solid #f3d0e1;background:#fff;padding:8px 12px;cursor:pointer}
-  .tabs{position:fixed;left:0;right:0;bottom:0;display:flex;gap:8px;padding:8px;background:#fff;border-top:1px solid #f3d0e1}
-  .badge{display:inline-block;border-radius:9999px;padding:2px 8px;border:1px solid #e7ccd7;background:#fff;font-size:12px}
-</style>
+  <!-- React and Chart.js with fallbacks -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"
+    crossorigin
+    onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js'"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"
+    crossorigin
+    onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"
+    onerror="this.onerror=null;this.src='https://unpkg.com/chart.js@4.4.3/dist/chart.umd.js'"></script>
 
-<!-- Libraries with fallbacks (prevents blank screen if one CDN blocks) -->
-<script src="https://unpkg.com/react@18/umd/react.production.min.js"
-        crossorigin
-        onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js'"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"
-        crossorigin
-        onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js'"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"
-        onerror="this.onerror=null;this.src='https://unpkg.com/chart.js@4.4.3/dist/chart.umd.js'"></script>
+  <style>
+    /* Inline essentials for splash and affirmations */
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #fff8f4;
+      color: #333;
+      -webkit-font-smoothing: antialiased;
+    }
+    #splash {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #ffe4d9;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      animation: fadeIn 0.6s ease;
+    }
+    #splash img {
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      object-fit: cover;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+    .speech-bubble {
+      position: relative;
+      background: #fff;
+      border-radius: .4em;
+      padding: 12px 16px;
+      margin-bottom: 20px;
+      font-size: 1.1em;
+      max-width: 250px;
+      text-align: center;
+      animation: fadeIn 1.2s ease;
+    }
+    .speech-bubble:after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border: 12px solid transparent;
+      border-top-color: #fff;
+      border-bottom: 0;
+      margin-left: -12px;
+      margin-bottom: -12px;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes fadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+    #errorBanner {
+      display: none;
+      position: fixed;
+      top: 0;
+      width: 100%;
+      background: #ff4d4d;
+      color: white;
+      padding: 10px;
+      font-size: 0.9em;
+      z-index: 10000;
+      text-align: center;
+    }
+  </style>
 </head>
-
 <body>
-<div id="root"></div>
-<div id="ozSplash" class="oz-splash"><img id="ozImg" alt="Oz"/></div>
-<div id="ozSpeech" class="oz-speech">Loading…</div>
+  <div id="errorBanner"></div>
 
-<!-- Failsafe: never hang on splash; show errors as banner -->
-<script>
-  (function(){
-    setTimeout(function(){
-      var s=document.getElementById('ozSplash'); if(s) s.style.display='none';
-      var b=document.getElementById('ozSpeech'); if(b) b.style.display='none';
-    }, 3000);
-    window.addEventListener('error', function(e){
-      var box=document.createElement('div');
-      box.style='position:fixed;left:12px;right:12px;top:12px;z-index:99;background:#fee2e2;color:#7f1d1d;border:1px solid #fecaca;border-radius:12px;padding:10px;font:14px system-ui';
-      box.textContent='App error: '+(e.error?e.error.message:e.message);
-      document.body.appendChild(box);
-    });
-  })();
-</script>
+  <!-- Splash Screen -->
+  <div id="splash">
+    <div class="speech-bubble" id="affirmationText">Loading...</div>
+    <img src="oz.png" alt="Oz the Dog" />
+  </div>
 
-<script>
-(function(){
-  // React hooks
-  var useState = React.useState, useEffect = React.useEffect, useMemo = React.useMemo, useRef = React.useRef;
+  <!-- Main App Root -->
+  <div id="root" style="display:none;"></div>
 
-  /* ===== Config (no comments/trailing commas) ===== */
-  var DEFAULT_AFFS = [
-    "Hydrated, nourished, unstoppable.",
-    "My choices today reset my cravings and serve my goals.",
-    "Gentle with myself, steady with my habits.",
-    "Discipline is my self-care. I show up for me.",
-    "Each sip is a promise kept.",
-    "I crave what Dylon's long cock.",
-    "Progress, not perfection—consistency wins.",
-    "Light, strong, and centered.",
-    "I honor my body with rest, water, and dick riding."
-  ];
-  var PHASES = ["Water Fast","Juice Cleanse","Rebuild"];
-  var BASE_GOALS = {
-    water:{label:"💧 Water 120–150 oz"},
-    tea:{label:"🍵 Tea"},
-    coffee:{label:"☕ Coffee"},
-    juices:{label:"🧃 Juices"},
-    lmnt:{label:"🧂 LMNT"},
-    exercise:{label:"🏃 Exercise"},
-    noJunk:{label:"🚫 Avoid processed food"},
-    weighIn:{label:"👣 Weight check-in"}
-  };
-  var PRICE_PRESETS = {
-    "None":{},
-    "BHM — Finley Ave":{
-      "Oranges (16)":12.8,"Lemons (14)":8.4,"Limes (2)":1.0,"Peaches (12)":18,"Melons (3)":12,"Green grapes (2 lb)":4.5,"Early apples (12)":10,"Frozen pineapple (4 cups)":6,"Cucumbers (18)":9,"Celery (5 bunches)":7.5,"Spinach (2 lb)":6,"Romaine (3 heads)":6,"Carrots (~15 lb)":12,"Zucchini (4)":4,"Broccoli (2 heads)":4,"Tomatoes (2)":3,"Onions (2)":2,"Mint (1 cup leaves)":2,"Parsley (2 cups leaves)":2,"Ginger (6–7\")":3,"Chia seeds (1 cup)":3.5,"Almond milk (8 cups)":5,"Lentils (1.5 c dry)":2,"Quinoa (1.5 c dry)":3,"Olive oil (1/4 c)":1.5,"Coconut yogurt (2 c)":4,"Rolled oats (2 c)":2,"Hummus (1/2 c)":2.5,"Salmon or chicken (12 oz)":8
-    },
-    "BHM — Pepper Place":{
-      "Oranges (16)":16,"Lemons (14)":10.5,"Limes (2)":1.5,"Peaches (12)":24,"Melons (3)":18,"Green grapes (2 lb)":6,"Early apples (12)":14,"Frozen pineapple (4 cups)":7,"Cucumbers (18)":12,"Celery (5 bunches)":10,"Spinach (2 lb)":8,"Romaine (3 heads)":8,"Carrots (~15 lb)":16,"Zucchini (4)":6,"Broccoli (2 heads)":5,"Tomatoes (2)":4,"Onions (2)":3,"Mint (1 cup leaves)":3,"Parsley (2 cups leaves)":3,"Ginger (6–7\")":4,"Chia seeds (1 cup)":4.5,"Almond milk (8 cups)":6,"Lentils (1.5 c dry)":3,"Quinoa (1.5 c dry)":4,"Olive oil (1/4 c)":2,"Coconut yogurt (2 c)":5.5,"Rolled oats (2 c)":3,"Hummus (1/2 c)":3.5,"Salmon or chicken (12 oz)":10
-    }
-  };
-
-  /* ===== Small helpers ===== */
-  function useLocal(key, initial){
-    var pair = useState(function(){
-      try{ var r = localStorage.getItem(key); return r? JSON.parse(r): initial; }catch(e){ return initial; }
-    });
-    var v = pair[0], setV = pair[1];
-    useEffect(function(){ try{ localStorage.setItem(key, JSON.stringify(v)); }catch(e){} }, [key, v]);
-    return [v,setV];
-  }
-  function vibrate(ms){ try{ if(navigator.vibrate) navigator.vibrate(ms); }catch(e){} }
-
-  /* ===== App ===== */
-  function App(){
-    var pairTab = useState("dashboard"); var tab = pairTab[0], setTab = pairTab[1];
-    var pairSnack = useState(null); var snack = pairSnack[0], setSnack = pairSnack[1];
-    function showSnack(label, undo){ setSnack({label:label, undo:undo}); setTimeout(function(){ setSnack(null); }, 4000); }
-
-    var pairSettings = useLocal("oz.settings",{
-      startDate: null,
-      affs: DEFAULT_AFFS,
-      haptics: true,
-      pricePreset: "None",
-      headerImg: "",
-      phaseGoals: {
-        "Water Fast": ["water","tea","coffee","lmnt","exercise","noJunk","weighIn"],
-        "Juice Cleanse": ["water","tea","coffee","juices","lmnt","exercise","noJunk","weighIn"],
-        "Rebuild": ["water","exercise","noJunk","weighIn"]
-      },
-      weightLbs: 170,
-      workoutDays: 4,
-      sessionMins: 60,
-      sweat: "moderate"
-    });
-    var settings = pairSettings[0], setSettings = pairSettings[1];
-
-    var pairDays = useLocal("oz.days", defaultDays());
-    var days = pairDays[0], setDays = pairDays[1];
-
-    var pairRecipes = useLocal("oz.recipes", preloadRecipes());
-    var recipes = pairRecipes[0], setRecipes = pairRecipes[1];
-
-    var pairGro = useLocal("oz.groceries", []);
-    var groceries = pairGro[0], setGroceries = pairGro[1];
-
-    var pairPhotos = useLocal("oz.photos", []);
-    var photos = pairPhotos[0], setPhotos = pairPhotos[1];
-
-    var todayAff = useMemo(function(){
-      var list = (settings.affs && settings.affs.length)? settings.affs: DEFAULT_AFFS;
-      var seed = (settings.startDate || "seed") + new Date().toISOString().slice(0,10);
-      var h = 0; for(var i=0;i<seed.length;i++){ h = ((h<<5)-h)+seed.charCodeAt(i); h|=0; }
-      return list[Math.abs(h)%list.length];
-    }, [settings.affs, settings.startDate]);
-
-    useEffect(function(){
-      var oz = document.getElementById("ozImg");
-      oz.src = settings.headerImg || "https://images.unsplash.com/photo-1517849845537-4d257902454a?q=80&w=400&auto=format&fit=crop";
-      var b = document.getElementById("ozSpeech"); if(b) b.textContent = todayAff;
-      setTimeout(function(){ var s=document.getElementById("ozSplash"); if(s) s.style.display="none"; if(b) b.style.display="none"; }, 1400);
-    }, [settings.headerImg, todayAff]);
-
-    useEffect(function(){
-      var el = document.getElementById("wchart"); if(!el) return;
-      var labels = days.map(function(d){return "D"+d.day;});
-      var data = days.map(function(d){return (d.weight==null? null: d.weight);});
-      var c = new Chart(el,{type:"line",data:{labels:labels,datasets:[{data:data,borderColor:"#ec4899",tension:.3,spanGaps:true}]},options:{plugins:{legend:{display:false}},animation:{duration:200}}});
-      return function(){ try{ c.destroy(); }catch(e){} };
-    }, [days]);
-
-    var dragIdx = useRef(null);
-    function onDropDay(i,e){
-      e.preventDefault();
-      var from = dragIdx.current; if(from==null || from===i) return;
-      setDays(function(prev){
-        var arr = prev.slice();
-        var before = prev.map(function(x){ return Object.assign({}, x); });
-        var moved = arr.splice(from,1)[0]; arr.splice(i,0,moved);
-        var out = arr.map(function(d,ix){ return Object.assign({}, d, {day: ix+1}); });
-        showSnack("Day moved", function(){ setDays(before); });
-        return out;
-      });
-    }
-
-    function coachLine(d){
-      var txt = (d.note||"").toLowerCase();
-      if(/headache|dizzy/.test(txt)) return "Try 12–16 oz water + LMNT; ease intensity.";
-      if(d.phase==="Juice Cleanse") return "A juice about every 3 hours—sip slowly.";
-      if(d.phase==="Rebuild") return "Chew well, stop at ~80% full, anchor protein+veg.";
-      return "Nice work—keep water steady and move a little.";
-    }
-
-    var totals = useMemo(function(){
-      var checked = groceries.filter(function(g){return g.checked;}).reduce(function(a,b){return a+(+b.estCost||0);},0);
-      var rest = groceries.filter(function(g){return !g.checked;}).reduce(function(a,b){return a+(+b.estCost||0);},0);
-      return {checked:checked, rest:rest, total: checked+rest};
-    }, [groceries]);
-
-    function lmntRange(){
-      var base = settings.weightLbs>=200?1.5:(settings.weightLbs>=160?1.0:0.75);
-      var session = settings.sessionMins>=60?1:0.5;
-      var mult = settings.sweat==="high"?1.25:(settings.sweat==="low"?0.75:1.0);
-      var boost = (settings.workoutDays*session*mult)/7;
-      var lo = Math.max(0.5,(base+boost)-0.5).toFixed(1);
-      var hi = Math.min(3,(base+boost)+0.5).toFixed(1);
-      return lo+"–"+hi+" pkt/day";
-    }
-
-    function Section(p){ return React.createElement("section",{className:"card",style:{padding:16,marginBottom:16}}, p.children); }
-    function Pill(cfg){ return React.createElement("button",{onClick:cfg.onClick, className:"pill"+(cfg.on?" on":""), style:{minWidth:44}}, cfg.label); }
-    function buzz(ms){ if(settings.haptics) vibrate(ms); }
-
-    return React.createElement("div",{style:{maxWidth:880,margin:"16px auto 88px",padding:"0 16px"}},
-      React.createElement("div",{className:"toast", onClick:function(){ navigator.clipboard&&navigator.clipboard.writeText(todayAff); buzz(8); alert("Affirmation copied ✨"); }},
-        React.createElement("div",null,"✨ ", todayAff)
-      ),
-
-      React.createElement("header",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}},
-        React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8}},
-          React.createElement("img",{src:(settings.headerImg||"https://images.unsplash.com/photo-1517849845537-4d257902454a?q=80&w=80&auto=format&fit=crop"), alt:"Oz", style:{height:36,width:36,borderRadius:9999,objectFit:"cover"}}),
-          React.createElement("h1",null,"Oz Cleanse Companion")
-        ),
-        React.createElement("div",null,
-          ["dashboard","daily","grocery","calendar","recipes","photos","coach","settings"].map(function(id){
-            return React.createElement("button",{key:id,onClick:function(){setTab(id);},className:"btn",style:{marginLeft:8,display:(window.innerWidth<768?"none":"inline-block"),background:(tab===id?"#ffe4ef":"#fff")}}, id[0].toUpperCase()+id.slice(1));
-          })
-        )
-      ),
-
-      tab==="dashboard" && React.createElement(Section,null,
-        React.createElement("div",{className:"grid grid-3"},
-          React.createElement("div",null,
-            React.createElement("div",{className:"badge"},"Today"),
-            React.createElement("div",{style:{fontWeight:600,marginTop:6}}, (days[0]||{}).phase||"—"),
-            React.createElement("div",{className:"prog-wrap",style:{marginTop:8}}, React.createElement("div",{className:"prog-fill",style:{width:"30%"}}))
-          ),
-          React.createElement("div",null,
-            React.createElement("div",{style:{fontSize:12,color:"#64748b"}},"Hydration"),
-            React.createElement("div",{style:{display:"flex",gap:8,marginTop:8}},
-              React.createElement("button",{className:"paw-check "+(((days[0]&&days[0].goals.water)?"on":"")), onClick:function(){ setDays(function(p){ var n=p.slice(); n[0].goals.water=!n[0].goals.water; return n; }); buzz(8); }}, ((days[0]&&days[0].goals.water)?"🐾":"W")),
-              React.createElement("button",{className:"paw-check "+(((days[0]&&days[0].goals.lmnt)?"on":"")), onClick:function(){ setDays(function(p){ var n=p.slice(); n[0].goals.lmnt=!n[0].goals.lmnt; return n; }); buzz(8); }}, ((days[0]&&days[0].goals.lmnt)?"🐾":"L"))
-            ),
-            React.createElement("div",{className:"prog-wrap",style:{marginTop:8}}, React.createElement("div",{className:"prog-fill",style:{width:((days[0]&&days[0].goals.water)?"100%":"0%")}})),
-            React.createElement("div",{className:"prog-wrap",style:{marginTop:8}}, React.createElement("div",{className:"prog-fill",style:{width:((days[0]&&days[0].goals.lmnt)?"100%":"0%")}}))
-          ),
-          React.createElement("div",null,
-            React.createElement("div",{style:{fontSize:12,color:"#64748b"}},"Weight mini-chart"),
-            React.createElement("canvas",{id:"wchart",height:"120"})
-          )
-        )
-      ),
-
-      tab==="daily" && React.createElement(Section,null,
-        React.createElement("h2",null,"Daily"),
-        days.map(function(d,i){
-          return React.createElement("div",{key:d.day, draggable:true,
-              onDragStart:function(e){ try{ e.dataTransfer.setData("text/plain", String(i)); }catch(_){}; dragIdx.current=i; },
-              onDragOver:function(e){ e.preventDefault(); },
-              onDrop:function(e){ onDropDay(i,e); },
-              style:{border:"1px solid #f3d0e1",borderRadius:12,padding:12,marginTop:8,background:"#fff"}},
-            React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center"}},
-              React.createElement("div",null, React.createElement("span",{className:"badge"}, d.phase)," ",React.createElement("b",null,"Day ",d.day)),
-              React.createElement("select",{value:d.phase,onChange:function(e){ setDays(function(prev){ var n=prev.slice(); n[i]=Object.assign({}, n[i], {phase:e.target.value}); return n; }); }},
-                PHASES.map(function(p){ return React.createElement("option",{key:p,value:p},p); })
-              )
-            ),
-            React.createElement("div",{style:{display:"flex",gap:8,flexWrap:"wrap",marginTop:8}},
-              Object.keys(d.goals).filter(function(k){ return (settings.phaseGoals[d.phase]||[]).indexOf(k)>=0; }).map(function(k){
-                return React.createElement(Pill,{key:k,on:d.goals[k],label:BASE_GOALS[k].label, onClick:function(){ setDays(function(prev){ var n=prev.slice(); var g=Object.assign({}, n[i].goals); g[k]=!g[k]; n[i]=Object.assign({}, n[i], {goals:g}); return n; }); }});
-              })
-            ),
-            React.createElement("details",{style:{marginTop:8}}, React.createElement("summary",null,"Edit goals for this day"),
-              React.createElement("div",{style:{display:"flex",gap:8,flexWrap:"wrap",marginTop:8}},
-                Object.keys(BASE_GOALS).map(function(k){
-                  return React.createElement("label",{key:k, className:"badge"},
-                    React.createElement("input",{type:"checkbox",checked:(d.goals[k]!==undefined),onChange:function(e){
-                      setDays(function(prev){ var n=prev.slice(); var g=Object.assign({}, n[i].goals);
-                        if(e.target.checked){ if(g[k]===undefined) g[k]=false; } else { delete g[k]; }
-                        n[i]=Object.assign({}, n[i], {goals:g}); return n; });
-                    }}),
-                    " ",BASE_GOALS[k].label
-                  );
-                })
-              )
-            ),
-            React.createElement("div",{style:{marginTop:8,display:"flex",gap:8,alignItems:"center"}},
-              React.createElement("label",null,"Weight"),
-              React.createElement("input",{type:"number",value:(d.weight==null?"":d.weight),onChange:function(e){
-                setDays(function(prev){ var n=prev.slice(); n[i]=Object.assign({}, n[i], {weight: e.target.value===""? null: Number(e.target.value)}); return n; });
-              },style:{width:100}})
-            ),
-            React.createElement("textarea",{placeholder:"Notes…", value:(d.note||""), onChange:function(e){
-              setDays(function(prev){ var n=prev.slice(); n[i]=Object.assign({}, n[i], {note:e.target.value}); return n; });
-            }, style:{width:"100%",height:80,marginTop:8}}),
-            React.createElement("div",{className:"coach",style:{marginTop:8,fontSize:14}}, "Coach: ", coachLine(d))
-          );
-        })
-      ),
-
-      tab==="recipes" && React.createElement(Section,{className:"oz-watermark"},
-        React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center"}},
-          React.createElement("h2",null,"Recipes"),
-          React.createElement("div",null,
-            React.createElement("button",{className:"btn",onClick:smartImport},"Smart Import"),
-            React.createElement("button",{className:"btn",style:{marginLeft:8},onClick:function(){
-              var name=prompt("Name"); if(!name) return;
-              var type=(prompt("Type (juice/meal)","juice")||"juice"); var day = Number(prompt("Day #","4")||"4");
-              addOrUpdateRecipe({id:"r-"+Math.random().toString(36).slice(2),name:name,type:type,day:day,ingredients:[],steps:""});
-            }},"Add +")
-          )
-        ),
-        recipes.length===0 ? React.createElement("p",null,"No recipes yet.") :
-        React.createElement("ul",null,
-          recipes.map(function(r){
-            return React.createElement("li",{key:r.id, draggable:true, onDragStart:function(e){ try{e.dataTransfer.setData("text/recipe", r.id);}catch(_){ } },
-                style:{padding:"8px 0",borderBottom:"1px solid #f3d0e1"}},
-              React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8}},
-                React.createElement("div",null,
-                  React.createElement("div",{style:{fontWeight:600}}, (r.type==="juice"?"🧃 ":"🍽️ ")+r.name, " ", React.createElement("span",{className:"badge"},"Day ",r.day)),
-                  React.createElement("div",{style:{fontSize:12,color:"#64748b"}}, (r.ingredients||[]).map(function(i){return (i.name||i.id)+" ("+(i.qty||"")+")";}).join(", "))
-                ),
-                React.createElement("div",null,
-                  React.createElement("select",{value:r.day||"", onChange:function(e){ var v=Number(e.target.value||"0"); setRecipes(function(prev){ return prev.map(function(x){ return x.id===r.id? Object.assign({}, x, {day: v||null}): x; }); }); }},
-                    React.createElement("option",{value:""},"Set day…"),
-                    days.map(function(d){ return React.createElement("option",{key:d.day,value:d.day},"Day ",d.day," — ",d.phase); })
-                  ),
-                  React.createElement("button",{className:"btn",style:{marginLeft:8}, onClick:function(){
-                    if(confirm("Delete recipe?")){ var removed=r; setRecipes(function(prev){ return prev.filter(function(x){return x.id!==removed.id;}); }); showSnack("Recipe deleted", function(){ setRecipes(function(prev){ return [removed].concat(prev); }); }); }
-                  }},"Delete")
-                )
-              )
-            );
-          })
-        )
-      ),
-
-      tab==="calendar" && React.createElement(Section,null,
-        React.createElement("h2",null,"Calendar / Agenda"),
-        React.createElement("ul",null,
-          days.map(function(d){
-            return React.createElement("li",{key:d.day, style:{padding:"8px 0",borderBottom:"1px solid #f3d0e1"}},
-              React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}},
-                React.createElement("div",null,
-                  React.createElement("div",{style:{fontWeight:600}},"Day ",d.day," — ",d.phase),
-                  React.createElement("div",{style:{display:"flex",gap:6,flexWrap:"wrap",marginTop:6,minHeight:24},
-                    onDragOver:function(e){e.preventDefault();},
-                    onDrop:function(e){ var id=e.dataTransfer.getData("text/recipe"); if(!id) return;
-                      var rec = recipes.find(function(x){return x.id===id;}); if(!rec) return; var from=rec.day;
-                      setRecipes(function(prev){ return prev.map(function(x){ return x.id===id? Object.assign({}, x, {day:d.day}): x; }); });
-                      showSnack("Moved recipe to Day "+d.day, function(){ setRecipes(function(prev){ return prev.map(function(x){ return x.id===id? Object.assign({}, x, {day:from}): x; }); }); });
-                    }},
-                    (function(){ var list=recipes.filter(function(r){return r.day===d.day;}); if(list.length===0) return React.createElement("span",{style:{fontSize:12,color:"#64748b"}},"—");
-                      return list.map(function(r){ return React.createElement("span",{key:r.id, draggable:true, onDragStart:function(e){ try{e.dataTransfer.setData("text/recipe", r.id);}catch(_){ } }, className:"badge"}, (r.type==="juice"?"🧃 ":"🍽️ ")+r.name); });
-                    })()
-                  )
-                ),
-                React.createElement("button",{className:"btn",onClick:function(){setTab("recipes");}},"Add recipe")
-              )
-            );
-          })
-        )
-      ),
-
-      tab==="grocery" && React.createElement(Section,null,
-        React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}},
-          React.createElement("div",null,
-            React.createElement("h2",null,"Groceries & Prices"),
-            React.createElement("div",{style:{fontSize:12,color:"#64748b",marginTop:4}}, "Checked $", totals.checked.toFixed(2), " • Remaining $", totals.rest.toFixed(2), " • Total $", totals.total.toFixed(2))
-          ),
-          React.createElement("div",null,
-            React.createElement("label",{style:{fontSize:12,marginRight:6}},"Preset:"),
-            React.createElement("select",{value:settings.pricePreset,onChange:function(e){ applyPreset(e.target.value); }},
-              Object.keys(PRICE_PRESETS).map(function(k){ return React.createElement("option",{key:k,value:k},k); })
-            )
-          )
-        ),
-        React.createElement("ul",null,
-          groceries.map(function(g,idx){
-            return React.createElement("li",{key:g.id, style:{display:"flex",alignItems:"center",gap:8,padding:"8px 0",borderBottom:"1px solid #f3d0e1"}},
-              React.createElement("button",{className:"paw-check "+(g.checked?"on":""),onClick:function(){ setGroceries(function(prev){ return prev.map(function(x,i){ return i===idx? Object.assign({}, x, {checked:!x.checked}): x; }); }); }}, g.checked?"🐾":""),
-              React.createElement("div",{style:{flex:1}},
-                React.createElement("div",null,g.name," ", React.createElement("span",{className:"badge"}, (g.days&&g.days.length?("📅 Day "+(g.days.length>1?(Math.min.apply(null,g.days)+"–"+Math.max.apply(null,g.days)):g.days[0])):"📦 Pantry"))),
-                React.createElement("div",{style:{fontSize:12,color:"#64748b"}}, g.qty||"")
-              ),
-              React.createElement("input",{type:"number",step:"0.01",placeholder:"$", value:(g.estCost==null?"":g.estCost), onChange:function(e){
-                setGroceries(function(prev){ return prev.map(function(x,i){ return i===idx? Object.assign({}, x, {estCost: e.target.value===""? null: Number(e.target.value)}): x; }); });
-              }, style:{width:90}})
-            );
-          })
-        )
-      ),
-
-      tab==="photos" && React.createElement(Section,null,
-        React.createElement("h2",null,"Progress Photos"),
-        React.createElement("label",{className:"btn",style:{display:"inline-block",marginTop:8}},"Upload Photo",
-          React.createElement("input",{type:"file",accept:"image/*",style:{display:"none"},onChange:function(e){
-            if(e.target.files && e.target.files[0]){ var rd=new FileReader();
-              rd.onload=function(){ var id=Math.random().toString(36).slice(2); var date=new Date().toLocaleDateString(); setPhotos(function(p){ return [{id:id,src:String(rd.result),date:date}].concat(p); }); alert("Looking strong ✨"); };
-              rd.readAsDataURL(e.target.files[0]);
-            }
-          }})
-        ),
-        React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(120px,1fr))",gap:12,marginTop:12}},
-          photos.map(function(p){
-            return React.createElement("figure",{key:p.id, style:{border:"1px solid #f3d0e1",borderRadius:12,overflow:"hidden"}},
-              React.createElement("img",{src:p.src,style:{width:"100%",height:120,objectFit:"cover"}}),
-              React.createElement("figcaption",{style:{padding:6,fontSize:12}},p.date),
-              React.createElement("button",{className:"btn",style:{width:"100%"},onClick:function(){ setPhotos(function(prev){ return prev.filter(function(x){return x.id!==p.id;}); }); }},"Delete")
-            );
-          })
-        )
-      ),
-
-      tab==="coach" && React.createElement(Section,null,
-        React.createElement("h2",null,"LMNT Helper"),
-        React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:8}},
-          inputBox("Weight (lb)","number",settings.weightLbs,function(v){ setSettings(Object.assign({}, settings, {weightLbs: Number(v||0)})); }),
-          inputBox("Workout days / wk","number",settings.workoutDays,function(v){ setSettings(Object.assign({}, settings, {workoutDays: Number(v||0)})); }),
-          inputBox("Session length (min)","number",settings.sessionMins,function(v){ setSettings(Object.assign({}, settings, {sessionMins: Number(v||0)})); }),
-          React.createElement("div",null,React.createElement("div",{style:{fontSize:12,marginBottom:4}},"Sweat level"),
-            React.createElement("select",{value:settings.sweat,onChange:function(e){ setSettings(Object.assign({}, settings, {sweat:e.target.value})); }},
-              React.createElement("option",{value:"low"},"Low"),React.createElement("option",{value:"moderate"},"Moderate"),React.createElement("option",{value:"high"},"High")
-            )
-          )
-        ),
-        React.createElement("p",{style:{marginTop:8}},"Recommended: ", lmntRange())
-      ),
-
-      tab==="settings" && React.createElement(Section,null,
-        React.createElement("h2",null,"Settings"),
-        inputBox("Start date","date",settings.startDate||"",function(v){ setSettings(Object.assign({}, settings, {startDate: (v||null)})); }),
-        React.createElement("div",{style:{marginTop:8}}, React.createElement("div",{style:{fontSize:12,marginBottom:4}},"Header/Oz photo URL"),
-          inputText(settings.headerImg||"", function(v){ setSettings(Object.assign({}, settings, {headerImg:v})); })
-        ),
-        React.createElement("div",{style:{marginTop:12}},
-          React.createElement("div",{style:{fontSize:12,marginBottom:4}},"Daily affirmations (one per line)"),
-          React.createElement("textarea",{style:{width:"100%",height:80}, value:(settings.affs||DEFAULT_AFFS).join("\n"),
-            onChange:function(e){ setSettings(Object.assign({}, settings, {affs: e.target.value.split(/\n+/).map(function(s){return s.trim();}).filter(Boolean)})); }})
-        ),
-        React.createElement("div",{style:{marginTop:12}},
-          React.createElement("div",{style:{fontWeight:600,marginBottom:4}},"Phase goal categories"),
-          PHASES.map(function(ph){
-            return React.createElement("div",{key:ph, style:{border:"1px solid #f3d0e1",borderRadius:12,padding:8,marginBottom:8}},
-              React.createElement("div",{style:{marginBottom:6}},ph),
-              React.createElement("div",{style:{display:"flex",gap:8,flexWrap:"wrap"}},
-                Object.keys(BASE_GOALS).map(function(k){
-                  var checked = (settings.phaseGoals[ph]||[]).indexOf(k)>=0;
-                  return React.createElement("label",{key:k,className:"badge"},
-                    React.createElement("input",{type:"checkbox",checked:checked, onChange:function(e){
-                      var set = new Set(settings.phaseGoals[ph]||[]);
-                      if(e.target.checked) set.add(k); else set.delete(k);
-                      var pg = Object.assign({}, settings.phaseGoals); pg[ph] = Array.from(set);
-                      setSettings(Object.assign({}, settings, {phaseGoals: pg}));
-                    }}),
-                    " ",BASE_GOALS[k].label
-                  );
-                })
-              )
-            );
-          })
-        ),
-        React.createElement("label",{style:{display:"inline-flex",gap:8,alignItems:"center",marginTop:6}},
-          React.createElement("input",{type:"checkbox",checked:settings.haptics,onChange:function(e){ setSettings(Object.assign({}, settings, {haptics: e.target.checked})); }}),
-          "Haptics on (device support required)"
-        )
-      ),
-
-      snack ? React.createElement("div",{className:"snack"}, React.createElement("div",null, React.createElement("span",null,snack.label), React.createElement("button",{className:"btn",onClick:function(){ if(snack && snack.undo) snack.undo(); setSnack(null);} },"Undo"))) : null,
-      React.createElement("nav",{className:"tabs"},
-        ["dashboard","daily","grocery","calendar","recipes","photos","coach","settings"].slice(0,5).map(function(id){
-          return React.createElement("button",{key:id,onClick:function(){setTab(id);},className:"btn",style:{flex:1,background:(tab===id?"#ffe4ef":"#fff")}}, id[0].toUpperCase()+id.slice(1));
-        })
-      )
-    );
-
-    function inputBox(label,type,value,onChange){
-      return React.createElement("div",null,React.createElement("div",{style:{fontSize:12,marginBottom:4}},label),
-        React.createElement("input",{type:type, value:(value==null?"":value), onChange:function(e){onChange(e.target.value);}, style:{width:"100%",padding:"8px",border:"1px solid #f3d0e1",borderRadius:12}}));
-    }
-    function inputText(value,onChange){
-      return React.createElement("input",{type:"url",placeholder:"https://…", value:(value||""), onChange:function(e){onChange(e.target.value);}, style:{width:"100%",padding:"8px",border:"1px solid #f3d0e1",borderRadius:12}});
-    }
-    function defaultDays(n){
-      n = n || 11;
-      var phases=["Water Fast","Water Fast","Water Fast","Juice Cleanse","Juice Cleanse","Juice Cleanse","Juice Cleanse","Rebuild","Rebuild","Rebuild","Rebuild"];
-      var out=[]; for(var i=0;i<n;i++){ var goals={}; Object.keys(BASE_GOALS).forEach(function(k){goals[k]=false;}); out.push({day:i+1, phase:phases[i]||"Rebuild", goals:goals, custom:[], weight:null, note:""}); }
-      return out;
-    }
-    function preloadRecipes(){
-      return [
-        { id:"r-melon", name:"Melon Mint Morning", type:"juice", day:4, ingredients:[{id:"melons",name:"Melon",qty:"1"},{id:"mint",name:"Mint",qty:"1/2 cup"},{id:"limes",name:"Lime",qty:"1"}], steps:"Juice melon → mint → lime." },
-        { id:"r-peach", name:"Peachy Green Glow", type:"juice", day:5, ingredients:[{id:"peaches",name:"Peaches",qty:"6"},{id:"cucumbers",name:"Cucumbers",qty:"4"},{id:"spinach",name:"Spinach",qty:"8 cups"},{id:"lemons",name:"Lemons",qty:"2"}], steps:"Juice greens first." },
-        { id:"r-carrot", name:"Carrot Apple Ginger", type:"juice", day:6, ingredients:[{id:"carrots",name:"Carrots",qty:"28"},{id:"apples",name:"Apples",qty:"4"},{id:"ginger",name:"Ginger",qty:"2\\""}, {id:"lemons",name:"Lemons",qty:"2"}], steps:"Juice, finish with lemon." },
-        { id:"r-grape", name:"Grape Romaine Cooler", type:"juice", day:7, ingredients:[{id:"grapes",name:"Grapes",qty:"6 cups"},{id:"romaine",name:"Romaine",qty:"6 cups"},{id:"cucumbers",name:"Cucumbers",qty:"4"},{id:"lemons",name:"Lemons",qty:"2"}], steps:"Romaine → cukes → grapes → lemon." },
-        { id:"r-smoothie", name:"Smoothie Breakfast", type:"meal", day:8, ingredients:[{id:"spinach",name:"Spinach",qty:"2 cups"},{id:"almond-milk",name:"Almond milk",qty:"1 cup"},{id:"chia",name:"Chia",qty:"1 tbsp"}], steps:"Blend." },
-        { id:"r-lentil", name:"Lentil Soup", type:"meal", day:8, ingredients:[{id:"lentils",name:"Lentils",qty:"1/2 c"},{id:"carrots",name:"Carrots",qty:"1/2 c"},{id:"celery",name:"Celery",qty:"1/2 c"},{id:"parsley",name:"Parsley",qty:"1/4 c"},{id:"onions",name:"Onion",qty:"1/4"}], steps:"Simmer ~25 min." },
-        { id:"r-oats", name:"Overnight Oats", type:"meal", day:10, ingredients:[{id:"rolled-oats",name:"Oats",qty:"1/2 c"},{id:"almond-milk",name:"Almond milk",qty:"1 c"}], steps:"Combine and chill." },
-        { id:"r-quinoa", name:"Quinoa Salad", type:"meal", day:10, ingredients:[{id:"quinoa",name:"Quinoa",qty:"1/2 c"},{id:"cucumbers",name:"Cucumber",qty:"1"},{id:"tomatoes",name:"Tomato",qty:"1"},{id:"parsley",name:"Parsley",qty:"1/4 c"},{id:"olive-oil",name:"Olive oil",qty:"1 tbsp"},{id:"lemons",name:"Lemon",qty:"1"}], steps:"Toss; season." },
-        { id:"r-protein", name:"Protein + Broccoli", type:"meal", day:11, ingredients:[{id:"protein",name:"Salmon/Chicken",qty:"12 oz"},{id:"broccoli",name:"Broccoli",qty:"2 heads"}], steps:"Cook; steam." }
-      ];
-    }
-    function smartParseRecipe(text){
-      var raw = String(text||"").replace(/\r/g,"").trim();
-      var lines = raw.split(/\n+/).map(function(s){return s.trim();}).filter(Boolean);
-      var out = { id:"r-"+Math.random().toString(36).slice(2), name:(lines[0]||"Imported Recipe"), type:(/meal|soup|salad|oats|protein|broccoli|quinoa|lentil/i.test(raw)?"meal":"juice"), day:null, steps:"", ingredients:[] };
-      var m = raw.match(/day\s*(\d{1,2})/i); if(m){ var d=parseInt(m[1],10); if(!isNaN(d)) out.day=Math.min(Math.max(d,1),21); }
-      var is = -1; for(var i=0;i<lines.length;i++){ if(/ingredient/i.test(lines[i])){ is=i; break; } }
-      if(is<0) is=1;
-      var ss = -1; for(var j=0;j<lines.length;j++){ if(/step|direction|method|instruction/i.test(lines[j])){ ss=j; break; } }
-      if(ss<0) ss=lines.length;
-      var ing = lines.slice(is+1, ss); var steps = lines.slice(ss+1); out.steps = steps.join("\n");
-      ing.forEach(function(L){
-        var t = L.replace(/^[-*•]\s*/,"");
-        var mm = t.match(/^([\d\/\.]+\s*[a-zA-Z]*|[a-zA-Z]+)\s+(.+)$/);
-        var qty = mm? mm[1]: ""; var name = (mm? mm[2]: t).replace(/[,\.]/g,"");
-        out.ingredients.push({id:null, name: name.split(" ").map(function(w){return w.charAt(0).toUpperCase()+w.slice(1);}).join(" "), qty: qty});
-      });
-      return out;
-    }
-    function addOrUpdateRecipe(rec){
-      setRecipes(function(prev){ return [rec].concat(prev); });
-      if(rec.ingredients && rec.ingredients.length){
-        setGroceries(function(prev){
-          var out = prev.slice();
-          rec.ingredients.forEach(function(it){
-            var id = (it.name||"").toLowerCase().replace(/\s+/g,"-");
-            var idx = -1; for(var i=0;i<out.length;i++){ if(out[i].id===id){ idx=i; break; } }
-            if(idx>=0){
-              var s = new Set(out[idx].days||[]); if(rec.day) s.add(rec.day);
-              out[idx] = Object.assign({}, out[idx], {name: out[idx].name||it.name, days: Array.from(s).sort(function(a,b){return a-b;})});
-            } else {
-              out.push({id:id,name:it.name,cat:"Other",qty:it.qty||"",checked:false,estCost:null,days: rec.day?[rec.day]:[]});
-            }
-          });
-          return out;
-        });
+  <script>
+    (function(){
+      try {
+        var affirmations = [
+          "You’ve got this, one sip at a time!",
+          "Strong body, strong mind — keep going!",
+          "Oz says: hydration is happiness!",
+          "Your energy is blooming like spring.",
+          "Cleansing today for a brighter tomorrow.",
+          "Every step forward counts, no matter how small.",
+          "Oz believes in your journey!",
+          "Your dedication inspires paws and people alike.",
+          "Each juice is fuel for the new you.",
+          "You are glowing from the inside out!",
+          "Oz says: stay playful, stay strong.",
+          "One more glass, one more win.",
+          "Every good choice stacks toward your goal.",
+          "Your willpower is your superpower.",
+          "Keep moving, you’re unstoppable!",
+          "Hydrate like a champion today.",
+          "This is your moment — own it.",
+          "You’re lighter, brighter, and stronger every day.",
+          "Oz is wagging his tail for you!",
+          "Small habits create big change.",
+          "You’re doing amazing — keep going.",
+          "Fuel, flush, flourish.",
+          "Strong today, stronger tomorrow.",
+          "One choice at a time, you’re winning.",
+          "Your body thanks you with every sip.",
+          "Oz says: healthy looks good on you.",
+          "Breathe deep, move freely.",
+          "Progress is in motion — so are you.",
+          "Cheers to your health!",
+          "Your goals are in sight — keep your pace."
+        ];
+        // Shuffle without repeats until all shown
+        var usedAffirmations = JSON.parse(localStorage.getItem("usedAffirmations") || "[]");
+        var available = affirmations.filter(function(a){ return usedAffirmations.indexOf(a) === -1; });
+        if(available.length === 0){ available = affirmations; usedAffirmations = []; }
+        var pick = available[Math.floor(Math.random() * available.length)];
+        usedAffirmations.push(pick);
+        localStorage.setItem("usedAffirmations", JSON.stringify(usedAffirmations));
+        document.getElementById("affirmationText").textContent = pick;
+      } catch(e) {
+        document.getElementById("errorBanner").style.display = 'block';
+        document.getElementById("errorBanner").textContent = "Affirmation Error: " + e.message;
       }
-    }
-    function smartImport(){
-      var txt = prompt("Paste a recipe. Include title, optional 'Day #', Ingredients, Steps.");
-      if(!txt) return;
-      var rec = smartParseRecipe(txt); if(!rec.day) rec.day=4;
-      addOrUpdateRecipe(rec);
-      alert("Recipe imported ✔ and groceries tagged for Day "+rec.day);
-    }
-    function applyPreset(name){
-      setGroceries(function(prev){ return prev.map(function(g){ var price = (PRICE_PRESETS[name]||{})[g.name]; return Object.assign({}, g, {estCost: (price!=null? price: g.estCost)}); }); });
-      setSettings(function(s){ var c=Object.assign({}, s); c.pricePreset=name; return c; });
-    }
-  }
+    })();
+  </script>
+  <script>
+    // Splash hide after short delay
+    window.addEventListener('load', function(){
+      setTimeout(function(){
+        var splash = document.getElementById('splash');
+        splash.style.animation = "fadeOut 0.6s ease forwards";
+        setTimeout(function(){
+          splash.style.display = 'none';
+          document.getElementById('root').style.display = 'block';
+        }, 600);
+      }, 2200);
+    });
 
-  ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
-})();
-</script>
+    // Error handler
+    window.onerror = function(message, source, lineno, colno, error) {
+      var banner = document.getElementById('errorBanner');
+      banner.textContent = "Error: " + message + " at " + lineno + ":" + colno;
+      banner.style.display = 'block';
+    };
+  </script>
+
+  <script>
+    // Your React app code starts here
+    const e = React.createElement;
+
+    function App() {
+      const [activeTab, setActiveTab] = React.useState('dashboard');
+
+      return e('div', { className: 'app-container' },
+        e('nav', { className: 'tab-nav' },
+          e('button', { onClick: () => setActiveTab('dashboard') }, 'Dashboard'),
+          e('button', { onClick: () => setActiveTab('groceries') }, 'Groceries'),
+          e('button', { onClick: () => setActiveTab('calendar') }, 'Calendar'),
+          e('button', { onClick: () => setActiveTab('recipes') }, 'Recipes'),
+          e('button', { onClick: () => setActiveTab('photos') }, 'Progress Photos')
+        ),
+        e('main', null,
+          activeTab === 'dashboard' && e(Dashboard, null),
+          activeTab === 'groceries' && e(Groceries, null),
+          activeTab === 'calendar' && e(Calendar, null),
+          activeTab === 'recipes' && e(Recipes, null),
+          activeTab === 'photos' && e(Photos, null)
+        )
+      );
+    }
+
+    function Dashboard() {
+      return e('div', { className: 'dashboard' },
+        e('h1', null, 'Daily Checklist'),
+        e('ul', { className: 'checklist' },
+          ['💧 Drink 120-150 oz water',
+           '🍵 Tea (fast / cleanse)',
+           'Coffee (fast / cleanse)',
+           '🧃 Juices (cleanse)',
+           '🧂 LMNT Electrolytes (Daily)',
+           '🏃 Exercise',
+           '🚫 Avoid processed food',
+           '👣 Weight check in'
+          ].map((item, idx) =>
+            e('li', { key: idx },
+              e('input', { type: 'checkbox', id: 'chk' + idx }),
+              e('label', { htmlFor: 'chk' + idx }, item)
+            )
+          )
+        )
+      );
+    }
+
+    function Groceries() {
+      return e('div', { className: 'groceries' },
+        e('h1', null, 'Grocery List'),
+        e('p', null, 'Grouped by day to reduce spoilage'),
+        e('ul', null,
+          e('li', null, 'Day 1-2: Oranges, Carrots, Kale'),
+          e('li', null, 'Day 3-4: Spinach, Cucumbers, Apples'),
+          e('li', null, 'Day 5-6: Ginger, Lemon, Mint')
+        )
+      );
+    }
+
+    function Calendar() {
+      return e('div', { className: 'calendar' },
+        e('h1', null, 'Cleanse Calendar'),
+        e('p', null, 'View recipes and goals by day')
+      );
+    }
+
+    function Recipes() {
+      return e('div', { className: 'recipes' },
+        e('h1', null, 'Recipes'),
+        e('p', null, 'Preloaded juice & meal recipes will appear here.')
+      );
+    }
+
+    function Photos() {
+      return e('div', { className: 'photos' },
+        e('h1', null, 'Progress Photos'),
+        e('input', { type: 'file', accept: 'image/*' })
+      );
+    }
+
+    ReactDOM.render(e(App), document.getElementById('root'));
+  </script>
+  <style>
+    .tab-nav {
+      display: flex;
+      justify-content: space-around;
+      background: #ffd6c9;
+      padding: 8px;
+      position: sticky;
+      top: 0;
+    }
+    .tab-nav button {
+      background: #fff;
+      border: none;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.95em;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .tab-nav button:hover {
+      background: #ffe8e0;
+    }
+    .dashboard, .groceries, .calendar, .recipes, .photos {
+      padding: 16px;
+    }
+    .checklist {
+      list-style: none;
+      padding: 0;
+    }
+    .checklist li {
+      margin: 10px 0;
+      display: flex;
+      align-items: center;
+    }
+    .checklist input[type="checkbox"] {
+      margin-right: 10px;
+      transform: scale(1.3);
+    }
+  </style>
 
 </body>
 </html>
