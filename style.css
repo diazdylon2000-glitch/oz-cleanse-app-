@@ -105,3 +105,5 @@ html, body {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-5px); }
 }
+/* optional – improves drag handle look */
+li .btn { margin-left: 8px; }
