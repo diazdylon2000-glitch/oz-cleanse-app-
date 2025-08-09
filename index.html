@@ -419,6 +419,9 @@ const Dashboard = ({ templates, days, setDays, recipes }) => {
     return { items: fallback, label };
   }
 
+  // get next-ingredients + label
+  const { items: nextItems, label: nextLabel } = nextTwoDayIngredients(day);
+
   // template + checklist
   const templateIds = templates[day.phase] || [];
   const activeIds = (day.order && day.order.length ? day.order : templateIds);
@@ -623,6 +626,7 @@ const Dashboard = ({ templates, days, setDays, recipes }) => {
     )
   );
 };
+
 
   /* ---------- App ---------- */
   const App = () => {
