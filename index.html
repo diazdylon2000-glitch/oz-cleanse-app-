@@ -6,6 +6,7 @@
 <title>Oz Cleanse Companion</title>
 <meta name="theme-color" content="#ec4899"/>
 <link rel="manifest" href="/manifest.webmanifest">
+
 <style>
   html,body{background:#fff7f1;color:#334155;margin:0}
   .card{background:#fff;border:1px solid #f3d0e1;border-radius:16px;box-shadow:0 8px 24px rgba(236,72,153,.08)}
@@ -17,7 +18,7 @@
   .toast{position:fixed;left:12px;right:12px;top:18px;z-index:60}
   .toast>div{background:linear-gradient(90deg,#ffe4ef,#e9d5ff);border:1px solid #f3d0e1;border-radius:16px;padding:10px;box-shadow:0 12px 30px rgba(236,72,153,.15)}
   .coach{background:#fffdf7;border:1px dashed #f6cf92;border-radius:12px;padding:10px}
-  .paw-check{display:inline-flex;align-items:center;justify-content:center;height:36px;width:36px;border-radius:9999px;border:1px solid #f0cbb0;background:#fff;transition:transform .12s, background .2s}
+  .paw-check{display:inline-flex;align-items:center;justify-content:center;height:36px;width:36px;border-radius:9999px;border:1px solid #f0cbb0;background:#fff;transition:transform .12s, background .2s; cursor:pointer}
   .paw-check.on{background:linear-gradient(90deg,#f9d49a,#ffd2c8);transform:scale(1.02)}
   .prog-wrap{height:10px;border-radius:9999px;background:#fde7e0;overflow:hidden}
   .prog-fill{height:100%;background:linear-gradient(90deg,#ffa56e,#ec4899);width:0;transition:width .35s ease}
@@ -35,18 +36,43 @@
   .tabs{position:fixed;left:0;right:0;bottom:0;display:flex;gap:8px;padding:8px;background:#fff;border-top:1px solid #f3d0e1}
   .badge{display:inline-block;border-radius:9999px;padding:2px 8px;border:1px solid #e7ccd7;background:#fff;font-size:12px}
 </style>
-<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Libraries with fallbacks (prevents blank screen if one CDN blocks) -->
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"
+        crossorigin
+        onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js'"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"
+        crossorigin
+        onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js'"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"
+        onerror="this.onerror=null;this.src='https://unpkg.com/chart.js@4.4.3/dist/chart.umd.js'"></script>
 </head>
+
 <body>
 <div id="root"></div>
 <div id="ozSplash" class="oz-splash"><img id="ozImg" alt="Oz"/></div>
 <div id="ozSpeech" class="oz-speech">Loading…</div>
+
+<!-- Failsafe: never hang on splash; show errors as banner -->
+<script>
+  (function(){
+    setTimeout(function(){
+      var s=document.getElementById('ozSplash'); if(s) s.style.display='none';
+      var b=document.getElementById('ozSpeech'); if(b) b.style.display='none';
+    }, 3000);
+    window.addEventListener('error', function(e){
+      var box=document.createElement('div');
+      box.style='position:fixed;left:12px;right:12px;top:12px;z-index:99;background:#fee2e2;color:#7f1d1d;border:1px solid #fecaca;border-radius:12px;padding:10px;font:14px system-ui';
+      box.textContent='App error: '+(e.error?e.error.message:e.message);
+      document.body.appendChild(box);
+    });
+  })();
+</script>
+
 <script>
 const {useState,useEffect,useMemo,useRef} = React;
 
-// ---------- Config ----------
+/* ==================== CONFIG ==================== */
 const DEFAULT_AFFS=[
   "Hydrated, nourished, unstoppable.",
   "My choices today reset my cravings and serve my goals.",
@@ -75,7 +101,7 @@ const PRICE_PRESETS={
   "BHM — Pepper Place":{ "Oranges (16)":16,"Lemons (14)":10.5,"Limes (2)":1.5,"Peaches (12)":24,"Melons (3)":18,"Green grapes (2 lb)":6,"Early apples (12)":14,"Frozen pineapple (4 cups)":7,"Cucumbers (18)":12,"Celery (5 bunches)":10,"Spinach (2 lb)":8,"Romaine (3 heads)":8,"Carrots (~15 lb)":16,"Zucchini (4)":6,"Broccoli (2 heads)":5,"Tomatoes (2)":4,"Onions (2)":3,"Mint (1 cup leaves)":3,"Parsley (2 cups leaves)":3,"Ginger (6–7\")":4,"Chia seeds (1 cup)":4.5,"Almond milk (8 cups)":6,"Lentils (1.5 c dry)":3,"Quinoa (1.5 c dry)":4,"Olive oil (1/4 c)":2,"Coconut yogurt (2 c)":5.5,"Rolled oats (2 c)":3,"Hummus (1/2 c)":3.5,"Salmon or chicken (12 oz)":10 }
 };
 
-// ---------- Helpers ----------
+/* ==================== HELPERS ==================== */
 function useLocal(key, initial){
   const [v,setV]=useState(()=>{try{const r=localStorage.getItem(key);return r?JSON.parse(r):initial}catch{return initial}});
   useEffect(()=>{try{localStorage.setItem(key,JSON.stringify(v))}catch{}},[key,v]);
@@ -83,7 +109,7 @@ function useLocal(key, initial){
 }
 function vibrate(ms){ try{navigator.vibrate&&navigator.vibrate(ms)}catch{} }
 
-// ---------- App ----------
+/* ==================== APP ==================== */
 function App(){
   const [tab,setTab]=useState('dashboard');
   const [snack,setSnack]=useState(null);
@@ -91,7 +117,7 @@ function App(){
 
   const [settings,setSettings]=useLocal('oz.settings',{
     startDate:null, affs:DEFAULT_AFFS, haptics:true, pricePreset:"None",
-    headerImg:"", // put Oz photo URL here (or set in Settings)
+    headerImg:"", // Paste Oz URL in Settings
     phaseGoals:{
       "Water Fast":['water','tea','coffee','lmnt','exercise','noJunk','weighIn'],
       "Juice Cleanse":['water','tea','coffee','juices','lmnt','exercise','noJunk','weighIn'],
@@ -105,7 +131,7 @@ function App(){
   const [groceries,setGroceries]=useLocal('oz.groceries', []);
   const [photos,setPhotos]=useLocal('oz.photos', []);
 
-  // Affirmation (stable daily)
+  // Daily affirmation (stable per day)
   const todayAff = useMemo(()=>{
     const list=(settings.affs&&settings.affs.length)?settings.affs:DEFAULT_AFFS;
     const seed=(settings.startDate||'seed')+new Date().toISOString().slice(0,10);
@@ -113,15 +139,15 @@ function App(){
     return list[Math.abs(h)%list.length];
   },[settings.affs, settings.startDate]);
 
-  // Splash: set image src + speech, hide after 1.4s
+  // Splash: image + speech → hide (also have failsafe above)
   useEffect(()=>{
     const oz = document.getElementById('ozImg');
-    oz.src = settings.headerImg || "https://images.unsplash.com/photo-1517849845537-4d257902454a?q=80&w=400&auto=format&fit=crop"; // fallback doggo
+    oz.src = settings.headerImg || "https://images.unsplash.com/photo-1517849845537-4d257902454a?q=80&w=400&auto=format&fit=crop";
     const b = document.getElementById('ozSpeech'); b.textContent = todayAff;
     setTimeout(()=>{ const s=document.getElementById('ozSplash'); if(s) s.style.display='none'; if(b) b.style.display='none'; }, 1400);
   },[settings.headerImg, todayAff]);
 
-  // ----- dashboard chart -----
+  // Chart
   useEffect(()=>{
     const el=document.getElementById('wchart'); if(!el) return;
     const labels=days.map(d=>'D'+d.day); const data=days.map(d=>d.weight??null);
@@ -129,13 +155,13 @@ function App(){
     return ()=>c.destroy();
   },[days]);
 
-  // Drag to reorder days
+  // Drag reorder days
   const dragIdx=useRef(null);
   function onDropDay(i,e){ e.preventDefault(); const from=dragIdx.current; if(from==null||from===i) return;
     setDays(prev=>{ const arr=[...prev]; const before=prev.map(x=>({...x})); const [m]=arr.splice(from,1); arr.splice(i,0,m); const out=arr.map((d,ix)=>({...d,day:ix+1})); showSnack('Day moved',()=>setDays(before)); return out; });
   }
 
-  // Smart coach
+  // Coach
   function coachLine(d){
     const txt=(d.note||'').toLowerCase();
     if(/headache|dizzy/.test(txt)) return "Try 12–16 oz water + LMNT; ease intensity.";
@@ -162,18 +188,18 @@ function App(){
     return `${lo}–${hi} pkt/day`;
   }
 
-  // UI bits
+  // UI helpers
   function Section(p){ return React.createElement('section',{className:'card',style:{padding:16,marginBottom:16}}, p.children); }
   function Pill({on,label,onClick}){ return React.createElement('button',{onClick, className:'pill'+(on?' on':''), style:{minWidth:44}},label); }
   function buzz(ms){ if(settings.haptics) vibrate(ms); }
 
   return React.createElement('div',{style:{maxWidth:880,margin:'16px auto 88px',padding:'0 16px'}},
-    // Affirmation toast
+    /* Affirmation toast */
     React.createElement('div',{className:'toast', onClick:()=>{navigator.clipboard.writeText(todayAff); buzz(8); alert('Affirmation copied ✨');}},
       React.createElement('div',null, '✨ ', todayAff)
     ),
 
-    // Header
+    /* Header + tabs (desktop) */
     React.createElement('header',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}},
       React.createElement('div',{style:{display:'flex',alignItems:'center',gap:8}},
         React.createElement('img',{src:(settings.headerImg||'https://images.unsplash.com/photo-1517849845537-4d257902454a?q=80&w=80&auto=format&fit=crop'), alt:'Oz', style:{height:36,width:36,borderRadius:9999,objectFit:'cover'}}),
@@ -186,7 +212,7 @@ function App(){
       )
     ),
 
-    // DASHBOARD
+    /* DASHBOARD */
     tab==='dashboard' && React.createElement(Section,null,
       React.createElement('div',{className:'grid grid-3'},
         React.createElement('div',null,
@@ -210,7 +236,7 @@ function App(){
       )
     ),
 
-    // DAILY
+    /* DAILY */
     tab==='daily' && React.createElement(Section,null,
       React.createElement('h2',null,'Daily'),
       days.map((d,i)=> React.createElement('div',{key:d.day, draggable:true,
@@ -248,7 +274,7 @@ function App(){
       ))
     ),
 
-    // RECIPES
+    /* RECIPES */
     tab==='recipes' && React.createElement(Section,{className:'oz-watermark'},
       React.createElement('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
         React.createElement('h2',null,'Recipes'),
@@ -278,7 +304,7 @@ function App(){
       )
     ),
 
-    // CALENDAR
+    /* CALENDAR */
     tab==='calendar' && React.createElement(Section,null,
       React.createElement('h2',null,'Calendar / Agenda'),
       React.createElement('ul',null,
@@ -298,7 +324,7 @@ function App(){
       )
     ),
 
-    // GROCERY
+    /* GROCERY */
     tab==='grocery' && React.createElement(Section,null,
       React.createElement('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}},
         React.createElement('div',null,
@@ -324,7 +350,7 @@ function App(){
       )
     ),
 
-    // PHOTOS
+    /* PHOTOS */
     tab==='photos' && React.createElement(Section,null,
       React.createElement('h2',null,'Progress Photos'),
       React.createElement('label',{className:'btn',style:{display:'inline-block',marginTop:8}},'Upload Photo',
@@ -339,7 +365,7 @@ function App(){
       )
     ),
 
-    // COACH
+    /* COACH */
     tab==='coach' && React.createElement(Section,null,
       React.createElement('h2',null,'LMNT Helper'),
       React.createElement('div',{style:{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(160px,1fr))',gap:8}},
@@ -354,7 +380,7 @@ function App(){
       React.createElement('p',{style:{marginTop:8}},'Recommended: ', lmntRange())
     ),
 
-    // SETTINGS
+    /* SETTINGS */
     tab==='settings' && React.createElement(Section,null,
       React.createElement('h2',null,'Settings'),
       inputBox('Start date','date',settings.startDate||'',v=>setSettings({...settings,startDate:v||null})),
@@ -393,7 +419,7 @@ function App(){
     )
   );
 
-  // ----- helpers in render scope -----
+  /* -------- helpers -------- */
   function inputBox(label,type,value,onChange){
     return React.createElement('div',null,React.createElement('div',{style:{fontSize:12,marginBottom:4}},label),
       React.createElement('input',{type, value:value??'', onChange:e=>onChange(e.target.value), style:{width:'100%',padding:'8px',border:'1px solid #f3d0e1',borderRadius:12}}));
@@ -437,6 +463,7 @@ function App(){
   function applyPreset(name){ setGroceries(prev=> prev.map(g=> ({...g, estCost: PRICE_PRESETS[name][g.name] ?? g.estCost}))); setSettings(s=>({...s, pricePreset:name})); }
 }
 
+/* Mount */
 ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
 </script>
 </body>
