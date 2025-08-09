@@ -634,6 +634,50 @@ const Dashboard = ({ templates, days, setDays }) => {
     )
   );
 };
+// ---- App ----
+const App = () => {
+  const [settings, setSettings] = useLocal("oz.settings", {
+    phaseTemplates: DEFAULT_PHASE_TEMPLATES
+  });
+
+  // one-time template validation
+  useEffect(() => {
+    var pt = settings && settings.phaseTemplates;
+    var valid = pt && ["fast","cleanse","rebuild"].every(function(k){
+      return Array.isArray(pt[k]) && pt[k].every(function(id){ return !!GOAL_LIBRARY[id]; });
+    });
+    if(!valid) setSettings({ phaseTemplates: DEFAULT_PHASE_TEMPLATES });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const [days, setDays] = useLocal("oz.days", defaultDays());
+  const [tab, setTab] = useState("dash");
+
+  return e("div", {},
+    tab === "dash" && e(Dashboard, { templates: settings.phaseTemplates, days: days, setDays: setDays }),
+    tab === "groceries" && e(GroceryList, {
+      items: [
+        { name: "Carrots", day: 4, price: 2.5 },
+        { name: "Spinach", day: 2, price: 3.0 },
+        { name: "Apples", day: 1, price: 4.0 }
+      ]
+    }),
+    tab === "calendar" && e(Calendar),
+    tab === "photos" && e(Photos),
+    tab === "settings" && e(Settings, {
+      templates: settings.phaseTemplates,
+      onChange: function(next){ setSettings({ phaseTemplates: next }); }
+    }),
+
+    e("div", { className: "tabs" },
+      e("button", { className: "btn" + (tab === "dash" ? " active" : ""), onClick: function(){ setTab("dash"); } }, "Dashboard"),
+      e("button", { className: "btn" + (tab === "groceries" ? " active" : ""), onClick: function(){ setTab("groceries"); } }, "Groceries"),
+      e("button", { className: "btn" + (tab === "calendar" ? " active" : ""), onClick: function(){ setTab("calendar"); } }, "Calendar"),
+      e("button", { className: "btn" + (tab === "photos" ? " active" : ""), onClick: function(){ setTab("photos"); } }, "Photos"),
+      e("button", { className: "btn" + (tab === "settings" ? " active" : ""), onClick: function(){ setTab("settings"); } }, "Settings")
+    )
+  );
+};
 
 ReactDOM.render(e(App), document.getElementById("root"));
 </script>
