@@ -3,18 +3,14 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <title>Oz Cleanse Companion — V14</title>
+  <title>Oz Cleanse Companion — V14+</title>
   <meta name="theme-color" content="#f9c2a7"/>
 
-  <!-- React + Chart.js with fallbacks (do not change) -->
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"
-          crossorigin
-          onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js'"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"
-          crossorigin
-          onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js'"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"
-          onerror="this.onerror=null;this.src='https://unpkg.com/chart.js@4.4.3/dist/chart.umd.js'"></script>
+  <!-- React + Chart.js + Confetti -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
   <!-- V14 look & feel -->
   <style>
@@ -31,678 +27,527 @@
     .badge{display:inline-block;padding:2px 10px;border:1px solid #e7ccd7;background:#fff;border-radius:9999px;font-size:12px}
     .btn{border:1px solid var(--line);background:#fff;padding:10px 12px;border-radius:14px;cursor:pointer}
     .btn.peach{background:linear-gradient(90deg,#ffc7a9,#ffe1d6);border-color:#ffd9c8}
-    .grid{display:grid;gap:16px}
-    @media(min-width:760px){.grid-3{grid-template-columns:repeat(3,1fr)}}
-
-    /* Pills + paw checks */
-    .pill{border-radius:9999px;padding:.45rem .8rem;border:1px solid #ffd8be;background:#fff;transition:transform .12s}
-    .pill.on{background:linear-gradient(90deg,#ffc79d,#ffd8be)}
-    .paw{display:inline-flex;align-items:center;justify-content:center;height:36px;width:36px;border-radius:9999px;border:1px solid #f0cbb0;background:#fff;transition:transform .12s, background .2s;cursor:pointer}
-    .paw.on{background:linear-gradient(90deg,#f9d49a,#ffd2c8);transform:scale(1.02)}
-
-    /* Progress bars */
-    .prog{height:10px;border-radius:9999px;background:#fde7e0;overflow:hidden}
-    .fill{height:100%;background:linear-gradient(90deg,#ffa56e,#ec4899);width:0;transition:width .35s ease}
-
-    /* Bottom tabs */
     .tabs{position:fixed;left:0;right:0;bottom:0;display:flex;gap:8px;padding:8px;background:#fff;border-top:1px solid var(--line)}
     .tabs .btn{flex:1}
     .tabs .btn.active{background:var(--chip)}
-
-    /* Toast + snack */
     .toast{position:fixed;left:12px;right:12px;top:18px;z-index:60}
     .toast>div{background:linear-gradient(90deg,#ffe4ef,#e9d5ff);border:1px solid var(--line);border-radius:16px;padding:10px;box-shadow:0 12px 30px rgba(236,72,153,.15)}
     .snack{position:fixed;left:12px;right:12px;bottom:16px;z-index:70}
     .snack>div{background:#1f2937;color:#fff;border-radius:14px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between}
-
-    /* Splash with Oz + speech bubble */
-    #errorBanner{display:none;position:fixed;top:0;left:0;right:0;background:#ff4d4d;color:#fff;padding:10px;font-size:14px;z-index:10000;text-align:center}
-    .splash{position:fixed;inset:0;background:#fef3ec;display:flex;align-items:center;justify-content:center;z-index:80}
-    .splash img{width:170px;height:170px;border-radius:9999px;object-fit:cover;border:6px solid #fff;box-shadow:0 24px 60px rgba(149,92,51,.25)}
-    .bubble{position:fixed;left:50%;top:54%;transform:translateX(92px);max-width:260px;z-index:81;background:#fff;border:2px solid var(--line);border-radius:16px;box-shadow:0 10px 32px rgba(236,72,153,.15);padding:10px 12px;font-size:13px;line-height:1.25}
-    .bubble:after{content:'';position:absolute;left:-10px;top:28px;border:10px solid transparent;border-right-color:var(--line)}
-    .bubble:before{content:'';position:absolute;left:-8px;top:28px;border:10px solid transparent;border-right-color:#fff;z-index:1}
-    .fadeOut{animation:fadeOut .6s ease forwards}
-    @keyframes fadeOut{to{opacity:0;visibility:hidden}}
-
-    /* Header row */
+    .pill{border-radius:9999px;padding:.45rem .8rem;border:1px solid #ffd8be;background:#fff;transition:transform .12s}
+    .pill.on{background:linear-gradient(90deg,#ffc79d,#ffd8be)}
+    .paw{display:inline-flex;align-items:center;justify-content:center;height:36px;width:36px;border-radius:9999px;border:1px solid #f0cbb0;background:#fff;transition:transform .12s, background .2s;cursor:pointer}
+    .paw.on{background:linear-gradient(90deg,#f9d49a,#ffd2c8);transform:scale(1.02)}
+    .prog{height:10px;border-radius:9999px;background:#fde7e0;overflow:hidden}
+    .fill{height:100%;background:linear-gradient(90deg,#ffa56e,#ec4899);width:0;transition:width .35s ease}
     header.hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
     header.hdr img{height:36px;width:36px;border-radius:9999px;object-fit:cover}
+    #errorBanner{display:none;position:fixed;top:0;left:0;right:0;background:#ff4d4d;color:#fff;padding:10px;font-size:14px;z-index:10000;text-align:center}
   </style>
 </head>
 <body>
-  <!-- Error banner shows any JS crash with line:col -->
   <div id="errorBanner"></div>
+  <div id="root"></div>
 
-  <!-- Splash -->
-  <div id="ozSplash" class="splash"><img id="ozImg" alt="Oz"/></div>
-  <div id="ozBubble" class="bubble">Loading…</div>
-
-  <!-- App root -->
-  <div id="root" style="display:none"></div>
-
-  <!-- Splash failsafe + error capture -->
+  <!-- React App -->
   <script>
-    (function(){
-      // Always hide splash after 3s even if React fails
-      setTimeout(function(){
-        var s=document.getElementById('ozSplash'); if(s) s.classList.add('fadeOut');
-        var b=document.getElementById('ozBubble'); if(b) b.classList.add('fadeOut');
-        setTimeout(function(){
-          if(s) s.style.display='none';
-          if(b) b.style.display='none';
-          var root=document.getElementById('root'); if(root) root.style.display='block';
-        },620);
-      },3000);
-      // Show errors on screen
-      window.addEventListener('error',function(e){
-        var el=document.getElementById('errorBanner');
-        el.textContent='Error: '+(e.error&&e.error.message?e.error.message:e.message);
-        el.style.display='block';
-      });
-    })();
-  </script>
+  "use strict";
+  const e = React.createElement;
+  const { useState, useEffect } = React;
 
-  <!-- Affirmations + Oz image init -->
-  <script>
-    (function(){
-      try{
-        var oz=document.getElementById('ozImg');
-        oz.src='oz.png'; // replace with your real Oz photo filename later if different
-
-        var A=[
-          "You’ve got this, one sip at a time!",
-          "Strong body, strong mind—keep going!",
-          "Hydration is happiness. 🐾",
-          "Fuel today, flourish tomorrow.",
-          "Every sip is a promise kept.",
-          "Gentle and steady wins.",
-          "You’re lighter and brighter each day.",
-          "Small habits, big change.",
-          "Proud of you already.",
-          "Your willpower is glowing.",
-          "Keep moving; you’re unstoppable!",
-          "Oz is rooting for you!",
-          "Cleansing with kindness.",
-          "Sip, breathe, reset.",
-          "You crave what nourishes you.",
-          "Consistency over intensity.",
-          "You’re building momentum.",
-          "Energy rising, mind clear.",
-          "Hydrate like a champ.",
-          "Today’s choices shape tomorrow.",
-          "Progress, not perfection.",
-          "Tiny wins stack up.",
-          "You’re doing amazing.",
-          "Cheers to your health.",
-          "Own your routine.",
-          "Steady heart, steady steps.",
-          "Let it be simple.",
-          "Flow with it; you’re good.",
-          "Trust your pace.",
-          "Shine from within."
-        ];
-        // Cycle without repeats
-        var used=JSON.parse(localStorage.getItem('oz_aff_used')||'[]');
-        var avail=A.filter(function(t){return used.indexOf(t)===-1;});
-        if(avail.length===0){avail=A;used=[];}
-        var pick=avail[Math.floor(Math.random()*avail.length)];
-        used.push(pick); localStorage.setItem('oz_aff_used',JSON.stringify(used));
-        var bubble=document.getElementById('ozBubble'); if(bubble) bubble.textContent=pick;
-      }catch(err){
-        var el=document.getElementById('errorBanner');
-        el.textContent='Init error: '+err.message;
-        el.style.display='block';
-      }
-      // Hide splash a bit earlier when window fully loads
-      window.addEventListener('load',function(){
-        setTimeout(function(){
-          var s=document.getElementById('ozSplash'); var b=document.getElementById('ozBubble');
-          if(s) s.classList.add('fadeOut'); if(b) b.classList.add('fadeOut');
-          setTimeout(function(){
-            if(s) s.style.display='none'; if(b) b.style.display='none';
-            var root=document.getElementById('root'); if(root) root.style.display='block';
-          },620);
-        },1400);
-      });
-    })();
-  </script>
-<!-- React App (clean, fixed) -->
-<script>
-"use strict";
-
-const e = React.createElement;
-const { useState, useEffect } = React;
-
-/* ---------- helpers & data ---------- */
-function useLocal(key, initialValue){
-  const [val, setVal] = React.useState(() => {
-    try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : initialValue; }
-    catch { return initialValue; }
+  /* ---------- helpers ---------- */
+  function useLocal(key, initialValue){
+    const [val, setVal] = React.useState(() => {
+      try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : initialValue; }
+      catch { return initialValue; }
+    });
+    React.useEffect(() => { try { localStorage.setItem(key, JSON.stringify(val)); } catch {} }, [key, val]);
+    return [val, setVal];
+  }
+  window.addEventListener('error',function(e){
+    var el=document.getElementById('errorBanner');
+    el.textContent='Error: '+(e.error&&e.error.message?e.error.message:e.message);
+    el.style.display='block';
   });
-  React.useEffect(() => {
-    try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
-  }, [key, val]);
-  return [val, setVal];
-}
 
-// Goal library
-const GOAL_LIBRARY = {
-  water:  "💧 Drink 120–150 oz water",
-  tea:    "🍵 Tea",
-  coffee: "☕ Coffee",
-  juice:  "🧃 Juices",
-  lmnt:   "🧂 LMNT Electrolytes",
-  exercise:"🏃 Exercise",
-  wholefood:"🥗 Whole food meals",
-  weight:"👣 Weight check-in"
-};
+  /* ---------- data ---------- */
+  const GOAL_LIBRARY = {
+    water:"💧 Drink 120–150 oz water",
+    tea:"🍵 Tea",
+    coffee:"☕ Coffee",
+    juice:"🧃 Juices",
+    lmnt:"🧂 LMNT Electrolytes",
+    exercise:"🏃 Exercise",
+    wholefood:"🥗 Whole food meals",
+    weight:"👣 Weight check-in"
+  };
 
-// Phase templates (defaults)
-const DEFAULT_PHASE_TEMPLATES = {
-  fast:    ["water","tea","coffee","lmnt","exercise","weight"],
-  cleanse: ["water","tea","coffee","juice","lmnt","exercise","weight"],
-  rebuild: ["water","lmnt","exercise","wholefood","weight"]
-};
+  const DEFAULT_PHASE_TEMPLATES = {
+    fast:["water","tea","coffee","lmnt","exercise","weight"],
+    cleanse:["water","tea","coffee","juice","lmnt","exercise","weight"],
+    rebuild:["water","lmnt","exercise","wholefood","weight"]
+  };
 
-// Default 11-day plan
-function defaultDays(){
-  var phases=["fast","fast","fast","cleanse","cleanse","cleanse","cleanse","rebuild","rebuild","rebuild","rebuild"];
-  var out=[];
-  for(var i=0;i<phases.length;i++){
-    out.push({
-      day: i+1,
-      phase: phases[i],
-      order: null,      // null = use template; array = custom order
-      checks: {},       // { goalId: boolean }
-      custom: false,    // badge
-      note: "",
-      weight: null
-    });
+  function defaultDays(){
+    const phases=["fast","fast","fast","cleanse","cleanse","cleanse","cleanse","rebuild","rebuild","rebuild","rebuild"];
+    return phases.map((ph,i)=>({day:i+1,phase:ph,order:null,checks:{},custom:false,note:"",weight:null}));
   }
-  return out;
-}
 
-/* ---------- small UI pieces ---------- */
-const ProgressBar = ({ value }) =>
-  e("div", { className: "prog" },
-    e("div", { className: "fill", style: { width: Math.max(0, Math.min(100, value)) + "%" } })
-  );
+  // Recipes
+  const PLAN_RECIPES = [
+    { id:"r-melon", name:"Melon Mint Morning", type:"juice", day:4,
+      ingredients:[{key:"melons",name:"Melon",qty:"1"},{key:"mint",name:"Mint",qty:"1/2 cup"},{key:"limes",name:"Lime",qty:"1"}],
+      steps:"Juice melon → mint → lime."
+    },
+    { id:"r-peach", name:"Peachy Green Glow", type:"juice", day:5,
+      ingredients:[{key:"peaches",name:"Peaches",qty:"6"},{key:"cucumbers",name:"Cucumbers",qty:"4"},{key:"spinach",name:"Spinach",qty:"8 cups"},{key:"lemons",name:"Lemons",qty:"2"}],
+      steps:"Juice greens first."
+    },
+    { id:"r-carrot", name:"Carrot Apple Ginger", type:"juice", day:6,
+      ingredients:[{key:"carrots",name:"Carrots",qty:'28'},{key:"apples",name:"Apples",qty:"4"},{key:"ginger",name:"Ginger",qty:'2"'},{key:"lemons",name:"Lemons",qty:"2"}],
+      steps:"Juice, finish with lemon."
+    },
+    { id:"r-grape", name:"Grape Romaine Cooler", type:"juice", day:7,
+      ingredients:[{key:"grapes",name:"Grapes",qty:"6 cups"},{key:"romaine",name:"Romaine",qty:"6 cups"},{key:"cucumbers",name:"Cucumbers",qty:"4"},{key:"lemons",name:"Lemons",qty:"2"}],
+      steps:"Romaine → cukes → grapes → lemon."
+    },
+    { id:"r-smoothie", name:"Smoothie Breakfast", type:"meal", day:8,
+      ingredients:[{key:"spinach",name:"Spinach",qty:"2 cups"},{key:"almond-milk",name:"Almond milk",qty:"1 cup"},{key:"chia",name:"Chia",qty:"1 tbsp"}],
+      steps:"Blend until smooth."
+    },
+    { id:"r-lentil", name:"Lentil Soup", type:"meal", day:8,
+      ingredients:[{key:"lentils",name:"Lentils (dry)",qty:"1/2 cup"},{key:"carrots",name:"Carrots",qty:"1/2 cup"},{key:"celery",name:"Celery",qty:"1/2 cup"},{key:"parsley",name:"Parsley",qty:"1/4 cup"},{key:"onions",name:"Onion",qty:"1/4"}],
+      steps:"Simmer ~25 min."
+    },
+    { id:"r-oats", name:"Overnight Oats", type:"meal", day:10,
+      ingredients:[{key:"rolled-oats",name:"Rolled oats",qty:"1/2 cup"},{key:"almond-milk",name:"Almond milk",qty:"1 cup"}],
+      steps:"Combine and chill."
+    },
+    { id:"r-quinoa", name:"Quinoa Salad", type:"meal", day:10,
+      ingredients:[{key:"quinoa",name:"Quinoa (dry)",qty:"1/2 cup"},{key:"cucumbers",name:"Cucumber",qty:"1"},{key:"tomatoes",name:"Tomato",qty:"1"},{key:"parsley",name:"Parsley",qty:"1/4 cup"},{key:"olive-oil",name:"Olive oil",qty:"1 tbsp"},{key:"lemons",name:"Lemon",qty:"1"}],
+      steps:"Toss; season."
+    },
+    { id:"r-protein", name:"Protein + Broccoli", type:"meal", day:11,
+      ingredients:[{key:"protein",name:"Salmon/Chicken",qty:"12 oz"},{key:"broccoli",name:"Broccoli",qty:"2 heads"}],
+      steps:"Cook protein; steam broccoli."
+    }
+  ];
 
-const Checklist = ({ items, state, onToggle }) =>
-  e("ul", { style: { listStyle: "none", padding: 0 } },
-    items.map(it =>
-      e("li", { key: it.id, style: { margin: "8px 0", display: "flex", alignItems: "center" } },
-        e("div", {
-          className: "paw" + (state[it.id] ? " on" : ""),
-          onClick: () => onToggle(it.id)
-        }, "🐾"),
-        e("span", { style: { marginLeft: 8 } }, it.label)
-      )
-    )
-  );
-
-// Chart.js mini weight chart
-const WeightChart = ({ series }) => {
-  const canvasRef = React.useRef(null);
-  const chartRef = React.useRef(null);
-
-  useEffect(() => {
-    const ctx = canvasRef.current.getContext("2d");
-    if (chartRef.current) { try { chartRef.current.destroy(); } catch(e){} }
-
-    chartRef.current = new Chart(ctx, {
-      type: "line",
-      data: {
-        labels: series.map((_, i) => "Day " + (i + 1)),
-        datasets: [{
-          data: series,
-          borderColor: "#ec4899",
-          backgroundColor: "rgba(236,72,153,.15)",
-          tension: 0.35, spanGaps: true, pointRadius: 2
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: { legend: { display: false } },
-        scales: { y: { ticks: { callback: v => v || "" } } },
-        animation: { duration: 200 }
-      }
+  function aggregateGroceries(recipes){
+    const map = {};
+    recipes.forEach(r=>{
+      (r.ingredients||[]).forEach(it=>{
+        const id=(it.key||it.name||"").toLowerCase().replace(/\s+/g,'-');
+        if(!map[id]){
+          map[id]={id,name:it.name,qty:it.qty||"",checked:false,estCost:null,days:r.day?[r.day]:[]};
+        }else{
+          const s=new Set(map[id].days||[]);
+          if(r.day) s.add(r.day);
+          map[id].days=Array.from(s).sort((a,b)=>a-b);
+        }
+      });
     });
+    return Object.values(map).sort((a,b)=> (a.name||"").localeCompare(b.name||""));
+  }
 
-    return () => { try { chartRef.current && chartRef.current.destroy(); } catch(e){} };
-  }, [series]);
+  /* ---------- small components ---------- */
+  const ProgressBar = ({ value }) =>
+    e("div", { className:"prog" }, e("div", { className:"fill", style:{ width: Math.max(0, Math.min(100, value))+"%" } }));
 
-  return e("canvas", { ref: canvasRef, height: 120 });
-};
-
-/* ---------- pages ---------- */
-
-// Simple grocery mock (you can replace later)
-const GroceryList = ({ items }) => {
-  const [checked, setChecked] = useState({});
-  const total = items.reduce((sum, it) => sum + (checked[it.name] ? 0 : it.price), 0);
-  return e("div", { className:"wrap" },
-    e("h1", null, "Groceries"),
-    e("div", { style: { fontWeight: "bold", marginBottom: 8 } }, "Total: $"+total.toFixed(2)),
-    e("ul", { style: { listStyle: "none", padding: 0 } },
+  const Checklist = ({ items, state, onToggle }) =>
+    e("ul", { style:{ listStyle:"none", padding:0 } },
       items.map(it =>
-        e("li", { key: it.name, style: { display: "flex", alignItems: "center", margin: "6px 0" } },
-          e("input", {
-            type: "checkbox",
-            checked: !!checked[it.name],
-            onChange: () => setChecked({ ...checked, [it.name]: !checked[it.name] })
-          }),
-          e("span", { style: { flex: 1, marginLeft: 8 } }, it.name+" — Day "+it.day),
-          e("span", { style: { fontSize: ".85em", color: "#666" } }, "$"+it.price.toFixed(2))
+        e("li", { key:it.id, style:{ margin:"8px 0", display:"flex", alignItems:"center" } },
+          e("div", { className:"paw"+(state[it.id]?" on":""), onClick:()=>onToggle(it.id) }, "🐾"),
+          e("span", { style:{ marginLeft:8 } }, it.label)
         )
-      )
-    )
-  );
-};
-
-const Calendar = () => e("div", { className: "wrap" }, e("h1", null, "Calendar View"));
-
-const Photos = () => {
-  const [photos, setPhotos] = useState([]);
-  function handleUpload(ev){
-    var files = Array.from(ev.target.files||[]);
-    var urls = files.map(function(f){ return URL.createObjectURL(f); });
-    setPhotos(photos.concat(urls));
-  }
-  return e("div", { className: "wrap" },
-    e("h1", null, "Progress Photos"),
-    e("input", { type: "file", multiple: true, onChange: handleUpload }),
-    e("div", { style: { display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 } },
-      photos.map((url, i) =>
-        e("img", { key: i, src: url, style: { width: 100, height: 100, objectFit: "cover", borderRadius: 8 } })
-      )
-    )
-  );
-};
-
-// Settings: drag to reorder default goals per phase
-const Settings = ({ templates, onChange }) => {
-  const [local, setLocal] = useState(templates);
-  const [drag, setDrag] = useState({ phase: null, index: null });
-
-  useEffect(() => { setLocal(templates); }, [templates]);
-
-  function handleDragStart(phase, index, e){
-    setDrag({ phase, index });
-    try { e.dataTransfer.setData("text/plain", String(index)); } catch {}
-  }
-  function handleDrop(phase, index, e){
-    e.preventDefault();
-    if (drag.phase !== phase || drag.index === null) return;
-    var arr = local[phase].slice();
-    var moved = arr.splice(drag.index, 1)[0];
-    arr.splice(index, 0, moved);
-    var next = Object.assign({}, local); next[phase] = arr;
-    setLocal(next); onChange(next);
-    setDrag({ phase: null, index: null });
-  }
-  function removeItem(phase, id){
-    var arr = (local[phase]||[]).filter(function(x){ return x!==id; });
-    var next = Object.assign({}, local); next[phase] = arr;
-    setLocal(next); onChange(next);
-  }
-  function addItem(phase){
-    var pool = Object.keys(GOAL_LIBRARY).filter(function(id){ return (local[phase]||[]).indexOf(id)===-1; });
-    if (pool.length===0){ alert("All goals already included"); return; }
-    var id = prompt("Add goal by ID:\n"+pool.join(", "));
-    if(!id || pool.indexOf(id)===-1) return;
-    var next = Object.assign({}, local); next[phase] = (local[phase]||[]).concat([id]);
-    setLocal(next); onChange(next);
-  }
-
-  function renderPhase(phase, label){
-    var ids = local[phase] || [];
-    return e("div", { className:"card", style:{ marginBottom:16 }},
-      e("h2", null, label),
-      e("ul", { style:{ listStyle:"none", padding:0, marginTop:8 }},
-        ids.map(function(id, idx){
-          return e("li", {
-            key:id, draggable:true,
-            onDragStart:function(ev){ handleDragStart(phase, idx, ev); },
-            onDragOver:function(ev){ ev.preventDefault(); },
-            onDrop:function(ev){ handleDrop(phase, idx, ev); },
-            style:{ display:"flex", alignItems:"center", padding:8, marginBottom:6, border:"1px solid #f3d0e1", borderRadius:12, background:"#fff" }
-          },
-            e("span", { style:{ width:18, marginRight:8, opacity:.6 } }, "⋮⋮"),
-            e("span", { style:{ flex:1 } }, GOAL_LIBRARY[id] || id),
-            e("button", { className:"btn", onClick:function(){ removeItem(phase, id); } }, "Remove")
-          );
-        })
-      ),
-      e("div", null,
-        e("button", { className:"btn peach", onClick:function(){ addItem(phase); } }, "Add Goal")
       )
     );
-  }
 
-  return e("div", { className:"wrap" },
-    e("h1", null, "Settings"),
-    e("p", { style:{ margin:"6px 0 12px", color:"#64748b" } }, "Drag to reorder the default goals for each phase. These act as templates; individual days can still customize later."),
-    renderPhase("fast", "Fast — Phase Template"),
-    renderPhase("cleanse", "Cleanse — Phase Template"),
-    renderPhase("rebuild", "Rebuild — Phase Template")
-  );
-};
-
-// Dashboard — per-day customization + progress from real goals
-const Dashboard = ({ templates, days, setDays }) => {
-  const [idx, setIdx] = useState(0); // current day index (0-based)
-
-  // Current day and computed lists
-  const day = days[idx] || days[0];
-  const templateIds = templates[day.phase] || [];
-  const activeIds = (day.order && day.order.length ? day.order : templateIds);
-
-  // Build UI items
-  const items = activeIds.map(function(id){
-    return { id:id, label: GOAL_LIBRARY[id] || id };
-  });
-
-// Progress math
-const checks = day.checks || {};
-const doneCount = items.reduce(function(acc, it){ return acc + (checks[it.id] ? 1 : 0); }, 0);
-const totalCount = Math.max(1, items.length);
-const progress = (doneCount / totalCount) * 100;
-
-// Trigger celebration when 100%
-useEffect(() => {
-  if (progress === 100) {
-    // Launch confetti (if canvas-confetti loaded)
-    if (window.confetti) {
-      window.confetti({
-        particleCount: 80,
-        spread: 70,
-        origin: { y: 0.6 }
+  const WeightChart = ({ series }) => {
+    const canvasRef = React.useRef(null);
+    const chartRef = React.useRef(null);
+    useEffect(()=>{
+      const ctx = canvasRef.current.getContext("2d");
+      if(chartRef.current){ try{ chartRef.current.destroy(); }catch(e){} }
+      chartRef.current = new Chart(ctx, {
+        type:"line",
+        data:{ labels: series.map((_,i)=>"Day "+(i+1)), datasets:[{ data:series, borderColor:"#ec4899", backgroundColor:"rgba(236,72,153,.15)", tension:.35, spanGaps:true, pointRadius:2 }] },
+        options:{ responsive:true, plugins:{ legend:{ display:false }}, scales:{ y:{ ticks:{ callback:v=>v||"" } } }, animation:{ duration:200 } }
       });
+      return ()=>{ try{ chartRef.current && chartRef.current.destroy(); }catch(e){} };
+    }, [series]);
+    return e("canvas", { ref:canvasRef, height:120 });
+  };
+
+  /* ---------- pages ---------- */
+  const GroceryList = ({ groceries, setGroceries }) => {
+    const totals = groceries.reduce((acc,g)=>{
+      const price = g.estCost ? Number(g.estCost) : 0;
+      if(g.checked) acc.checked += price; else acc.remaining += price;
+      acc.total += price; return acc;
+    }, {checked:0, remaining:0, total:0});
+
+    function toggle(idx){ setGroceries(groceries.map((g,i)=> i===idx? Object.assign({},g,{checked:!g.checked}):g)); }
+    function setPrice(idx,val){ const v = val===""? null: Number(val); setGroceries(groceries.map((g,i)=> i===idx? Object.assign({},g,{estCost:v}):g)); }
+    function daysBadge(days){
+      if(!days||!days.length) return "📦 Pantry";
+      const min = Math.min.apply(null,days), max = Math.max.apply(null,days);
+      return "📅 "+(min===max?("Day "+min):("Day "+min+"–"+max));
     }
-    // Random encouragement
-    const phrases = [
-      "Paw-some job! 🐾",
-      "You nailed it today! 💪",
-      "Oz is proud of you! 🐶",
-      "100% — You’re unstoppable! 🌟",
-      "Way to crush it! 🎉"
-    ];
-    alert(phrases[Math.floor(Math.random() * phrases.length)]);
-  }
-}, [progress]);
-  
-  // Weight series for mini chart
-  const weightSeries = days.map(function(d){ return (d.weight==null ? null : d.weight); });
 
-  function toggleCheck(id){
-    setDays(function(prev){
-      var next = prev.slice();
-      var d = Object.assign({}, next[idx]);
-      var c = Object.assign({}, d.checks || {});
-      c[id] = !c[id];
-      d.checks = c;
-      next[idx] = d;
-      return next;
-    });
-  }
-
-  function setPhase(p){
-    setDays(function(prev){
-      var next = prev.slice();
-      var d = Object.assign({}, next[idx]);
-      d.phase = p;
-      next[idx] = d;
-      return next;
-    });
-  }
-
-  function lmntQuickAdd(){
-    if (activeIds.indexOf("lmnt") !== -1) {
-      alert("LMNT is already on today’s checklist.");
-      return;
-    }
-    setDays(function(prev){
-      var next = prev.slice();
-      var d = Object.assign({}, next[idx]);
-      var base = (d.order && d.order.length ? d.order.slice() : templateIds.slice());
-      base.push("lmnt");
-      d.order = base;     
-      d.custom = true;
-      var c = Object.assign({}, d.checks || {});
-      c.lmnt = false;
-      d.checks = c;
-      next[idx] = d;
-      return next;
-    });
-  }
-
-  const [editing, setEditing] = useState(false);
-  const [dragIndex, setDragIndex] = useState(null);
-  const [localIds, setLocalIds] = useState(activeIds);
-
-  useEffect(function(){ setLocalIds(activeIds); }, [idx, day.phase, day.order]);
-
-  function applyCustom(){
-    setDays(function(prev){
-      var next = prev.slice();
-      var d = Object.assign({}, next[idx]);
-      d.order = localIds.slice();
-      d.custom = true;
-      next[idx] = d;
-      return next;
-    });
-    setEditing(false);
-  }
-
-  function resetToTemplate(){
-    setDays(function(prev){
-      var next = prev.slice();
-      var d = Object.assign({}, next[idx]);
-      d.order = null;
-      d.custom = false;
-      var allowed = {};
-      (templates[d.phase] || []).forEach(function(g){ allowed[g]=true; });
-      var nc = {};
-      Object.keys(d.checks || {}).forEach(function(k){ if(allowed[k]) nc[k]=d.checks[k]; });
-      d.checks = nc;
-      next[idx] = d;
-      return next;
-    });
-    setEditing(false);
-  }
-
-  function removeGoal(id){
-    setLocalIds(function(prev){ return prev.filter(function(x){ return x!==id; }); });
-  }
-
-  function addGoal(){
-    var pool = Object.keys(GOAL_LIBRARY).filter(function(id){ return localIds.indexOf(id)===-1; });
-    if(pool.length===0){ alert("All goals already included"); return; }
-    var id = prompt("Add goal by ID:\n"+pool.join(", "));
-    if(!id || pool.indexOf(id)===-1) return;
-    setLocalIds(function(prev){ return prev.concat([id]); });
-  }
-
-  function handleDragStart(i,e){
-    setDragIndex(i);
-    try{ e.dataTransfer.setData("text/plain", String(i)); }catch(_){}
-  }
-  function handleDrop(i,e){
-    e.preventDefault();
-    if(dragIndex===null || dragIndex===i) return;
-    setLocalIds(function(prev){
-      var arr = prev.slice();
-      var mv = arr.splice(dragIndex,1)[0];
-      arr.splice(i,0,mv);
-      return arr;
-    });
-    setDragIndex(null);
-  }
-
-  function changeDay(direction){
-    setIdx(function(cur){
-      var n = cur + direction;
-      if(n<0) n = days.length-1;
-      if(n>=days.length) n = 0;
-      return n;
-    });
-  }
-
-  return e("div", { className:"wrap" },
-    e("header", { className:"hdr", style:{gap:8}},
-      e("h1", null, "Dashboard"),
-      e("div", { className:"badge" },
-        (day.custom ? "Custom • " : "Template • ") + day.phase.toUpperCase()
+    return e("div", { className:"wrap" },
+      e("h1", null, "Groceries & Prices"),
+      e("div", { style:{ fontSize:12, color:"#64748b", margin:"6px 0 12px" } },
+        "Checked $", totals.checked.toFixed(2),
+        " • Remaining $", totals.remaining.toFixed(2),
+        " • Total $", totals.total.toFixed(2)
       ),
-      e("div", null,
-        e("button", { className:"btn", onClick:function(){ changeDay(-1); } }, "◀"),
-        e("span", { className:"badge", style:{margin:"0 8px"} }, "Day "+day.day),
-        e("button", { className:"btn", onClick:function(){ changeDay(1); } }, "▶")
-      ),
-      e("div", null,
-        e("select", {
-          value: day.phase,
-          onChange:function(ev){ setPhase(ev.target.value); },
-          className:"btn"
-        },
-          e("option", {value:"fast"}, "Fast"),
-          e("option", {value:"cleanse"}, "Cleanse"),
-          e("option", {value:"rebuild"}, "Rebuild")
-        )
-      ),
-      e("div", null,
-        e("button", { className:"btn peach", onClick:function(){ setEditing(true); } }, "Customize Day"),
-        day.custom && e("button", { className:"btn", style:{marginLeft:8}, onClick:resetToTemplate }, "Reset to Template"),
-        e("button", { className:"btn", style:{marginLeft:8}, onClick: lmntQuickAdd }, "Add LMNT Today")
-      )
-    ),
-
-    e(ProgressBar, { value: progress }),
-
-    e("ul", { style:{ listStyle:"none", padding:0, marginTop:12 }},
-      items.map(function(it){
-        var on = !!checks[it.id];
-        return e("li", { key:it.id, style:{ display:"flex", alignItems:"center", margin:"8px 0" }},
-          e("div", {
-            className:"paw"+(on?" on":""),
-            onClick:function(){ toggleCheck(it.id); }
-          }, "🐾"),
-          e("span", { style:{ marginLeft:8 } }, it.label)
-        );
-      })
-    ),
-
-    // Weight card
-    e("div", { className:"card", style:{ marginTop:16 }},
-      e("h2", null, "Weight"),
-      e("div", { style:{ display:"flex", alignItems:"center", gap:8, margin:"8px 0" } },
-        e("label", null, "Today’s weight"),
-        e("input", {
-          type:"number",
-          step:"0.1",
-          value: (day.weight==null ? "" : day.weight),
-          onChange: function(ev){
-            var v = ev.target.value;
-            setDays(function(prev){
-              var next = prev.slice();
-              var d = Object.assign({}, next[idx]);
-              d.weight = (v==="" ? null : Number(v));
-
-              // Auto-check "weight" goal if value entered
-              if (v !== "" && ((d.checks && "weight" in d.checks) || activeIds.indexOf("weight") !== -1)) {
-                var c = Object.assign({}, d.checks || {});
-                c.weight = true;
-                d.checks = c;
-              }
-
-              next[idx] = d;
-              return next;
-            });
-          },
-          style:{ width:120 }
-        }),
-        e("span", { className:"badge" }, "Day "+day.day)
-      ),
-      e("div", { style:{ marginTop:8 } },
-        e(WeightChart, { series: weightSeries })
-      )
-    ),
-
-    // Customization panel
-    editing && e("div", { className:"card", style:{ marginTop:16, borderColor:"#f9c2a7" }},
-      e("h2", null, "Customize Day "+day.day),
-      e("p", { style:{ color:"#64748b", margin:"6px 0 12px" } }, "Drag to reorder; add/remove goals just for this day."),
       e("ul", { style:{ listStyle:"none", padding:0 }},
-        localIds.map(function(id, i){
-          return e("li", {
-              key:id, draggable:true,
-              onDragStart:function(e){ handleDragStart(i,e); },
-              onDragOver:function(e){ e.preventDefault(); },
-              onDrop:function(e){ handleDrop(i,e); },
-              style:{ display:"flex", alignItems:"center", padding:"8px", marginBottom:"6px", border:"1px solid #f3d0e1", borderRadius:"12px", background:"#fff"}
-            },
-            e("span", { style:{ width:18, marginRight:8, opacity:.6 } }, "⋮⋮"),
-            e("span", { style:{ flex:1 } }, GOAL_LIBRARY[id] || id),
-            e("button", { className:"btn", onClick:function(){ removeGoal(id); } }, "Remove")
+        groceries.map((g,idx)=>
+          e("li", { key:g.id, style:{ display:"flex", alignItems:"center", gap:8, padding:"8px 0", borderBottom:"1px solid #f3d0e1" } },
+            e("button", { className:"paw"+(g.checked?" on":""), onClick:()=>toggle(idx) }, g.checked?"🐾":""),
+            e("div", { style:{ flex:1 } },
+              e("div", null, g.name, " ", e("span", { className:"badge" }, daysBadge(g.days))),
+              e("div", { style:{ fontSize:12, color:"#64748b" } }, g.qty||"")
+            ),
+            e("input", { type:"number", step:"0.01", placeholder:"$", value:(g.estCost==null?"":g.estCost), onChange:(ev)=>setPrice(idx, ev.target.value), style:{ width:90 } })
+          )
+        )
+      )
+    );
+  };
+
+  const Calendar = ({ days, recipes, settings }) => {
+    function dateFor(dayNum){
+      const dstr = settings.phaseTemplates.__startDate || "";
+      if(!dstr) return null;
+      const base = new Date(dstr+"T00:00:00");
+      if(isNaN(base)) return null;
+      const dt = new Date(base.getTime() + (dayNum-1)*86400000);
+      return dt.toLocaleDateString();
+    }
+    return e("div", { className:"wrap" },
+      e("h1", null, "Calendar"),
+      e("ul", { style:{ listStyle:"none", padding:0, marginTop:8 }},
+        days.map(d=>{
+          const dRecipes = recipes.filter(r=> r.day===d.day);
+          const dd = dateFor(d.day);
+          return e("li", { key:d.day, className:"card", style:{ marginBottom:8 }},
+            e("div", { style:{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:8 }},
+              e("div", null,
+                e("div", { style:{ fontWeight:600 } }, "Day ", d.day, " — ", d.phase.toUpperCase()),
+                dd && e("div", { className:"badge", style:{ marginTop:6 } }, dd)
+              ),
+              e("div", { style:{ display:"flex", gap:6, flexWrap:"wrap", minHeight:24 }},
+                dRecipes.length ? dRecipes.map(r=> e("span", { key:r.id, className:"badge" }, (r.type==="juice"?"🧃 ":"🍽️ "), r.name)) :
+                e("span", { style:{ fontSize:12, color:"#64748b" } }, "—")
+              )
+            )
           );
         })
-      ),
-      e("div", null,
-        e("button", { className:"btn peach", onClick:addGoal }, "Add Goal"),
-        e("button", { className:"btn", style:{ marginLeft:8 }, onClick:function(){ setEditing(false); } }, "Cancel"),
-        e("button", { className:"btn", style:{ marginLeft:8 }, onClick:applyCustom }, "Save")
       )
-    )
-  );
-};
-// ---- App ----
-const App = () => {
-  const [settings, setSettings] = useLocal("oz.settings", {
-    phaseTemplates: DEFAULT_PHASE_TEMPLATES
-  });
+    );
+  };
 
-  // one-time template validation
-  useEffect(() => {
-    var pt = settings && settings.phaseTemplates;
-    var valid = pt && ["fast","cleanse","rebuild"].every(function(k){
-      return Array.isArray(pt[k]) && pt[k].every(function(id){ return !!GOAL_LIBRARY[id]; });
-    });
-    if(!valid) setSettings({ phaseTemplates: DEFAULT_PHASE_TEMPLATES });
+  const Photos = () => {
+    const [photos, setPhotos] = useState([]);
+    function handleUpload(ev){
+      const files = Array.from(ev.target.files||[]);
+      const urls = files.map(f=> URL.createObjectURL(f));
+      setPhotos(photos.concat(urls));
+      setTimeout(()=>{ alert("Looking strong ✨"); }, 50);
+    }
+    return e("div", { className:"wrap" },
+      e("h1", null, "Progress Photos"),
+      e("input", { type:"file", multiple:true, accept:"image/*", onChange:handleUpload }),
+      e("div", { style:{ display:"flex", gap:8, flexWrap:"wrap", marginTop:12 } },
+        photos.map((url,i)=> e("img",{ key:i, src:url, style:{ width:100, height:100, objectFit:"cover", borderRadius:8 }}))
+      )
+    );
+  };
+
+  // Settings (phase templates + start date + import)
+  const Settings = ({ templates, onChange, onImportPlan }) => {
+    const [local, setLocal] = useState(templates);
+    const [drag, setDrag] = useState({ phase:null, index:null });
+    useEffect(()=>{ setLocal(templates); }, [templates]);
+
+    function handleDragStart(phase, index, ev){ setDrag({phase,index}); try{ ev.dataTransfer.setData("text/plain", String(index)); }catch(e){} }
+    function handleDrop(phase, index, ev){
+      ev.preventDefault(); if(drag.phase!==phase || drag.index===null) return;
+      const arr = (local[phase]||[]).slice(); const moved = arr.splice(drag.index,1)[0]; arr.splice(index,0,moved);
+      const next = Object.assign({}, local); next[phase]=arr; setLocal(next); onChange(next); setDrag({phase:null,index:null});
+    }
+    function removeItem(phase, id){
+      const arr = (local[phase]||[]).filter(x=>x!==id);
+      const next = Object.assign({}, local); next[phase]=arr; setLocal(next); onChange(next);
+    }
+    function addItem(phase){
+      const pool = Object.keys(GOAL_LIBRARY).filter(id=> (local[phase]||[]).indexOf(id)===-1);
+      if(pool.length===0){ alert("All goals already included"); return; }
+      const id = prompt("Add goal by ID:\n"+pool.join(", ")); if(!id || pool.indexOf(id)===-1) return;
+      const next = Object.assign({}, local); next[phase]=(local[phase]||[]).concat([id]); setLocal(next); onChange(next);
+    }
+    function renderPhase(phase, label){
+      const ids = local[phase]||[];
+      return e("div",{className:"card",style:{marginBottom:16}},
+        e("h2",null,label),
+        e("ul",{style:{listStyle:"none",padding:0,marginTop:8}},
+          ids.map((id,idx)=> e("li",{
+              key:id, draggable:true,
+              onDragStart:(ev)=>handleDragStart(phase,idx,ev),
+              onDragOver:(ev)=>ev.preventDefault(),
+              onDrop:(ev)=>handleDrop(phase,idx,ev),
+              style:{display:"flex",alignItems:"center",padding:8,marginBottom:6,border:"1px solid #f3d0e1",borderRadius:12,background:"#fff"}
+            },
+            e("span",{style:{width:18,marginRight:8,opacity:.6}},"⋮⋮"),
+            e("span",{style:{flex:1}},GOAL_LIBRARY[id]||id),
+            e("button",{className:"btn",onClick:()=>removeItem(phase,id)},"Remove")
+          ))
+        ),
+        e("div",null, e("button",{className:"btn peach",onClick:()=>addItem(phase)},"Add Goal"))
+      );
+    }
+
+    return e("div",{className:"wrap"},
+      e("h1",null,"Settings"),
+
+      // Start Date
+      e("div", { className:"card", style:{ marginBottom:16 }},
+        e("h2", null, "Cleanse Start"),
+        e("label", { style:{ fontSize:12, color:"#64748b" } }, "Start date"),
+        e("input", {
+          type:"date",
+          value: (local.__startDate || ""),
+          onChange: (ev)=>{
+            const next = Object.assign({}, local, { __startDate: ev.target.value || "" });
+            setLocal(next); onChange(next);
+          },
+          style:{ marginTop:6, padding:"8px", border:"1px solid #f3d0e1", borderRadius:"12px" }
+        })
+      ),
+
+      e("p",{style:{margin:"6px 0 12px",color:"#64748b"}}, "Drag to reorder the default goals for each phase. These act as templates; individual days can still customize later."),
+      renderPhase("fast","Fast — Phase Template"),
+      renderPhase("cleanse","Cleanse — Phase Template"),
+      renderPhase("rebuild","Rebuild — Phase Template"),
+
+      e("div",{className:"card",style:{marginTop:8}},
+        e("h2",null,"Import 11-Day Plan"),
+        e("p",{style:{color:"#64748b",margin:"6px 0 12px"}},"Loads all juices/meals and builds a tagged grocery list."),
+        e("button",{className:"btn peach",onClick:onImportPlan},"Import Plan")
+      )
+    );
+  };
+
+  // Dashboard
+  const Dashboard = ({ templates, days, setDays }) => {
+    const [idx, setIdx] = useState(0);
+    const day = days[idx] || days[0];
+    const templateIds = templates[day.phase] || [];
+    const activeIds = (day.order && day.order.length ? day.order : templateIds);
+    const items = activeIds.map(id=>({id,label:GOAL_LIBRARY[id]||id}));
+    const checks = day.checks || {};
+    const doneCount = items.reduce((a,it)=> a+(checks[it.id]?1:0), 0);
+    const totalCount = Math.max(1, items.length);
+    const progress = (doneCount/totalCount)*100;
+    const weightSeries = days.map(d=> d.weight==null? null: d.weight);
+
+    // Celebrate on 100%
+    useEffect(()=>{
+      if(Math.round(progress)===100){
+        if(window.confetti){
+          window.confetti({ particleCount: 80, spread: 70, origin:{y:.6} });
+        }
+        const phrases=["Paw-some job! 🐾","You nailed it today! 💪","Oz is proud of you! 🐶","100% — You’re unstoppable! 🌟","Way to crush it! 🎉"];
+        console.log(phrases[Math.floor(Math.random()*phrases.length)]);
+      }
+    }, [progress]);
+
+    function toggleCheck(id){
+      setDays(prev=>{
+        const next = prev.slice();
+        const d = Object.assign({}, next[idx]);
+        const c = Object.assign({}, d.checks||{});
+        c[id] = !c[id];
+        d.checks = c;
+        next[idx] = d;
+        return next;
+      });
+    }
+    function setPhase(p){
+      setDays(prev=>{
+        const next = prev.slice();
+        const d = Object.assign({}, next[idx]);
+        d.phase = p; next[idx]=d; return next;
+      });
+    }
+    function lmntQuickAdd(){
+      if(activeIds.indexOf("lmnt")!==-1){ alert("LMNT is already on today’s checklist."); return; }
+      setDays(prev=>{
+        const next = prev.slice();
+        const d = Object.assign({}, next[idx]);
+        const base = (d.order&&d.order.length? d.order.slice() : templateIds.slice());
+        base.push("lmnt"); d.order=base; d.custom=true;
+        const c = Object.assign({}, d.checks||{}); c.lmnt=false; d.checks=c;
+        next[idx]=d; return next;
+      });
+    }
+    const [editing,setEditing]=useState(false);
+    const [dragIndex,setDragIndex]=useState(null);
+    const [localIds,setLocalIds]=useState(activeIds);
+    useEffect(()=>{ setLocalIds(activeIds); }, [idx, day.phase, day.order]);
+    function applyCustom(){
+      setDays(prev=>{
+        const next=prev.slice(); const d=Object.assign({}, next[idx]);
+        d.order=localIds.slice(); d.custom=true; next[idx]=d; return next;
+      }); setEditing(false);
+    }
+    function resetToTemplate(){
+      setDays(prev=>{
+        const next=prev.slice(); const d=Object.assign({}, next[idx]);
+        d.order=null; d.custom=false;
+        const allowed={}; (templates[d.phase]||[]).forEach(g=>allowed[g]=true);
+        const nc={}; Object.keys(d.checks||{}).forEach(k=>{ if(allowed[k]) nc[k]=d.checks[k]; });
+        d.checks=nc; next[idx]=d; return next;
+      }); setEditing(false);
+    }
+    function removeGoal(id){ setLocalIds(prev=> prev.filter(x=>x!==id)); }
+    function addGoal(){
+      const pool = Object.keys(GOAL_LIBRARY).filter(id=> localIds.indexOf(id)===-1);
+      if(pool.length===0){ alert("All goals already included"); return; }
+      const id = prompt("Add goal by ID:\n"+pool.join(", ")); if(!id || pool.indexOf(id)===-1) return;
+      setLocalIds(prev=> prev.concat([id]));
+    }
+    function handleDragStart(i,ev){ setDragIndex(i); try{ ev.dataTransfer.setData("text/plain", String(i)); }catch(e){} }
+    function handleDrop(i,ev){
+      ev.preventDefault(); if(dragIndex===null || dragIndex===i) return;
+      setLocalIds(prev=>{ const arr=prev.slice(); const mv=arr.splice(dragIndex,1)[0]; arr.splice(i,0,mv); return arr; });
+      setDragIndex(null);
+    }
+    function changeDay(dir){ setIdx(cur=>{ let n=cur+dir; if(n<0) n=days.length-1; if(n>=days.length) n=0; return n; }); }
+
+    return e("div",{className:"wrap"},
+      e("header",{className:"hdr",style:{gap:8}},
+        e("h1",null,"Dashboard"),
+        e("div",{className:"badge"}, (day.custom?"Custom • ":"Template • ")+day.phase.toUpperCase()),
+        e("div",null,
+          e("button",{className:"btn",onClick:()=>changeDay(-1)},"◀"),
+          e("span",{className:"badge",style:{margin:"0 8px"}},"Day "+day.day),
+          e("button",{className:"btn",onClick:()=>changeDay(1)},"▶")
+        ),
+        e("div",null,
+          e("select",{value:day.phase,onChange:(ev)=>setPhase(ev.target.value),className:"btn"},
+            e("option",{value:"fast"},"Fast"),
+            e("option",{value:"cleanse"},"Cleanse"),
+            e("option",{value:"rebuild"},"Rebuild")
+          )
+        ),
+        e("div",null,
+          e("button",{className:"btn peach",onClick:()=>setEditing(true)},"Customize Day"),
+          day.custom && e("button",{className:"btn",style:{marginLeft:8},onClick:resetToTemplate},"Reset to Template"),
+          e("button",{className:"btn",style:{marginLeft:8},onClick:lmntQuickAdd},"Add LMNT Today")
+        )
+      ),
+
+      e(ProgressBar,{value:progress}),
+
+      e(Checklist,{items, state:checks, onToggle:toggleCheck}),
+
+      e("div",{className:"card",style:{marginTop:16}},
+        e("h2",null,"Weight"),
+        e("div",{style:{display:"flex",alignItems:"center",gap:8,margin:"8px 0"}},
+          e("label",null,"Today’s weight"),
+          e("input",{
+            type:"number", step:"0.1",
+            value:(day.weight==null?"":day.weight),
+            onChange:(ev)=>{
+              const v = ev.target.value;
+              setDays(prev=>{
+                const next=prev.slice(); const d=Object.assign({}, next[idx]);
+                d.weight=(v===""?null:Number(v));
+                if(v!=="" && ((d.checks && "weight" in d.checks) || activeIds.indexOf("weight")!==-1)){
+                  const c=Object.assign({}, d.checks||{}); c.weight=true; d.checks=c;
+                }
+                next[idx]=d; return next;
+              });
+            },
+            style:{width:120}
+          }),
+          e("span",{className:"badge"},"Day "+day.day)
+        ),
+        e("div",{style:{marginTop:8}}, e(WeightChart,{series:weightSeries}))
+      ),
+
+      editing && e("div",{className:"card",style:{marginTop:16,borderColor:"#f9c2a7"}},
+        e("h2",null,"Customize Day "+day.day),
+        e("p",{style:{color:"#64748b",margin:"6px 0 12px"}},"Drag to reorder; add/remove goals just for this day."),
+        e("ul",{style:{listStyle:"none",padding:0}},
+          localIds.map((id,i)=> e("li",{
+              key:id,draggable:true,
+              onDragStart:(ev)=>handleDragStart(i,ev),
+              onDragOver:(ev)=>ev.preventDefault(),
+              onDrop:(ev)=>handleDrop(i,ev),
+              style:{display:"flex",alignItems:"center",padding:8,marginBottom:6,border:"1px solid #f3d0e1",borderRadius:12,background:"#fff"}
+            },
+            e("span",{style:{width:18,marginRight:8,opacity:.6}},"⋮⋮"),
+            e("span",{style:{flex:1}},GOAL_LIBRARY[id]||id),
+            e("button",{className:"btn",onClick:()=>removeGoal(id)},"Remove")
+          ))
+        ),
+        e("div",null,
+          e("button",{className:"btn peach",onClick:addGoal},"Add Goal"),
+          e("button",{className:"btn",style:{marginLeft:8},onClick:()=>setEditing(false)},"Cancel"),
+          e("button",{className:"btn",style:{marginLeft:8},onClick:applyCustom},"Save")
+        )
+      )
+    );
+  };
+
+  /* ---------- App ---------- */
+  const App = () => {
+    const [settings, setSettings] = useLocal("oz.settings", { phaseTemplates: DEFAULT_PHASE_TEMPLATES });
+    useEffect(()=>{
+      const pt=settings&&settings.phaseTemplates;
+      const valid=pt&&["fast","cleanse","rebuild"].every(k=> Array.isArray(pt[k]) && pt[k].every(id=>!!GOAL_LIBRARY[id]));
+      if(!valid) setSettings({ phaseTemplates: DEFAULT_PHASE_TEMPLATES });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    },[]);
+    const [days, setDays] = useLocal("oz.days", defaultDays());
+    const [recipes, setRecipes] = useLocal("oz.recipes", []);
+    const [groceries, setGroceries] = useLocal("oz.groceries", []);
+    const [tab, setTab] = useState("dash");
 
-  const [days, setDays] = useLocal("oz.days", defaultDays());
-  const [tab, setTab] = useState("dash");
+    function importFullPlan(){
+      const newDays = defaultDays(); setDays(newDays);
+      setRecipes(PLAN_RECIPES);
+      setGroceries(aggregateGroceries(PLAN_RECIPES));
+      alert("Plan imported ✔");
+    }
 
-  return e("div", {},
-    tab === "dash" && e(Dashboard, { templates: settings.phaseTemplates, days: days, setDays: setDays }),
-    tab === "groceries" && e(GroceryList, {
-      items: [
-        { name: "Carrots", day: 4, price: 2.5 },
-        { name: "Spinach", day: 2, price: 3.0 },
-        { name: "Apples", day: 1, price: 4.0 }
-      ]
-    }),
-    tab === "calendar" && e(Calendar),
-    tab === "photos" && e(Photos),
-    tab === "settings" && e(Settings, {
-      templates: settings.phaseTemplates,
-      onChange: function(next){ setSettings({ phaseTemplates: next }); }
-    }),
+    return e("div", {},
+      tab==="dash"      && e(Dashboard, { templates: settings.phaseTemplates, days, setDays }),
+      tab==="groceries" && e(GroceryList, { groceries, setGroceries }),
+      tab==="calendar"  && e(Calendar, { days, recipes, settings }),
+      tab==="photos"    && e(Photos),
+      tab==="settings"  && e(Settings, {
+        templates: settings.phaseTemplates,
+        onChange: (next)=> setSettings({ phaseTemplates: next }),
+        onImportPlan: importFullPlan
+      }),
 
-    e("div", { className: "tabs" },
-      e("button", { className: "btn" + (tab === "dash" ? " active" : ""), onClick: function(){ setTab("dash"); } }, "Dashboard"),
-      e("button", { className: "btn" + (tab === "groceries" ? " active" : ""), onClick: function(){ setTab("groceries"); } }, "Groceries"),
-      e("button", { className: "btn" + (tab === "calendar" ? " active" : ""), onClick: function(){ setTab("calendar"); } }, "Calendar"),
-      e("button", { className: "btn" + (tab === "photos" ? " active" : ""), onClick: function(){ setTab("photos"); } }, "Photos"),
-      e("button", { className: "btn" + (tab === "settings" ? " active" : ""), onClick: function(){ setTab("settings"); } }, "Settings")
-    )
-  );
-};
+      e("div", { className:"tabs" },
+        e("button",{className:"btn"+(tab==="dash"?" active":""),onClick:()=>setTab("dash")},"Dashboard"),
+        e("button",{className:"btn"+(tab==="groceries"?" active":""),onClick:()=>setTab("groceries")},"Groceries"),
+        e("button",{className:"btn"+(tab==="calendar"?" active":""),onClick:()=>setTab("calendar")},"Calendar"),
+        e("button",{className:"btn"+(tab==="photos"?" active":""),onClick:()=>setTab("photos")},"Photos"),
+        e("button",{className:"btn"+(tab==="settings"?" active":""),onClick:()=>setTab("settings")},"Settings")
+      )
+    );
+  };
 
-ReactDOM.render(e(App), document.getElementById("root"));
-</script>
+  ReactDOM.createRoot(document.getElementById("root")).render(e(App));
+  </script>
 </body>
 </html>
