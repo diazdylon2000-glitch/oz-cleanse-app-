@@ -287,46 +287,30 @@ const WeightChart = ({ series }) => {
 const Dashboard = ({ templates, days, setDays }) => {
   const [idx, setIdx] = useState(0); // current day index (0-based)
 
+  // Current day and computed lists
   const day = days[idx] || days[0];
-
-  // weight series for chart (nulls allowed for missing days)
-  const weightSeries = days.map(function(d){ return (d.weight==null ? null : d.weight); });
-
   const templateIds = templates[day.phase] || [];
   const activeIds = (day.order && day.order.length ? day.order : templateIds);
-const activeIds = (day.order && day.order.length ? day.order : templateIds);
 
-function lmntQuickAdd(){
-  if (activeIds.includes("lmnt")) {
-    alert("LMNT is already on today’s checklist.");
-    return;
-  }
-  setDays(prev => {
-    let next = prev.slice();
-    let d = { ...next[idx] };
-    let base = d.order?.length ? [...d.order] : [...templateIds];
-    base.push("lmnt");
-    d.order = base;
-    d.custom = true;
-    d.checks = { ...d.checks, lmnt: false };
-    next[idx] = d;
-    return next;
-  });
-}
+  // Build UI items
   const items = activeIds.map(function(id){
     return { id:id, label: GOAL_LIBRARY[id] || id };
   });
 
+  // Progress math
   const checks = day.checks || {};
   const doneCount = items.reduce(function(acc, it){ return acc + (checks[it.id] ? 1 : 0); }, 0);
   const totalCount = Math.max(1, items.length);
   const progress = (doneCount / totalCount) * 100;
 
+  // Weight series for mini chart
+  const weightSeries = days.map(function(d){ return (d.weight==null ? null : d.weight); });
+
   function toggleCheck(id){
     setDays(function(prev){
       var next = prev.slice();
       var d = Object.assign({}, next[idx]);
-      var c = Object.assign({}, d.checks);
+      var c = Object.assign({}, d.checks || {});
       c[id] = !c[id];
       d.checks = c;
       next[idx] = d;
@@ -339,12 +323,13 @@ function lmntQuickAdd(){
       var next = prev.slice();
       var d = Object.assign({}, next[idx]);
       d.phase = p;
+      // keep any custom order; user can Reset to Template if they want defaults
       next[idx] = d;
       return next;
     });
   }
 
-  // LMNT quick-add (lives INSIDE Dashboard so it can see variables)
+  // LMNT quick-add lives INSIDE Dashboard so it can access idx/activeIds/templateIds
   function lmntQuickAdd(){
     if (activeIds.indexOf("lmnt") !== -1) {
       alert("LMNT is already on today’s checklist.");
@@ -355,16 +340,17 @@ function lmntQuickAdd(){
       var d = Object.assign({}, next[idx]);
       var base = (d.order && d.order.length ? d.order.slice() : templateIds.slice());
       base.push("lmnt");
-      d.order = base;     // becomes a custom day now
+      d.order = base;     // becomes a custom day
       d.custom = true;
-      if(!d.checks) d.checks = {};
-      d.checks.lmnt = false;
+      var c = Object.assign({}, d.checks || {});
+      c.lmnt = false;
+      d.checks = c;
       next[idx] = d;
       return next;
     });
   }
 
-  // Customization editor (per-day)
+  // Per-day customization editor
   const [editing, setEditing] = useState(false);
   const [dragIndex, setDragIndex] = useState(null);
   const [localIds, setLocalIds] = useState(activeIds);
@@ -389,12 +375,12 @@ function lmntQuickAdd(){
       var d = Object.assign({}, next[idx]);
       d.order = null;
       d.custom = false;
-      var allowed = new Set((templates[d.phase]||[]));
-      var newChecks = {};
-      Object.keys(d.checks||{}).forEach(function(k){
-        if(allowed.has(k)) newChecks[k]=d.checks[k];
-      });
-      d.checks = newChecks;
+      // prune checks not in template
+      var allowed = {};
+      (templates[d.phase] || []).forEach(function(g){ allowed[g]=true; });
+      var nc = {};
+      Object.keys(d.checks || {}).forEach(function(k){ if(allowed[k]) nc[k]=d.checks[k]; });
+      d.checks = nc;
       next[idx] = d;
       return next;
     });
@@ -404,6 +390,7 @@ function lmntQuickAdd(){
   function removeGoal(id){
     setLocalIds(function(prev){ return prev.filter(function(x){ return x!==id; }); });
   }
+
   function addGoal(){
     var pool = Object.keys(GOAL_LIBRARY).filter(function(id){ return localIds.indexOf(id)===-1; });
     if(pool.length===0){ alert("All goals already included"); return; }
@@ -411,6 +398,7 @@ function lmntQuickAdd(){
     if(!id || pool.indexOf(id)===-1) return;
     setLocalIds(function(prev){ return prev.concat([id]); });
   }
+
   function handleDragStart(i,e){
     setDragIndex(i);
     try{ e.dataTransfer.setData("text/plain", String(i)); }catch(_){}
@@ -480,7 +468,7 @@ function lmntQuickAdd(){
       })
     ),
 
-    // Weight card (NOTE: ends with a comma to separate next sibling)
+    // Weight card — NOTE: ends with a comma to separate the next sibling
     e("div", { className:"card", style:{ marginTop:16 }},
       e("h2", null, "Weight"),
       e("div", { style:{ display:"flex", alignItems:"center", gap:8, margin:"8px 0" } },
@@ -535,8 +523,6 @@ function lmntQuickAdd(){
     )
   );
 };
-
-
     ReactDOM.render(e(App), document.getElementById("root"));
   </script>
 </body>
