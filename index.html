@@ -523,21 +523,26 @@ const Dashboard = ({ templates, days, setDays }) => {
         e("input", {
           type:"number", step:"0.1",
           value: (day.weight==null ? "" : day.weight),
-          onChange: function(ev){
-            var v = ev.target.value;
-            setDays(function(prev){
-              var next = prev.slice();
-              var d = Object.assign({}, next[idx]);
-              d.weight = (v==="" ? null : Number(v));
-              next[idx] = d; return next;
-            });
-          },
-          style:{ width:120 }
-        }),
-        e("span", { className:"badge" }, "Day "+day.day)
-      ),
-      e("div", { style:{ marginTop:8 } }, e(WeightChart, { series: weightSeries }))
-    ),
+      onChange: function(ev){
+  var v = ev.target.value;
+  setDays(function(prev){
+    var next = prev.slice();
+    var d = Object.assign({}, next[idx]);
+
+    // set today's weight
+    d.weight = (v==="" ? null : Number(v));
+
+    // if a weight was entered and the weight goal exists today, auto-check it
+    if (v !== "" && (d.checks || activeIds.indexOf("weight") !== -1)) {
+      var c = Object.assign({}, d.checks || {});
+      c.weight = true;
+      d.checks = c;
+    }
+
+    next[idx] = d;
+    return next;
+  });
+},
 
     // Customization panel
     editing && e("div", { className:"card", style:{ marginTop:16, borderColor:"#f9c2a7" }},
