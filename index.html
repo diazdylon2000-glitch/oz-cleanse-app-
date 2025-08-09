@@ -443,7 +443,7 @@ const Dashboard = ({ templates, days, setDays }) => {
       })
     ),
 
-  e("div", { className:"card", style:{ marginTop:16 }},
+e("div", { className:"card", style:{ marginTop:16 }},
   e("h2", null, "Weight"),
   e("div", { style:{ display:"flex", alignItems:"center", gap:8, margin:"8px 0" } },
     e("label", null, "Today’s weight"),
@@ -468,8 +468,7 @@ const Dashboard = ({ templates, days, setDays }) => {
   e("div", { style:{ marginTop:8 } },
     e(WeightChart, { series: weightSeries })
   )
-),
-
+)
 
     editing && e("div", { className:"card", style:{ marginTop:16, borderColor:"#f9c2a7" }},
       e("h2", null, "Customize Day "+day.day),
@@ -489,15 +488,11 @@ const Dashboard = ({ templates, days, setDays }) => {
           );
         })
       ),
-      e("div", null,
-        e("button", { className:"btn peach", onClick:addGoal }, "Add Goal"),
-        e("button", { className:"btn", style:{ marginLeft:8 }, onClick:function(){ setEditing(false); } }, "Cancel"),
-        e("button", { className:"btn", style:{ marginLeft:8 }, onClick:applyCustom }, "Save")
-        e("button", { className:"btn", style:{marginLeft:8}, onClick: lmntQuickAdd }, "Add LMNT Today"),
-      )
-    )
-  );
-};
+     e("div", null,
+  e("button", { className:"btn peach", onClick:function(){ setEditing(true); } }, "Customize Day"),
+  day.custom && e("button", { className:"btn", style:{marginLeft:8}, onClick:resetToTemplate }, "Reset to Template"),
+  e("button", { className:"btn", style:{marginLeft:8}, onClick: lmntQuickAdd }, "Add LMNT Today")
+)
 
     // Simple Calendar placeholder (drag/drop recipes can be wired)
     const Calendar = () => e("div", { className: "wrap" }, e("h1", null, "Calendar View"));
