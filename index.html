@@ -171,35 +171,37 @@
   <script>
     const e = React.createElement;
     const { useState, useEffect } = React;
+  // --- localStorage state helper ---
+  function useLocal(key, initialValue){
+    const [val, setVal] = React.useState(() => {
+      try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : initialValue; }
+      catch { return initialValue; }
+    });
+    React.useEffect(() => {
+      try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
+    }, [key, val]);
+    return [val, setVal];
+  }
 
-    // Sample checklist items for each phase
-    const PHASES = {
-      fast: [
-        { id: "water", label: "💧 Drink 120–150 oz water" },
-        { id: "tea", label: "🍵 Tea" },
-        { id: "coffee", label: "☕ Coffee" },
-        { id: "lmnt", label: "🧂 LMNT Electrolytes" },
-        { id: "exercise", label: "🏃 Exercise" },
-        { id: "weight", label: "👣 Weight check-in" }
-      ],
-      cleanse: [
-        { id: "water", label: "💧 Drink 120–150 oz water" },
-        { id: "tea", label: "🍵 Tea" },
-        { id: "coffee", label: "☕ Coffee" },
-        { id: "juice", label: "🧃 Juices" },
-        { id: "lmnt", label: "🧂 LMNT Electrolytes" },
-        { id: "exercise", label: "🏃 Exercise" },
-        { id: "weight", label: "👣 Weight check-in" }
-      ],
-      rebuild: [
-        { id: "water", label: "💧 Drink 120–150 oz water" },
-        { id: "lmnt", label: "🧂 LMNT Electrolytes" },
-        { id: "exercise", label: "🏃 Exercise" },
-        { id: "wholefood", label: "🥗 Whole food meals" },
-        { id: "weight", label: "👣 Weight check-in" }
-      ]
-    };
+  // --- Goal library (single source of truth) ---
+  const GOAL_LIBRARY = {
+    water:  "💧 Drink 120–150 oz water",
+    tea:    "🍵 Tea",
+    coffee: "☕ Coffee",
+    juice:  "🧃 Juices",
+    lmnt:   "🧂 LMNT Electrolytes",
+    exercise:"🏃 Exercise",
+    wholefood:"🥗 Whole food meals",
+    weight:"👣 Weight check-in"
+  };
 
+  // Default template order (used for first-time load / migration)
+  const DEFAULT_PHASE_TEMPLATES = {
+    fast:    ["water","tea","coffee","lmnt","exercise","weight"],
+    cleanse: ["water","tea","coffee","juice","lmnt","exercise","weight"],
+    rebuild: ["water","lmnt","exercise","wholefood","weight"]
+  };
+  
     // Animated progress bar
     const ProgressBar = ({ value }) =>
       e("div", { className: "prog" },
@@ -266,26 +268,41 @@
       );
     };
 
-    // Dashboard
-    const Dashboard = () => {
-      const [phase, setPhase] = useState("fast");
-      const [checkState, setCheckState] = useState({});
-      const [weightData, setWeightData] = useState([170,169,168.5,168,167.8]);
-      const doneCount = Object.values(checkState).filter(Boolean).length;
-      const totalCount = PHASES[phase].length;
-      return e("div", { className: "wrap" },
-        e("header", { className: "hdr" },
-          e("h1", null, "Dashboard"),
-          e("div", { className: "badge" }, phase.toUpperCase())
-        ),
-        e(ProgressBar, { value: (doneCount / totalCount) * 100 }),
-        e(Checklist, { items: PHASES[phase], state: checkState, setState: setCheckState }),
-        e("div", { className: "card", style: { marginTop: "16px" } },
-          e("h2", null, "Weight Trend"),
-          e(WeightChart, { data: weightData })
+   // Dashboard
+const Dashboard = ({ templates }) => {
+  const [phase, setPhase] = useState("fast");
+  const [checkState, setCheckState] = useState({});
+  const [weightData, setWeightData] = useState([170,169,168.5,168,167.8]);
+
+  // Build items for current phase from template ids
+  const items = (templates[phase] || []).map(id => ({ id, label: GOAL_LIBRARY[id] || id }));
+  const doneCount = Object.values(checkState).filter(Boolean).length;
+  const totalCount = items.length || 1;
+
+  return e("div", { className: "wrap" },
+    e("header", { className: "hdr" },
+      e("h1", null, "Dashboard"),
+      e("div", { className: "badge" }, phase.toUpperCase()),
+      e("div", null,
+        e("select", {
+          value: phase,
+          onChange: (ev) => setPhase(ev.target.value),
+          className: "btn", style: { marginLeft: 8 }
+        },
+          e("option", { value: "fast" }, "Fast"),
+          e("option", { value: "cleanse" }, "Cleanse"),
+          e("option", { value: "rebuild" }, "Rebuild")
         )
-      );
-    };
+      )
+    ),
+    e(ProgressBar, { value: (doneCount / totalCount) * 100 }),
+    e(Checklist, { items, state: checkState, setState: setCheckState }),
+    e("div", { className: "card", style: { marginTop: "16px" } },
+      e("h2", null, "Weight Trend"),
+      e(WeightChart, { data: weightData })
+    )
+  );
+};
 
     // Simple Calendar placeholder (drag/drop recipes can be wired)
     const Calendar = () => e("div", { className: "wrap" }, e("h1", null, "Calendar View"));
@@ -308,29 +325,134 @@
         )
       );
     };
+// Settings: drag to reorder default goals per phase
+const Settings = ({ templates, onChange }) => {
+  const [local, setLocal] = useState(templates);
+  const [drag, setDrag] = useState({ phase: null, index: null });
 
-    // Main App
-    const App = () => {
-      const [tab, setTab] = useState("dash");
-      return e("div", {},
-        tab === "dash" && e(Dashboard),
-        tab === "groceries" && e(GroceryList, {
-          items: [
-            { name: "Carrots", day: 4, price: 2.5 },
-            { name: "Spinach", day: 2, price: 3.0 },
-            { name: "Apples", day: 1, price: 4.0 }
-          ]
-        }),
-        tab === "calendar" && e(Calendar),
-        tab === "photos" && e(Photos),
-        e("div", { className: "tabs" },
-          e("button", { className: "btn" + (tab === "dash" ? " active" : ""), onClick: () => setTab("dash") }, "Dashboard"),
-          e("button", { className: "btn" + (tab === "groceries" ? " active" : ""), onClick: () => setTab("groceries") }, "Groceries"),
-          e("button", { className: "btn" + (tab === "calendar" ? " active" : ""), onClick: () => setTab("calendar") }, "Calendar"),
-          e("button", { className: "btn" + (tab === "photos" ? " active" : ""), onClick: () => setTab("photos") }, "Photos")
+  useEffect(() => { setLocal(templates); }, [templates]);
+
+  function handleDragStart(phase, index, e){
+    setDrag({ phase, index });
+    try { e.dataTransfer.setData("text/plain", String(index)); } catch {}
+  }
+  function handleDrop(phase, index, e){
+    e.preventDefault();
+    if (drag.phase !== phase || drag.index === null) return;
+    const arr = local[phase].slice();
+    const [moved] = arr.splice(drag.index, 1);
+    arr.splice(index, 0, moved);
+    const next = { ...local, [phase]: arr };
+    setLocal(next);
+    onChange(next); // persist
+    setDrag({ phase: null, index: null });
+  }
+
+  function removeItem(phase, id){
+    const arr = local[phase].filter(x => x !== id);
+    const next = { ...local, [phase]: arr };
+    setLocal(next);
+    onChange(next);
+  }
+
+  function addItem(phase){
+    // Simple picker of anything not already included
+    const pool = Object.keys(GOAL_LIBRARY).filter(id => local[phase].indexOf(id) === -1);
+    if (pool.length === 0) { alert("All goals already included"); return; }
+    const id = prompt("Add goal by ID:\n" + pool.join(", "));
+    if (!id || pool.indexOf(id) === -1) return;
+    const next = { ...local, [phase]: local[phase].concat([id]) };
+    setLocal(next);
+    onChange(next);
+  }
+
+  function renderPhase(phase, label){
+    const ids = local[phase] || [];
+    return e("div", { className: "card", style: { marginBottom: 16 } },
+      e("h2", null, label),
+      e("ul", { style: { listStyle: "none", padding: 0, marginTop: 8 } },
+        ids.map((id, idx) =>
+          e("li", {
+            key: id,
+            draggable: true,
+            onDragStart: (e) => handleDragStart(phase, idx, e),
+            onDragOver: (e) => e.preventDefault(),
+            onDrop: (e) => handleDrop(phase, idx, e),
+            style: {
+              display: "flex", alignItems: "center",
+              padding: "8px", marginBottom: "6px",
+              border: "1px solid #f3d0e1", borderRadius: "12px", background: "#fff"
+            }
+          },
+            e("span", { style: { width: 18, marginRight: 8, opacity: .6 } }, "⋮⋮"),
+            e("span", { style: { flex: 1 } }, GOAL_LIBRARY[id] || id),
+            e("button", { className: "btn", onClick: () => removeItem(phase, id) }, "Remove")
+          )
         )
-      );
-    };
+      ),
+      e("div", null,
+        e("button", { className: "btn peach", onClick: () => addItem(phase) }, "Add Goal")
+      )
+    );
+  }
+
+  return e("div", { className: "wrap" },
+    e("h1", null, "Settings"),
+    e("p", { style: { margin: "6px 0 12px", color: "#64748b" } },
+      "Drag to reorder the default goals for each phase. These act as templates; individual days can still customize later."
+    ),
+    renderPhase("fast", "Fast — Phase Template"),
+    renderPhase("cleanse", "Cleanse — Phase Template"),
+    renderPhase("rebuild", "Rebuild — Phase Template")
+  );
+};
+
+   // Main App
+const App = () => {
+  // settings.phaseTemplates holds the default order per phase
+  const [settings, setSettings] = useLocal("oz.settings", {
+    phaseTemplates: DEFAULT_PHASE_TEMPLATES   // will be migrated below if needed
+  });
+
+  // MIGRATION: if phaseTemplates missing or malformed, reset to defaults (one-time)
+  React.useEffect(() => {
+    const pt = settings && settings.phaseTemplates;
+    const valid = pt && ["fast","cleanse","rebuild"].every(k =>
+      Array.isArray(pt[k]) && pt[k].every(id => GOAL_LIBRARY[id])
+    );
+    if (!valid) {
+      setSettings({ phaseTemplates: DEFAULT_PHASE_TEMPLATES });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const [tab, setTab] = useState("dash");
+
+  return e("div", {},
+    tab === "dash" && e(Dashboard, { templates: settings.phaseTemplates }),
+    tab === "groceries" && e(GroceryList, {
+      items: [
+        { name: "Carrots", day: 4, price: 2.5 },
+        { name: "Spinach", day: 2, price: 3.0 },
+        { name: "Apples", day: 1, price: 4.0 }
+      ]
+    }),
+    tab === "calendar" && e(Calendar),
+    tab === "photos" && e(Photos),
+    tab === "settings" && e(Settings, {
+      templates: settings.phaseTemplates,
+      onChange: (next) => setSettings({ phaseTemplates: next })
+    }),
+
+    e("div", { className: "tabs" },
+      e("button", { className: "btn" + (tab === "dash" ? " active" : ""), onClick: () => setTab("dash") }, "Dashboard"),
+      e("button", { className: "btn" + (tab === "groceries" ? " active" : ""), onClick: () => setTab("groceries") }, "Groceries"),
+      e("button", { className: "btn" + (tab === "calendar" ? " active" : ""), onClick: () => setTab("calendar") }, "Calendar"),
+      e("button", { className: "btn" + (tab === "photos" ? " active" : ""), onClick: () => setTab("photos") }, "Photos"),
+      e("button", { className: "btn" + (tab === "settings" ? " active" : ""), onClick: () => setTab("settings") }, "Settings")
+    )
+  );
+};
 
     ReactDOM.render(e(App), document.getElementById("root"));
   </script>
