@@ -404,12 +404,35 @@ const Dashboard = ({ templates, days, setDays }) => {
     return { id:id, label: GOAL_LIBRARY[id] || id };
   });
 
-  // Progress math
-  const checks = day.checks || {};
-  const doneCount = items.reduce(function(acc, it){ return acc + (checks[it.id] ? 1 : 0); }, 0);
-  const totalCount = Math.max(1, items.length);
-  const progress = (doneCount / totalCount) * 100;
+// Progress math
+const checks = day.checks || {};
+const doneCount = items.reduce(function(acc, it){ return acc + (checks[it.id] ? 1 : 0); }, 0);
+const totalCount = Math.max(1, items.length);
+const progress = (doneCount / totalCount) * 100;
 
+// Trigger celebration when 100%
+useEffect(() => {
+  if (progress === 100) {
+    // Launch confetti (if canvas-confetti loaded)
+    if (window.confetti) {
+      window.confetti({
+        particleCount: 80,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+    }
+    // Random encouragement
+    const phrases = [
+      "Paw-some job! 🐾",
+      "You nailed it today! 💪",
+      "Oz is proud of you! 🐶",
+      "100% — You’re unstoppable! 🌟",
+      "Way to crush it! 🎉"
+    ];
+    alert(phrases[Math.floor(Math.random() * phrases.length)]);
+  }
+}, [progress]);
+  
   // Weight series for mini chart
   const weightSeries = days.map(function(d){ return (d.weight==null ? null : d.weight); });
 
