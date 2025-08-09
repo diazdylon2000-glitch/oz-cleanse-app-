@@ -1,3 +1,62 @@
+/* Dashboard header polish */
+.dash-header {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+
+.dash-header-left {
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.oz-icon {
+  width:40px;
+  height:40px;
+  border-radius:9999px;
+  object-fit:cover;
+  border:2px solid #fff;
+}
+
+.dash-title {
+  font-size:18px;
+  line-height:1;
+  margin:0;
+}
+
+.dash-subtitle {
+  font-size:12px;
+  color:#64748b;
+  margin-top:4px;
+}
+
+.day-nav {
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+
+.day-btn {
+  background:#fff;
+  border:2px solid #f3d0e1;
+  border-radius:12px;
+  padding:4px 8px;
+  cursor:pointer;
+}
+
+.day-btn:active {
+  transform:translateY(1px);
+}
+
+.day-label {
+  font-weight:600;
+  font-size:14px;
+  border:2px solid #f3d0e1;
+  background:#fff;
+  border-radius:12px;
+  padding:4px 10px;
+}
 /* Global Reset */
 * {
   box-sizing: border-box;
