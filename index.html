@@ -34,9 +34,38 @@
     /* Splash with Oz + speech bubble */
 .splash{position:fixed;inset:0;background:#fef3ec;display:flex;align-items:center;justify-content:center;z-index:80}
 .splash img{width:170px;height:170px;border-radius:9999px;object-fit:cover;border:6px solid #fff;box-shadow:0 24px 60px rgba(149,92,51,.25)}
-.bubble{position:fixed;left:50%;top:54%;transform:translateX(92px);max-width:260px;z-index:81;background:#fff;border:2px solid #f3d0e1;border-radius:16px;box-shadow:0 10px 32px rgba(236,72,153,.15);padding:10px 12px;font-size:13px;line-height:1.25}
-.bubble:after{content:'';position:absolute;left:-10px;top:28px;border:10px solid transparent;border-right-color:#f3d0e1}
-.bubble:before{content:'';position:absolute;left:-8px;top:28px;border:10px solid transparent;border-right-color:#fff;z-index:1}
+.bubble{
+  position:fixed;
+  left:50%;
+  top:62%;
+  transform:translate(-50%, -10px);
+  max-width:min(90vw, 360px);
+  z-index:81;
+  background:#fff;
+  border:2px solid #f3d0e1;
+  border-radius:16px;
+  box-shadow:0 10px 32px rgba(236,72,153,.15);
+  padding:12px 14px;
+  font-size:13px; line-height:1.25;
+  word-break:break-word; hyphens:auto;
+}
+.bubble:before,.bubble:after{ display:none; }
+
+/* Bring back the V14 side bubble only on wider screens */
+@media (min-width: 600px){
+  .bubble{
+    left:50%;
+    top:54%;
+    transform:translateX(92px);
+    max-width:260px;
+  }
+  .bubble:after,.bubble:before{ display:block; content:''; position:absolute; top:28px; border:10px solid transparent; }
+  .bubble:after{ left:-10px; border-right-color:#f3d0e1; }
+  .bubble:before{ left:-8px; z-index:1; border-right-color:#fff; }
+}
+
+/* (nice-to-have) respect iPhone safe area so nothing hugs the notch/home bar */
+body{ padding-top:env(safe-area-inset-top); padding-bottom:env(safe-area-inset-bottom); }
 .fadeOut{animation:fadeOut .6s ease forwards}
 @keyframes fadeOut{to{opacity:0;visibility:hidden}}
 
