@@ -51,17 +51,20 @@
 }
 .bubble:before,.bubble:after{ display:none; }
 
-/* Bring back the V14 side bubble only on wider screens */
-@media (min-width: 600px){
+/* --- MOBILE BUBBLE FIX (put this at the very end) --- */
+@media (max-width: 599px){
   .bubble{
-    left:50%;
-    top:54%;
-    transform:translateX(92px);
-    max-width:260px;
+    position: fixed !important;
+    left: 50% !important;
+    top: calc(50% + 110px) !important; /* below the Oz photo */
+    transform: translateX(-50%) !important;
+    max-width: min(90vw, 360px) !important;
+    padding: 12px 14px !important;
+    word-break: break-word; 
+    hyphens: auto;
   }
-  .bubble:after,.bubble:before{ display:block; content:''; position:absolute; top:28px; border:10px solid transparent; }
-  .bubble:after{ left:-10px; border-right-color:#f3d0e1; }
-  .bubble:before{ left:-8px; z-index:1; border-right-color:#fff; }
+  .bubble:before,
+  .bubble:after{ display: none !important; }
 }
 
 /* (nice-to-have) respect iPhone safe area so nothing hugs the notch/home bar */
