@@ -397,9 +397,9 @@ const Dashboard = ({ templates, days, setDays, recipes }) => {
   }, [progress]);
 
   // helpers
-  function nextTwoDayIngredients(currentDay, includeToday){
-    const d1 = includeToday ? currentDay.day : currentDay.day + 1;
-    const d2 = includeToday ? currentDay.day + 1 : currentDay.day + 2;
+function nextTwoDayIngredients(currentDay){
+  // First try strict: today + tomorrow
+  const tryDays = (d1, d2) => {
     const want = new Set([d1, d2]);
     const bag = {};
     (recipes || []).forEach(r => {
@@ -413,7 +413,26 @@ const Dashboard = ({ templates, days, setDays, recipes }) => {
     });
     Object.keys(bag).forEach(k => bag[k].days = Array.from(bag[k].days).sort((a,b)=>a-b));
     return Object.values(bag).sort((a,b)=>(a.name||"").localeCompare(b.name||""));
-  }
+  };
+
+  const strict = tryDays(currentDay.day, currentDay.day+1);
+  if (strict.length) return { items: strict, label: "Next 2 Days — Ingredients" };
+
+  // Fallback: find the next two future days that actually have recipes
+  const futureDaysWithRecipes = Array.from(
+    new Set((recipes||[]).filter(r => r.day >= currentDay.day).map(r => r.day))
+  ).sort((a,b)=>a-b);
+
+  const pool = futureDaysWithRecipes.slice(0,2);
+  if (pool.length === 0) return { items: [], label: "Upcoming Ingredients" };
+
+  const fallback = tryDays(pool[0], pool[1] || pool[0]);
+  const label = pool.length === 2
+    ? `Upcoming Ingredients — Day ${pool[0]} & ${pool[1]}`
+    : `Upcoming Ingredients — Day ${pool[0]}`;
+  return { items: fallback, label };
+}
+
   const nextItems = nextTwoDayIngredients(day, true); // today + tomorrow
 
   function toggleCheck(id){
@@ -521,11 +540,6 @@ const Dashboard = ({ templates, days, setDays, recipes }) => {
             e("option",{value:"rebuild"},"Rebuild")
           )
         ),
-        e("div",null,
-          e("button",{className:"btn peach",onClick:()=>setEditing(true)},"Customize Day"),
-          day.custom && e("button",{className:"btn",style:{marginLeft:8},onClick:resetToTemplate},"Reset to Template"),
-          e("button",{className:"btn",style:{marginLeft:8},onClick:lmntQuickAdd},"Add LMNT Today")
-        )
       )
     ),
 
@@ -536,24 +550,23 @@ const Dashboard = ({ templates, days, setDays, recipes }) => {
     e(Checklist,{items, state:checks, onToggle:toggleCheck}),
 
     // next 2 days ingredients (today + tomorrow)
-    e("div",{className:"card",style:{marginTop:16}},
-      e("h2",null,"Next 2 Days — Ingredients"),
-      nextItems.length===0
-        ? e("p",{style:{color:"#64748b"}},"No recipes scheduled in the next 2 days.")
-        : e("ul",{style:{listStyle:"none",padding:0,marginTop:8}},
-            nextItems.map(item =>
-              e("li",{key:item.name,style:{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:"1px solid #f3d0e1"}},
-                e("span",null,item.name," ",
-                  e("span",{className:"badge"},
-                    item.days.length===1 ? ("Day "+item.days[0]) : ("Day "+item.days[0]+"–"+item.days[item.days.length-1])
-                  )
-                ),
-                e("span",{style:{color:"#64748b",fontSize:12}}, item.qtyList.join(" + ") || "")
+  e("div",{className:"card",style:{marginTop:16}},
+  e("h2",null,nextLabel),
+  nextItems.length===0
+    ? e("p",{style:{color:"#64748b"}},"No recipes scheduled soon.")
+    : e("ul",{style:{listStyle:"none",padding:0,marginTop:8}},
+        nextItems.map(item =>
+          e("li",{key:item.name,style:{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:"1px solid #f3d0e1"}},
+            e("span",null,item.name," ",
+              e("span",{className:"badge"},
+                item.days.length===1 ? ("Day "+item.days[0]) : ("Day "+item.days[0]+"–"+item.days[item.days.length-1])
               )
-            )
+            ),
+            e("span",{style:{color:"#64748b",fontSize:12}}, item.qtyList.join(" + ") || "")
           )
-    ),
-
+        )
+      )
+),
     // weight card
     e("div",{className:"card",style:{marginTop:16}},
       e("h2",null,"Weight"),
@@ -618,8 +631,8 @@ const Dashboard = ({ templates, days, setDays, recipes }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     },[]);
     const [days, setDays] = useLocal("oz.days", defaultDays());
-    const [recipes, setRecipes] = useLocal("oz.recipes", []);
-    const [groceries, setGroceries] = useLocal("oz.groceries", []);
+   const [recipes, setRecipes] = useLocal("oz.recipes", PLAN_RECIPES);
+const [groceries, setGroceries] = useLocal("oz.groceries", aggregateGroceries(PLAN_RECIPES));
     const [tab, setTab] = useState("dash");
 
     function importFullPlan(){
