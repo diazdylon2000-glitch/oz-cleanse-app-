@@ -1,5 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
+  <style>
+  html,body{background:#fff7f1;color:#334155;margin:0}
+  .card{background:#fff;border:1px solid #f3d0e1;border-radius:16px;box-shadow:0 8px 24px rgba(236,72,153,.08)}
+  .pill{border-radius:9999px;padding:.4rem .75rem;border:1px solid #ffd8be;background:#fff;transition:transform .12s}
+  .pill.on{background:linear-gradient(90deg,#ffc79d,#ffd8be)}
+  .paw-check{display:inline-flex;align-items:center;justify-content:center;height:36px;width:36px;border-radius:9999px;border:1px solid #f0cbb0;background:#fff;transition:transform .12s, background .2s; cursor:pointer}
+  .paw-check.on{background:linear-gradient(90deg,#f9d49a,#ffd2c8);transform:scale(1.02)}
+  .badge{display:inline-block;border-radius:9999px;padding:2px 8px;border:1px solid #e7ccd7;background:#fff;font-size:12px}
+  .prog-wrap{height:10px;border-radius:9999px;background:#fde7e0;overflow:hidden}
+  .prog-fill{height:100%;background:linear-gradient(90deg,#ffa56e,#ec4899);width:0;transition:width .35s ease}
+  .tabs{position:fixed;left:0;right:0;bottom:0;display:flex;gap:8px;padding:8px;background:#fff;border-top:1px solid #f3d0e1}
+  .btn{border-radius:14px;border:1px solid #f3d0e1;background:#fff;padding:8px 12px;cursor:pointer}
+  .toast>div{background:linear-gradient(90deg,#ffe4ef,#e9d5ff);border:1px solid #f3d0e1;border-radius:16px;padding:10px;box-shadow:0 12px 30px rgba(236,72,153,.15)}
+</style>
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
