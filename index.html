@@ -20,6 +20,14 @@
       --cream:#fff7f1; --shadow:0 8px 24px rgba(236,72,153,.08);
     }
     *{box-sizing:border-box}
+    /* Pretty dashboard masthead */
+.mast{position:relative;border:1px solid var(--line);border-radius:16px;padding:12px;background:linear-gradient(90deg,#fff7f1,#ffe9e0)}
+.mastRow{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.mastLeft{display:flex;align-items:center;gap:10px}
+.mastLeft img{height:40px;width:40px;border-radius:9999px;object-fit:cover;border:2px solid #fff}
+.mastTitle{display:flex;flex-direction:column}
+.mastTitle b{font-size:18px;line-height:1}
+.mastTitle small{color:#64748b}
     html,body{margin:0;background:var(--cream);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
     h1,h2{margin:0 0 8px 0}
     .wrap{max-width:940px;margin:16px auto 96px;padding:0 16px}
@@ -47,8 +55,25 @@
 </head>
 <body>
   <div id="errorBanner"></div>
+  <div id="ozSplash" class="splash"><img id="ozImg" alt="Oz" src="https://share.icloud.com/photos/0a48OSRIqDOc3XO8J4zPfJfVg"/></div>
+<div id="ozBubble" class="bubble">Hydration is happiness 🐾</div>
   <div id="root"></div>
-
+  
+<script>
+(function(){
+  // pick a friendly line each load
+  var A=["You’ve got this!","Oz is proud of you 🐶","Small habits, big change","Sip, breathe, reset","Progress, not perfection"];
+  var b=document.getElementById("ozBubble"); if(b) b.textContent=A[Math.floor(Math.random()*A.length)];
+  // fade out after load
+  window.addEventListener("load",function(){
+    setTimeout(function(){
+      var s=document.getElementById("ozSplash"), bb=document.getElementById("ozBubble");
+      if(s) s.classList.add("fadeOut"); if(bb) bb.classList.add("fadeOut");
+      setTimeout(function(){ if(s) s.style.display="none"; if(bb) bb.style.display="none"; }, 620);
+    }, 1100);
+  });
+})();
+</script>
   <!-- React App -->
   <script>
   "use strict";
