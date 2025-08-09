@@ -390,20 +390,27 @@ const Settings = ({ templates, onChange }) => {
   );
 };
 
-/* ---------- Dashboard (fixed) ---------- */
+// Dashboard — per-day customization + progress from real goals
 const Dashboard = ({ templates, days, setDays }) => {
-  const [idx, setIdx] = useState(0); // 0-based
+  const [idx, setIdx] = useState(0); // current day index (0-based)
 
+  // Current day and computed lists
   const day = days[idx] || days[0];
   const templateIds = templates[day.phase] || [];
   const activeIds = (day.order && day.order.length ? day.order : templateIds);
 
-  const items = activeIds.map(function(id){ return { id:id, label: GOAL_LIBRARY[id] || id }; });
+  // Build UI items
+  const items = activeIds.map(function(id){
+    return { id:id, label: GOAL_LIBRARY[id] || id };
+  });
+
+  // Progress math
   const checks = day.checks || {};
   const doneCount = items.reduce(function(acc, it){ return acc + (checks[it.id] ? 1 : 0); }, 0);
   const totalCount = Math.max(1, items.length);
   const progress = (doneCount / totalCount) * 100;
 
+  // Weight series for mini chart
   const weightSeries = days.map(function(d){ return (d.weight==null ? null : d.weight); });
 
   function toggleCheck(id){
@@ -428,73 +435,115 @@ const Dashboard = ({ templates, days, setDays }) => {
     });
   }
 
-  // LMNT quick-add in-scope
   function lmntQuickAdd(){
-    if (activeIds.indexOf("lmnt") !== -1) { alert("LMNT is already on today’s checklist."); return; }
+    if (activeIds.indexOf("lmnt") !== -1) {
+      alert("LMNT is already on today’s checklist.");
+      return;
+    }
     setDays(function(prev){
       var next = prev.slice();
       var d = Object.assign({}, next[idx]);
       var base = (d.order && d.order.length ? d.order.slice() : templateIds.slice());
       base.push("lmnt");
-      d.order = base; d.custom = true;
-      var c = Object.assign({}, d.checks || {}); c.lmnt = false; d.checks = c;
+      d.order = base;     
+      d.custom = true;
+      var c = Object.assign({}, d.checks || {});
+      c.lmnt = false;
+      d.checks = c;
       next[idx] = d;
       return next;
     });
   }
 
-  // Customization editor
   const [editing, setEditing] = useState(false);
   const [dragIndex, setDragIndex] = useState(null);
   const [localIds, setLocalIds] = useState(activeIds);
+
   useEffect(function(){ setLocalIds(activeIds); }, [idx, day.phase, day.order]);
 
   function applyCustom(){
     setDays(function(prev){
       var next = prev.slice();
       var d = Object.assign({}, next[idx]);
-      d.order = localIds.slice(); d.custom = true;
-      next[idx] = d; return next;
-    }); setEditing(false);
+      d.order = localIds.slice();
+      d.custom = true;
+      next[idx] = d;
+      return next;
+    });
+    setEditing(false);
   }
+
   function resetToTemplate(){
     setDays(function(prev){
       var next = prev.slice();
       var d = Object.assign({}, next[idx]);
-      d.order = null; d.custom = false;
-      var allowed = {}; (templates[d.phase]||[]).forEach(function(g){ allowed[g]=true; });
-      var nc = {}; Object.keys(d.checks||{}).forEach(function(k){ if(allowed[k]) nc[k]=d.checks[k]; });
-      d.checks = nc; next[idx] = d; return next;
-    }); setEditing(false);
+      d.order = null;
+      d.custom = false;
+      var allowed = {};
+      (templates[d.phase] || []).forEach(function(g){ allowed[g]=true; });
+      var nc = {};
+      Object.keys(d.checks || {}).forEach(function(k){ if(allowed[k]) nc[k]=d.checks[k]; });
+      d.checks = nc;
+      next[idx] = d;
+      return next;
+    });
+    setEditing(false);
   }
-  function removeGoal(id){ setLocalIds(function(prev){ return prev.filter(function(x){ return x!==id; }); }); }
+
+  function removeGoal(id){
+    setLocalIds(function(prev){ return prev.filter(function(x){ return x!==id; }); });
+  }
+
   function addGoal(){
     var pool = Object.keys(GOAL_LIBRARY).filter(function(id){ return localIds.indexOf(id)===-1; });
     if(pool.length===0){ alert("All goals already included"); return; }
-    var id = prompt("Add goal by ID:\n"+pool.join(", ")); if(!id || pool.indexOf(id)===-1) return;
+    var id = prompt("Add goal by ID:\n"+pool.join(", "));
+    if(!id || pool.indexOf(id)===-1) return;
     setLocalIds(function(prev){ return prev.concat([id]); });
   }
-  function handleDragStart(i,e){ setDragIndex(i); try{ e.dataTransfer.setData("text/plain", String(i)); }catch(_){} }
+
+  function handleDragStart(i,e){
+    setDragIndex(i);
+    try{ e.dataTransfer.setData("text/plain", String(i)); }catch(_){}
+  }
   function handleDrop(i,e){
-    e.preventDefault(); if(dragIndex===null || dragIndex===i) return;
-    setLocalIds(function(prev){ var arr=prev.slice(); var mv=arr.splice(dragIndex,1)[0]; arr.splice(i,0,mv); return arr; });
+    e.preventDefault();
+    if(dragIndex===null || dragIndex===i) return;
+    setLocalIds(function(prev){
+      var arr = prev.slice();
+      var mv = arr.splice(dragIndex,1)[0];
+      arr.splice(i,0,mv);
+      return arr;
+    });
     setDragIndex(null);
   }
+
   function changeDay(direction){
-    setIdx(function(cur){ var n=cur+direction; if(n<0) n=days.length-1; if(n>=days.length) n=0; return n; });
+    setIdx(function(cur){
+      var n = cur + direction;
+      if(n<0) n = days.length-1;
+      if(n>=days.length) n = 0;
+      return n;
+    });
   }
 
   return e("div", { className:"wrap" },
     e("header", { className:"hdr", style:{gap:8}},
       e("h1", null, "Dashboard"),
-      e("div", { className:"badge" }, (day.custom ? "Custom • " : "Template • ") + day.phase.toUpperCase()),
+      e("div", { className:"badge" },
+        (day.custom ? "Custom • " : "Template • ") + day.phase.toUpperCase()
+      ),
       e("div", null,
         e("button", { className:"btn", onClick:function(){ changeDay(-1); } }, "◀"),
         e("span", { className:"badge", style:{margin:"0 8px"} }, "Day "+day.day),
         e("button", { className:"btn", onClick:function(){ changeDay(1); } }, "▶")
       ),
       e("div", null,
-        e("select", { value: day.phase, onChange:function(ev){ setPhase(ev.target.value); }, className:"btn" },
+        e("select", {
+          value: day.phase,
+          onChange:function(ev){ setPhase(ev.target.value); },
+          className:"btn"
+        },
           e("option", {value:"fast"}, "Fast"),
           e("option", {value:"cleanse"}, "Cleanse"),
           e("option", {value:"rebuild"}, "Rebuild")
@@ -509,41 +558,54 @@ const Dashboard = ({ templates, days, setDays }) => {
 
     e(ProgressBar, { value: progress }),
 
-    e(Checklist, {
-      items: items,
-      state: checks,
-      onToggle: toggleCheck
-    }),
+    e("ul", { style:{ listStyle:"none", padding:0, marginTop:12 }},
+      items.map(function(it){
+        var on = !!checks[it.id];
+        return e("li", { key:it.id, style:{ display:"flex", alignItems:"center", margin:"8px 0" }},
+          e("div", {
+            className:"paw"+(on?" on":""),
+            onClick:function(){ toggleCheck(it.id); }
+          }, "🐾"),
+          e("span", { style:{ marginLeft:8 } }, it.label)
+        );
+      })
+    ),
 
     // Weight card
     e("div", { className:"card", style:{ marginTop:16 }},
       e("h2", null, "Weight"),
       e("div", { style:{ display:"flex", alignItems:"center", gap:8, margin:"8px 0" } },
         e("label", null, "Today’s weight"),
-  e("input", {
-  type: "number",
-  step: "0.1",
-  value: (day.weight == null ? "" : day.weight),
-  onChange: function(ev) {
-    var v = ev.target.value;
-    setDays(function(prev) {
-      var next = prev.slice();
-      var d = Object.assign({}, next[idx]);
-      d.weight = (v === "" ? null : Number(v));
+        e("input", {
+          type:"number",
+          step:"0.1",
+          value: (day.weight==null ? "" : day.weight),
+          onChange: function(ev){
+            var v = ev.target.value;
+            setDays(function(prev){
+              var next = prev.slice();
+              var d = Object.assign({}, next[idx]);
+              d.weight = (v==="" ? null : Number(v));
 
-      // Auto-check "weight" goal if value is entered
-      if (v !== "" && ((d.checks && "weight" in d.checks) || activeIds.indexOf("weight") !== -1)) {
-        var c = Object.assign({}, d.checks || {});
-        c.weight = true;
-        d.checks = c;
-      }
+              // Auto-check "weight" goal if value entered
+              if (v !== "" && ((d.checks && "weight" in d.checks) || activeIds.indexOf("weight") !== -1)) {
+                var c = Object.assign({}, d.checks || {});
+                c.weight = true;
+                d.checks = c;
+              }
 
-      next[idx] = d;
-      return next;
-    });
-  },
-  style: { width: 120 }
-}),
+              next[idx] = d;
+              return next;
+            });
+          },
+          style:{ width:120 }
+        }),
+        e("span", { className:"badge" }, "Day "+day.day)
+      ),
+      e("div", { style:{ marginTop:8 } },
+        e(WeightChart, { series: weightSeries })
+      )
+    ),
 
     // Customization panel
     editing && e("div", { className:"card", style:{ marginTop:16, borderColor:"#f9c2a7" }},
@@ -553,10 +615,10 @@ const Dashboard = ({ templates, days, setDays }) => {
         localIds.map(function(id, i){
           return e("li", {
               key:id, draggable:true,
-              onDragStart:function(ev){ handleDragStart(i,ev); },
-              onDragOver:function(ev){ ev.preventDefault(); },
-              onDrop:function(ev){ handleDrop(i,ev); },
-              style:{ display:"flex", alignItems:"center", padding:8, marginBottom:6, border:"1px solid #f3d0e1", borderRadius:12, background:"#fff" }
+              onDragStart:function(e){ handleDragStart(i,e); },
+              onDragOver:function(e){ e.preventDefault(); },
+              onDrop:function(e){ handleDrop(i,e); },
+              style:{ display:"flex", alignItems:"center", padding:"8px", marginBottom:"6px", border:"1px solid #f3d0e1", borderRadius:"12px", background:"#fff"}
             },
             e("span", { style:{ width:18, marginRight:8, opacity:.6 } }, "⋮⋮"),
             e("span", { style:{ flex:1 } }, GOAL_LIBRARY[id] || id),
@@ -569,51 +631,6 @@ const Dashboard = ({ templates, days, setDays }) => {
         e("button", { className:"btn", style:{ marginLeft:8 }, onClick:function(){ setEditing(false); } }, "Cancel"),
         e("button", { className:"btn", style:{ marginLeft:8 }, onClick:applyCustom }, "Save")
       )
-    )
-  );
-};
-
-/* ---------- App ---------- */
-const App = () => {
-  const [settings, setSettings] = useLocal("oz.settings", {
-    phaseTemplates: DEFAULT_PHASE_TEMPLATES
-  });
-
-  // template migration (one-time)
-  useEffect(() => {
-    var pt = settings && settings.phaseTemplates;
-    var valid = pt && ["fast","cleanse","rebuild"].every(function(k){
-      return Array.isArray(pt[k]) && pt[k].every(function(id){ return !!GOAL_LIBRARY[id]; });
-    });
-    if(!valid) setSettings({ phaseTemplates: DEFAULT_PHASE_TEMPLATES });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const [days, setDays] = useLocal("oz.days", defaultDays());
-  const [tab, setTab] = useState("dash");
-
-  return e("div", {},
-    tab === "dash" && e(Dashboard, { templates: settings.phaseTemplates, days: days, setDays: setDays }),
-    tab === "groceries" && e(GroceryList, {
-      items: [
-        { name: "Carrots", day: 4, price: 2.5 },
-        { name: "Spinach", day: 2, price: 3.0 },
-        { name: "Apples", day: 1, price: 4.0 }
-      ]
-    }),
-    tab === "calendar" && e(Calendar),
-    tab === "photos" && e(Photos),
-    tab === "settings" && e(Settings, {
-      templates: settings.phaseTemplates,
-      onChange: function(next){ setSettings({ phaseTemplates: next }); }
-    }),
-
-    e("div", { className: "tabs" },
-      e("button", { className: "btn" + (tab === "dash" ? " active" : ""), onClick: function(){ setTab("dash"); } }, "Dashboard"),
-      e("button", { className: "btn" + (tab === "groceries" ? " active" : ""), onClick: function(){ setTab("groceries"); } }, "Groceries"),
-      e("button", { className: "btn" + (tab === "calendar" ? " active" : ""), onClick: function(){ setTab("calendar"); } }, "Calendar"),
-      e("button", { className: "btn" + (tab === "photos" ? " active" : ""), onClick: function(){ setTab("photos"); } }, "Photos"),
-      e("button", { className: "btn" + (tab === "settings" ? " active" : ""), onClick: function(){ setTab("settings"); } }, "Settings")
     )
   );
 };
