@@ -532,11 +532,11 @@ const Dashboard = ({ templates, days, setDays }) => {
 
       d.weight = (v==="" ? null : Number(v));
 
-      if (v !== "" && (d.checks || activeIds.indexOf("weight") !== -1)) {
-        var c = Object.assign({}, d.checks || {});
-        c.weight = true;
-        d.checks = c;
-      }
+    if (v !== "" && ( (d.checks && "weight" in d.checks) || activeIds.indexOf("weight") !== -1 )) {
+  var c = Object.assign({}, d.checks || {});
+  c.weight = true;
+  d.checks = c;
+}
 
       next[idx] = d;
       return next;
