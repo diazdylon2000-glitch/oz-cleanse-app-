@@ -167,72 +167,89 @@
       });
     })();
   </script>
-  <!-- React App -->
-  <script>
-    const e = React.createElement;
-    const { useState, useEffect } = React;
-  // --- localStorage state helper ---
-  function useLocal(key, initialValue){
-    const [val, setVal] = React.useState(() => {
-      try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : initialValue; }
-      catch { return initialValue; }
+<!-- React App (clean, fixed) -->
+<script>
+"use strict";
+
+const e = React.createElement;
+const { useState, useEffect } = React;
+
+/* ---------- helpers & data ---------- */
+function useLocal(key, initialValue){
+  const [val, setVal] = React.useState(() => {
+    try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : initialValue; }
+    catch { return initialValue; }
+  });
+  React.useEffect(() => {
+    try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
+  }, [key, val]);
+  return [val, setVal];
+}
+
+// Goal library
+const GOAL_LIBRARY = {
+  water:  "💧 Drink 120–150 oz water",
+  tea:    "🍵 Tea",
+  coffee: "☕ Coffee",
+  juice:  "🧃 Juices",
+  lmnt:   "🧂 LMNT Electrolytes",
+  exercise:"🏃 Exercise",
+  wholefood:"🥗 Whole food meals",
+  weight:"👣 Weight check-in"
+};
+
+// Phase templates (defaults)
+const DEFAULT_PHASE_TEMPLATES = {
+  fast:    ["water","tea","coffee","lmnt","exercise","weight"],
+  cleanse: ["water","tea","coffee","juice","lmnt","exercise","weight"],
+  rebuild: ["water","lmnt","exercise","wholefood","weight"]
+};
+
+// Default 11-day plan
+function defaultDays(){
+  var phases=["fast","fast","fast","cleanse","cleanse","cleanse","cleanse","rebuild","rebuild","rebuild","rebuild"];
+  var out=[];
+  for(var i=0;i<phases.length;i++){
+    out.push({
+      day: i+1,
+      phase: phases[i],
+      order: null,      // null = use template; array = custom order
+      checks: {},       // { goalId: boolean }
+      custom: false,    // badge
+      note: "",
+      weight: null
     });
-    React.useEffect(() => {
-      try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
-    }, [key, val]);
-    return [val, setVal];
   }
+  return out;
+}
 
-    setDays(function(prev){
-      var next = prev.slice();
-      var d = Object.assign({}, next[idx]);
-      var base = (d.order && d.order.length ? d.order.slice() : templateIds.slice());
-      base.push("lmnt");
-      d.order = base;     // becomes a custom day now
-      d.custom = true;
-      if(!d.checks) d.checks = {};
-      d.checks.lmnt = false;
-      next[idx] = d;
-      return next;
-    });
-  }
+/* ---------- small UI pieces ---------- */
+const ProgressBar = ({ value }) =>
+  e("div", { className: "prog" },
+    e("div", { className: "fill", style: { width: Math.max(0, Math.min(100, value)) + "%" } })
+  );
 
+const Checklist = ({ items, state, onToggle }) =>
+  e("ul", { style: { listStyle: "none", padding: 0 } },
+    items.map(it =>
+      e("li", { key: it.id, style: { margin: "8px 0", display: "flex", alignItems: "center" } },
+        e("div", {
+          className: "paw" + (state[it.id] ? " on" : ""),
+          onClick: () => onToggle(it.id)
+        }, "🐾"),
+        e("span", { style: { marginLeft: 8 } }, it.label)
+      )
+    )
+  );
 
-  // Default template order (used for first-time load / migration)
-  const DEFAULT_PHASE_TEMPLATES = {
-    fast:    ["water","tea","coffee","lmnt","exercise","weight"],
-    cleanse: ["water","tea","coffee","juice","lmnt","exercise","weight"],
-    rebuild: ["water","lmnt","exercise","wholefood","weight"]
-  };
-  
-    // Animated progress bar
-    const ProgressBar = ({ value }) =>
-      e("div", { className: "prog" },
-        e("div", { className: "fill", style: { width: value + "%" } })
-      );
-
-    // Checklist with paw toggles
-    const Checklist = ({ items, state, setState }) =>
-      e("ul", { style: { listStyle: "none", padding: 0 } },
-        items.map(item =>
-          e("li", { key: item.id, style: { margin: "8px 0", display: "flex", alignItems: "center" } },
-            e("div", {
-              className: "paw" + (state[item.id] ? " on" : ""),
-              onClick: () => setState({ ...state, [item.id]: !state[item.id] })
-            }, "🐾"),
-            e("span", { style: { marginLeft: "8px" } }, item.label)
-          )
-        )
-      );
-
-  // Mini weight chart with live updates and cleanup
+// Chart.js mini weight chart
 const WeightChart = ({ series }) => {
   const canvasRef = React.useRef(null);
   const chartRef = React.useRef(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const ctx = canvasRef.current.getContext("2d");
-    if (chartRef.current) chartRef.current.destroy();
+    if (chartRef.current) { try { chartRef.current.destroy(); } catch(e){} }
 
     chartRef.current = new Chart(ctx, {
       type: "line",
@@ -242,9 +259,7 @@ const WeightChart = ({ series }) => {
           data: series,
           borderColor: "#ec4899",
           backgroundColor: "rgba(236,72,153,.15)",
-          tension: 0.35,
-          spanGaps: true,
-          pointRadius: 2
+          tension: 0.35, spanGaps: true, pointRadius: 2
         }]
       },
       options: {
@@ -258,52 +273,137 @@ const WeightChart = ({ series }) => {
     return () => { try { chartRef.current && chartRef.current.destroy(); } catch(e){} };
   }, [series]);
 
-  return React.createElement("canvas", { ref: canvasRef, height: 120 });
+  return e("canvas", { ref: canvasRef, height: 120 });
 };
 
-    // Grocery list with day tags + total
-    const GroceryList = ({ items }) => {
-      const [checked, setChecked] = useState({});
-      const total = items.reduce((sum, it) => sum + (checked[it.name] ? 0 : it.price), 0);
-      return e("div", {},
-        e("div", { style: { fontWeight: "bold", marginBottom: "8px" } }, `Total: $${total.toFixed(2)}`),
-        e("ul", { style: { listStyle: "none", padding: 0 } },
-          items.map(it =>
-            e("li", { key: it.name, style: { display: "flex", alignItems: "center", margin: "6px 0" } },
-              e("input", {
-                type: "checkbox",
-                checked: !!checked[it.name],
-                onChange: () => setChecked({ ...checked, [it.name]: !checked[it.name] })
-              }),
-              e("span", { style: { flex: 1, marginLeft: "8px" } }, `${it.name} — Day ${it.day}`),
-              e("span", { style: { fontSize: "0.85em", color: "#666" } }, `$${it.price.toFixed(2)}`)
-            )
-          )
+/* ---------- pages ---------- */
+
+// Simple grocery mock (you can replace later)
+const GroceryList = ({ items }) => {
+  const [checked, setChecked] = useState({});
+  const total = items.reduce((sum, it) => sum + (checked[it.name] ? 0 : it.price), 0);
+  return e("div", { className:"wrap" },
+    e("h1", null, "Groceries"),
+    e("div", { style: { fontWeight: "bold", marginBottom: 8 } }, "Total: $"+total.toFixed(2)),
+    e("ul", { style: { listStyle: "none", padding: 0 } },
+      items.map(it =>
+        e("li", { key: it.name, style: { display: "flex", alignItems: "center", margin: "6px 0" } },
+          e("input", {
+            type: "checkbox",
+            checked: !!checked[it.name],
+            onChange: () => setChecked({ ...checked, [it.name]: !checked[it.name] })
+          }),
+          e("span", { style: { flex: 1, marginLeft: 8 } }, it.name+" — Day "+it.day),
+          e("span", { style: { fontSize: ".85em", color: "#666" } }, "$"+it.price.toFixed(2))
         )
-      );
-    };
+      )
+    )
+  );
+};
 
-// Dashboard — per-day customization + progress from real goals
+const Calendar = () => e("div", { className: "wrap" }, e("h1", null, "Calendar View"));
+
+const Photos = () => {
+  const [photos, setPhotos] = useState([]);
+  function handleUpload(ev){
+    var files = Array.from(ev.target.files||[]);
+    var urls = files.map(function(f){ return URL.createObjectURL(f); });
+    setPhotos(photos.concat(urls));
+  }
+  return e("div", { className: "wrap" },
+    e("h1", null, "Progress Photos"),
+    e("input", { type: "file", multiple: true, onChange: handleUpload }),
+    e("div", { style: { display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 } },
+      photos.map((url, i) =>
+        e("img", { key: i, src: url, style: { width: 100, height: 100, objectFit: "cover", borderRadius: 8 } })
+      )
+    )
+  );
+};
+
+// Settings: drag to reorder default goals per phase
+const Settings = ({ templates, onChange }) => {
+  const [local, setLocal] = useState(templates);
+  const [drag, setDrag] = useState({ phase: null, index: null });
+
+  useEffect(() => { setLocal(templates); }, [templates]);
+
+  function handleDragStart(phase, index, e){
+    setDrag({ phase, index });
+    try { e.dataTransfer.setData("text/plain", String(index)); } catch {}
+  }
+  function handleDrop(phase, index, e){
+    e.preventDefault();
+    if (drag.phase !== phase || drag.index === null) return;
+    var arr = local[phase].slice();
+    var moved = arr.splice(drag.index, 1)[0];
+    arr.splice(index, 0, moved);
+    var next = Object.assign({}, local); next[phase] = arr;
+    setLocal(next); onChange(next);
+    setDrag({ phase: null, index: null });
+  }
+  function removeItem(phase, id){
+    var arr = (local[phase]||[]).filter(function(x){ return x!==id; });
+    var next = Object.assign({}, local); next[phase] = arr;
+    setLocal(next); onChange(next);
+  }
+  function addItem(phase){
+    var pool = Object.keys(GOAL_LIBRARY).filter(function(id){ return (local[phase]||[]).indexOf(id)===-1; });
+    if (pool.length===0){ alert("All goals already included"); return; }
+    var id = prompt("Add goal by ID:\n"+pool.join(", "));
+    if(!id || pool.indexOf(id)===-1) return;
+    var next = Object.assign({}, local); next[phase] = (local[phase]||[]).concat([id]);
+    setLocal(next); onChange(next);
+  }
+
+  function renderPhase(phase, label){
+    var ids = local[phase] || [];
+    return e("div", { className:"card", style:{ marginBottom:16 }},
+      e("h2", null, label),
+      e("ul", { style:{ listStyle:"none", padding:0, marginTop:8 }},
+        ids.map(function(id, idx){
+          return e("li", {
+            key:id, draggable:true,
+            onDragStart:function(ev){ handleDragStart(phase, idx, ev); },
+            onDragOver:function(ev){ ev.preventDefault(); },
+            onDrop:function(ev){ handleDrop(phase, idx, ev); },
+            style:{ display:"flex", alignItems:"center", padding:8, marginBottom:6, border:"1px solid #f3d0e1", borderRadius:12, background:"#fff" }
+          },
+            e("span", { style:{ width:18, marginRight:8, opacity:.6 } }, "⋮⋮"),
+            e("span", { style:{ flex:1 } }, GOAL_LIBRARY[id] || id),
+            e("button", { className:"btn", onClick:function(){ removeItem(phase, id); } }, "Remove")
+          );
+        })
+      ),
+      e("div", null,
+        e("button", { className:"btn peach", onClick:function(){ addItem(phase); } }, "Add Goal")
+      )
+    );
+  }
+
+  return e("div", { className:"wrap" },
+    e("h1", null, "Settings"),
+    e("p", { style:{ margin:"6px 0 12px", color:"#64748b" } }, "Drag to reorder the default goals for each phase. These act as templates; individual days can still customize later."),
+    renderPhase("fast", "Fast — Phase Template"),
+    renderPhase("cleanse", "Cleanse — Phase Template"),
+    renderPhase("rebuild", "Rebuild — Phase Template")
+  );
+};
+
+/* ---------- Dashboard (fixed) ---------- */
 const Dashboard = ({ templates, days, setDays }) => {
-  const [idx, setIdx] = useState(0); // current day index (0-based)
+  const [idx, setIdx] = useState(0); // 0-based
 
-  // Current day and computed lists
   const day = days[idx] || days[0];
   const templateIds = templates[day.phase] || [];
   const activeIds = (day.order && day.order.length ? day.order : templateIds);
 
-  // Build UI items
-  const items = activeIds.map(function(id){
-    return { id:id, label: GOAL_LIBRARY[id] || id };
-  });
-
-  // Progress math
+  const items = activeIds.map(function(id){ return { id:id, label: GOAL_LIBRARY[id] || id }; });
   const checks = day.checks || {};
   const doneCount = items.reduce(function(acc, it){ return acc + (checks[it.id] ? 1 : 0); }, 0);
   const totalCount = Math.max(1, items.length);
   const progress = (doneCount / totalCount) * 100;
 
-  // Weight series for mini chart
   const weightSeries = days.map(function(d){ return (d.weight==null ? null : d.weight); });
 
   function toggleCheck(id){
@@ -323,124 +423,78 @@ const Dashboard = ({ templates, days, setDays }) => {
       var next = prev.slice();
       var d = Object.assign({}, next[idx]);
       d.phase = p;
-      // keep any custom order; user can Reset to Template if they want defaults
       next[idx] = d;
       return next;
     });
   }
 
-  // LMNT quick-add lives INSIDE Dashboard so it can access idx/activeIds/templateIds
+  // LMNT quick-add in-scope
   function lmntQuickAdd(){
-    if (activeIds.indexOf("lmnt") !== -1) {
-      alert("LMNT is already on today’s checklist.");
-      return;
-    }
+    if (activeIds.indexOf("lmnt") !== -1) { alert("LMNT is already on today’s checklist."); return; }
     setDays(function(prev){
       var next = prev.slice();
       var d = Object.assign({}, next[idx]);
       var base = (d.order && d.order.length ? d.order.slice() : templateIds.slice());
       base.push("lmnt");
-      d.order = base;     // becomes a custom day
-      d.custom = true;
-      var c = Object.assign({}, d.checks || {});
-      c.lmnt = false;
-      d.checks = c;
+      d.order = base; d.custom = true;
+      var c = Object.assign({}, d.checks || {}); c.lmnt = false; d.checks = c;
       next[idx] = d;
       return next;
     });
   }
 
-  // Per-day customization editor
+  // Customization editor
   const [editing, setEditing] = useState(false);
   const [dragIndex, setDragIndex] = useState(null);
   const [localIds, setLocalIds] = useState(activeIds);
-
   useEffect(function(){ setLocalIds(activeIds); }, [idx, day.phase, day.order]);
 
   function applyCustom(){
     setDays(function(prev){
       var next = prev.slice();
       var d = Object.assign({}, next[idx]);
-      d.order = localIds.slice();
-      d.custom = true;
-      next[idx] = d;
-      return next;
-    });
-    setEditing(false);
+      d.order = localIds.slice(); d.custom = true;
+      next[idx] = d; return next;
+    }); setEditing(false);
   }
-
   function resetToTemplate(){
     setDays(function(prev){
       var next = prev.slice();
       var d = Object.assign({}, next[idx]);
-      d.order = null;
-      d.custom = false;
-      // prune checks not in template
-      var allowed = {};
-      (templates[d.phase] || []).forEach(function(g){ allowed[g]=true; });
-      var nc = {};
-      Object.keys(d.checks || {}).forEach(function(k){ if(allowed[k]) nc[k]=d.checks[k]; });
-      d.checks = nc;
-      next[idx] = d;
-      return next;
-    });
-    setEditing(false);
+      d.order = null; d.custom = false;
+      var allowed = {}; (templates[d.phase]||[]).forEach(function(g){ allowed[g]=true; });
+      var nc = {}; Object.keys(d.checks||{}).forEach(function(k){ if(allowed[k]) nc[k]=d.checks[k]; });
+      d.checks = nc; next[idx] = d; return next;
+    }); setEditing(false);
   }
-
-  function removeGoal(id){
-    setLocalIds(function(prev){ return prev.filter(function(x){ return x!==id; }); });
-  }
-
+  function removeGoal(id){ setLocalIds(function(prev){ return prev.filter(function(x){ return x!==id; }); }); }
   function addGoal(){
     var pool = Object.keys(GOAL_LIBRARY).filter(function(id){ return localIds.indexOf(id)===-1; });
     if(pool.length===0){ alert("All goals already included"); return; }
-    var id = prompt("Add goal by ID:\n"+pool.join(", "));
-    if(!id || pool.indexOf(id)===-1) return;
+    var id = prompt("Add goal by ID:\n"+pool.join(", ")); if(!id || pool.indexOf(id)===-1) return;
     setLocalIds(function(prev){ return prev.concat([id]); });
   }
-
-  function handleDragStart(i,e){
-    setDragIndex(i);
-    try{ e.dataTransfer.setData("text/plain", String(i)); }catch(_){}
-  }
+  function handleDragStart(i,e){ setDragIndex(i); try{ e.dataTransfer.setData("text/plain", String(i)); }catch(_){} }
   function handleDrop(i,e){
-    e.preventDefault();
-    if(dragIndex===null || dragIndex===i) return;
-    setLocalIds(function(prev){
-      var arr = prev.slice();
-      var mv = arr.splice(dragIndex,1)[0];
-      arr.splice(i,0,mv);
-      return arr;
-    });
+    e.preventDefault(); if(dragIndex===null || dragIndex===i) return;
+    setLocalIds(function(prev){ var arr=prev.slice(); var mv=arr.splice(dragIndex,1)[0]; arr.splice(i,0,mv); return arr; });
     setDragIndex(null);
   }
-
   function changeDay(direction){
-    setIdx(function(cur){
-      var n = cur + direction;
-      if(n<0) n = days.length-1;
-      if(n>=days.length) n = 0;
-      return n;
-    });
+    setIdx(function(cur){ var n=cur+direction; if(n<0) n=days.length-1; if(n>=days.length) n=0; return n; });
   }
 
   return e("div", { className:"wrap" },
     e("header", { className:"hdr", style:{gap:8}},
       e("h1", null, "Dashboard"),
-      e("div", { className:"badge" },
-        (day.custom ? "Custom • " : "Template • ") + day.phase.toUpperCase()
-      ),
+      e("div", { className:"badge" }, (day.custom ? "Custom • " : "Template • ") + day.phase.toUpperCase()),
       e("div", null,
         e("button", { className:"btn", onClick:function(){ changeDay(-1); } }, "◀"),
         e("span", { className:"badge", style:{margin:"0 8px"} }, "Day "+day.day),
         e("button", { className:"btn", onClick:function(){ changeDay(1); } }, "▶")
       ),
       e("div", null,
-        e("select", {
-          value: day.phase,
-          onChange:function(ev){ setPhase(ev.target.value); },
-          className:"btn"
-        },
+        e("select", { value: day.phase, onChange:function(ev){ setPhase(ev.target.value); }, className:"btn" },
           e("option", {value:"fast"}, "Fast"),
           e("option", {value:"cleanse"}, "Cleanse"),
           e("option", {value:"rebuild"}, "Rebuild")
@@ -455,27 +509,19 @@ const Dashboard = ({ templates, days, setDays }) => {
 
     e(ProgressBar, { value: progress }),
 
-    e("ul", { style:{ listStyle:"none", padding:0, marginTop:12 }},
-      items.map(function(it){
-        var on = !!checks[it.id];
-        return e("li", { key:it.id, style:{ display:"flex", alignItems:"center", margin:"8px 0" }},
-          e("div", {
-            className:"paw"+(on?" on":""),
-            onClick:function(){ toggleCheck(it.id); }
-          }, "🐾"),
-          e("span", { style:{ marginLeft:8 } }, it.label)
-        );
-      })
-    ),
+    e(Checklist, {
+      items: items,
+      state: checks,
+      onToggle: toggleCheck
+    }),
 
-    // Weight card — NOTE: ends with a comma to separate the next sibling
+    // Weight card
     e("div", { className:"card", style:{ marginTop:16 }},
       e("h2", null, "Weight"),
       e("div", { style:{ display:"flex", alignItems:"center", gap:8, margin:"8px 0" } },
         e("label", null, "Today’s weight"),
         e("input", {
-          type:"number",
-          step:"0.1",
+          type:"number", step:"0.1",
           value: (day.weight==null ? "" : day.weight),
           onChange: function(ev){
             var v = ev.target.value;
@@ -483,17 +529,14 @@ const Dashboard = ({ templates, days, setDays }) => {
               var next = prev.slice();
               var d = Object.assign({}, next[idx]);
               d.weight = (v==="" ? null : Number(v));
-              next[idx] = d;
-              return next;
+              next[idx] = d; return next;
             });
           },
           style:{ width:120 }
         }),
         e("span", { className:"badge" }, "Day "+day.day)
       ),
-      e("div", { style:{ marginTop:8 } },
-        e(WeightChart, { series: weightSeries })
-      )
+      e("div", { style:{ marginTop:8 } }, e(WeightChart, { series: weightSeries }))
     ),
 
     // Customization panel
@@ -504,10 +547,10 @@ const Dashboard = ({ templates, days, setDays }) => {
         localIds.map(function(id, i){
           return e("li", {
               key:id, draggable:true,
-              onDragStart:function(e){ handleDragStart(i,e); },
-              onDragOver:function(e){ e.preventDefault(); },
-              onDrop:function(e){ handleDrop(i,e); },
-              style:{ display:"flex", alignItems:"center", padding:"8px", marginBottom:"6px", border:"1px solid #f3d0e1", borderRadius:"12px", background:"#fff"}
+              onDragStart:function(ev){ handleDragStart(i,ev); },
+              onDragOver:function(ev){ ev.preventDefault(); },
+              onDrop:function(ev){ handleDrop(i,ev); },
+              style:{ display:"flex", alignItems:"center", padding:8, marginBottom:6, border:"1px solid #f3d0e1", borderRadius:12, background:"#fff" }
             },
             e("span", { style:{ width:18, marginRight:8, opacity:.6 } }, "⋮⋮"),
             e("span", { style:{ flex:1 } }, GOAL_LIBRARY[id] || id),
@@ -523,7 +566,53 @@ const Dashboard = ({ templates, days, setDays }) => {
     )
   );
 };
-    ReactDOM.render(e(App), document.getElementById("root"));
-  </script>
+
+/* ---------- App ---------- */
+const App = () => {
+  const [settings, setSettings] = useLocal("oz.settings", {
+    phaseTemplates: DEFAULT_PHASE_TEMPLATES
+  });
+
+  // template migration (one-time)
+  useEffect(() => {
+    var pt = settings && settings.phaseTemplates;
+    var valid = pt && ["fast","cleanse","rebuild"].every(function(k){
+      return Array.isArray(pt[k]) && pt[k].every(function(id){ return !!GOAL_LIBRARY[id]; });
+    });
+    if(!valid) setSettings({ phaseTemplates: DEFAULT_PHASE_TEMPLATES });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const [days, setDays] = useLocal("oz.days", defaultDays());
+  const [tab, setTab] = useState("dash");
+
+  return e("div", {},
+    tab === "dash" && e(Dashboard, { templates: settings.phaseTemplates, days: days, setDays: setDays }),
+    tab === "groceries" && e(GroceryList, {
+      items: [
+        { name: "Carrots", day: 4, price: 2.5 },
+        { name: "Spinach", day: 2, price: 3.0 },
+        { name: "Apples", day: 1, price: 4.0 }
+      ]
+    }),
+    tab === "calendar" && e(Calendar),
+    tab === "photos" && e(Photos),
+    tab === "settings" && e(Settings, {
+      templates: settings.phaseTemplates,
+      onChange: function(next){ setSettings({ phaseTemplates: next }); }
+    }),
+
+    e("div", { className: "tabs" },
+      e("button", { className: "btn" + (tab === "dash" ? " active" : ""), onClick: function(){ setTab("dash"); } }, "Dashboard"),
+      e("button", { className: "btn" + (tab === "groceries" ? " active" : ""), onClick: function(){ setTab("groceries"); } }, "Groceries"),
+      e("button", { className: "btn" + (tab === "calendar" ? " active" : ""), onClick: function(){ setTab("calendar"); } }, "Calendar"),
+      e("button", { className: "btn" + (tab === "photos" ? " active" : ""), onClick: function(){ setTab("photos"); } }, "Photos"),
+      e("button", { className: "btn" + (tab === "settings" ? " active" : ""), onClick: function(){ setTab("settings"); } }, "Settings")
+    )
+  );
+};
+
+ReactDOM.render(e(App), document.getElementById("root"));
+</script>
 </body>
 </html>
