@@ -422,14 +422,10 @@
 // Dashboard
 const Dashboard = ({ templates, days, setDays, recipes }) => {
   const [idx, setIdx] = React.useState(0);
-
-  // current day
   const day = days[idx] || days[0];
-const { items: nextItems, label: nextLabel } = nextTwoDayIngredients(day);
-  
+
   // helper: build next-ingredients (today+tomorrow, else next recipe days)
   function nextTwoDayIngredients(currentDay){
-    const { items: nextItems, label: nextLabel } = nextTwoDayIngredients(day);
     const tryDays = (d1, d2) => {
       const want = new Set([d1, d2]);
       const bag = {};
@@ -465,6 +461,8 @@ const { items: nextItems, label: nextLabel } = nextTwoDayIngredients(day);
     return { items: fallback, label };
   }
 
+  // build next-items + label for the card
+  const { items: nextItems, label: nextLabel } = nextTwoDayIngredients(day);
 
   // template + checklist
   const templateIds = templates[day.phase] || [];
@@ -478,10 +476,14 @@ const { items: nextItems, label: nextLabel } = nextTwoDayIngredients(day);
 
   const weightSeries = days.map(d => (d.weight == null ? null : d.weight));
 
-  // celebrate on 100%
+  // celebrate on 100% (mobile-safe confetti)
   React.useEffect(() => {
-    if (Math.round(progress) === 100 && window.safeConfetti) {
-      window.safeConfetti({ particleCount: 80, spread: 70, origin: { y: .6 } });
+    if (Math.round(progress) === 100) {
+      if (window.safeConfetti) {
+        window.safeConfetti({ particleCount: 80, spread: 70, origin: { y: .6 } });
+      } else if (window.confetti) {
+        window.confetti({ particleCount: 80, spread: 70, origin: { y: .6 } });
+      }
       console.log(["Paw-some job! 🐾","You nailed it today! 💪","Oz is proud of you! 🐶","100% — You’re unstoppable! 🌟","Way to crush it! 🎉"][Math.floor(Math.random()*5)]);
     }
   }, [progress]);
@@ -540,7 +542,8 @@ const { items: nextItems, label: nextLabel } = nextTwoDayIngredients(day);
   function addGoal(){
     const pool = Object.keys(GOAL_LIBRARY).filter(id => localIds.indexOf(id) === -1);
     if (pool.length === 0) { alert("All goals already included"); return; }
-    const id = prompt("Add goal by ID:\n"+pool.join(", ")); if (!id || pool.indexOf(id) === -1) return;
+    const id = prompt("Add goal by ID:\n"+pool.join(", "));
+    if (!id || pool.indexOf(id) === -1) return;
     setLocalIds(prev => prev.concat([id]));
   }
   function handleDragStart(i,ev){ setDragIndex(i); try{ ev.dataTransfer.setData("text/plain", String(i)); }catch(e){} }
@@ -631,6 +634,7 @@ const { items: nextItems, label: nextLabel } = nextTwoDayIngredients(day);
               const next = prev.slice();
               const d = { ...next[idx] };
               d.weight = (v==="" ? null : Number(v));
+              // auto-check weight if present in today’s goals
               if (v !== "" && ((d.checks && "weight" in d.checks) || activeIds.indexOf("weight") !== -1)) {
                 const c = { ...(d.checks || {}) }; c.weight = true; d.checks = c;
               }
@@ -670,7 +674,6 @@ const { items: nextItems, label: nextLabel } = nextTwoDayIngredients(day);
     )
   );
 };
-
 
   /* ---------- App ---------- */
   const App = () => {
