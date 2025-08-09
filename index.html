@@ -183,17 +183,6 @@
     return [val, setVal];
   }
 
-  // --- Goal library (single source of truth) ---
-  const GOAL_LIBRARY = {
-    water:  "💧 Drink 120–150 oz water",
-    tea:    "🍵 Tea",
-    coffee: "☕ Coffee",
-    juice:  "🧃 Juices",
-    lmnt:   "🧂 LMNT Electrolytes",
-    exercise:"🏃 Exercise",
-    wholefood:"🥗 Whole food meals",
-    weight:"👣 Weight check-in"
-  };
 
   // Default template order (used for first-time load / migration)
   const DEFAULT_PHASE_TEMPLATES = {
@@ -268,38 +257,185 @@
       );
     };
 
-   // Dashboard
-const Dashboard = ({ templates }) => {
-  const [phase, setPhase] = useState("fast");
-  const [checkState, setCheckState] = useState({});
-  const [weightData, setWeightData] = useState([170,169,168.5,168,167.8]);
+  // Dashboard — per-day customization + progress from real goals
+const Dashboard = ({ templates, days, setDays }) => {
+  const [idx, setIdx] = useState(0); // current day index (0-based)
 
-  // Build items for current phase from template ids
-  const items = (templates[phase] || []).map(id => ({ id, label: GOAL_LIBRARY[id] || id }));
-  const doneCount = Object.values(checkState).filter(Boolean).length;
-  const totalCount = items.length || 1;
+  const day = days[idx] || days[0];
+  const templateIds = templates[day.phase] || [];
+  const activeIds = (day.order && day.order.length ? day.order : templateIds);
 
-  return e("div", { className: "wrap" },
-    e("header", { className: "hdr" },
+  const items = activeIds.map(function(id){
+    return { id:id, label: GOAL_LIBRARY[id] || id };
+  });
+
+  const checks = day.checks || {};
+  const doneCount = items.reduce(function(acc, it){ return acc + (checks[it.id] ? 1 : 0); }, 0);
+  const totalCount = Math.max(1, items.length);
+  const progress = (doneCount / totalCount) * 100;
+
+  function toggleCheck(id){
+    setDays(function(prev){
+      var next = prev.slice();
+      var d = Object.assign({}, next[idx]);
+      var c = Object.assign({}, d.checks);
+      c[id] = !c[id];
+      d.checks = c;
+      next[idx] = d;
+      return next;
+    });
+  }
+
+  function setPhase(p){
+    setDays(function(prev){
+      var next = prev.slice();
+      var d = Object.assign({}, next[idx]);
+      d.phase = p;
+      next[idx] = d;
+      return next;
+    });
+  }
+
+  const [editing, setEditing] = useState(false);
+  const [dragIndex, setDragIndex] = useState(null);
+  const [localIds, setLocalIds] = useState(activeIds);
+
+  useEffect(function(){ setLocalIds(activeIds); }, [idx, day.phase, day.order]);
+
+  function applyCustom(){
+    setDays(function(prev){
+      var next = prev.slice();
+      var d = Object.assign({}, next[idx]);
+      d.order = localIds.slice();
+      d.custom = true;
+      next[idx] = d;
+      return next;
+    });
+    setEditing(false);
+  }
+
+  function resetToTemplate(){
+    setDays(function(prev){
+      var next = prev.slice();
+      var d = Object.assign({}, next[idx]);
+      d.order = null;
+      d.custom = false;
+      var allowed = new Set((templates[d.phase]||[]));
+      var newChecks = {};
+      Object.keys(d.checks||{}).forEach(function(k){
+        if(allowed.has(k)) newChecks[k]=d.checks[k];
+      });
+      d.checks = newChecks;
+      next[idx] = d;
+      return next;
+    });
+    setEditing(false);
+  }
+
+  function removeGoal(id){
+    setLocalIds(function(prev){ return prev.filter(function(x){ return x!==id; }); });
+  }
+  function addGoal(){
+    var pool = Object.keys(GOAL_LIBRARY).filter(function(id){ return localIds.indexOf(id)===-1; });
+    if(pool.length===0){ alert("All goals already included"); return; }
+    var id = prompt("Add goal by ID:\n"+pool.join(", "));
+    if(!id || pool.indexOf(id)===-1) return;
+    setLocalIds(function(prev){ return prev.concat([id]); });
+  }
+  function handleDragStart(i,e){
+    setDragIndex(i);
+    try{ e.dataTransfer.setData("text/plain", String(i)); }catch(_){}
+  }
+  function handleDrop(i,e){
+    e.preventDefault();
+    if(dragIndex===null || dragIndex===i) return;
+    setLocalIds(function(prev){
+      var arr = prev.slice();
+      var mv = arr.splice(dragIndex,1)[0];
+      arr.splice(i,0,mv);
+      return arr;
+    });
+    setDragIndex(null);
+  }
+
+  function changeDay(direction){
+    setIdx(function(cur){
+      var n = cur + direction;
+      if(n<0) n = days.length-1;
+      if(n>=days.length) n = 0;
+      return n;
+    });
+  }
+
+  return e("div", { className:"wrap" },
+    e("header", { className:"hdr", style:{gap:8}},
       e("h1", null, "Dashboard"),
-      e("div", { className: "badge" }, phase.toUpperCase()),
+      e("div", { className:"badge" }, (day.custom?"Custom • ":"")+day.phase.toUpperCase()),
+      e("div", null,
+        e("button", { className:"btn", onClick:function(){ changeDay(-1); } }, "◀"),
+        e("span", { className:"badge", style:{margin:"0 8px"} }, "Day "+day.day),
+        e("button", { className:"btn", onClick:function(){ changeDay(1); } }, "▶")
+      ),
       e("div", null,
         e("select", {
-          value: phase,
-          onChange: (ev) => setPhase(ev.target.value),
-          className: "btn", style: { marginLeft: 8 }
+          value: day.phase,
+          onChange:function(ev){ setPhase(ev.target.value); },
+          className:"btn"
         },
-          e("option", { value: "fast" }, "Fast"),
-          e("option", { value: "cleanse" }, "Cleanse"),
-          e("option", { value: "rebuild" }, "Rebuild")
+          e("option", {value:"fast"}, "Fast"),
+          e("option", {value:"cleanse"}, "Cleanse"),
+          e("option", {value:"rebuild"}, "Rebuild")
         )
+      ),
+      e("div", null,
+        e("button", { className:"btn peach", onClick:function(){ setEditing(true); } }, "Customize Day"),
+        day.custom && e("button", { className:"btn", style:{marginLeft:8}, onClick:resetToTemplate }, "Reset to Template")
       )
     ),
-    e(ProgressBar, { value: (doneCount / totalCount) * 100 }),
-    e(Checklist, { items, state: checkState, setState: setCheckState }),
-    e("div", { className: "card", style: { marginTop: "16px" } },
-      e("h2", null, "Weight Trend"),
-      e(WeightChart, { data: weightData })
+
+    e(ProgressBar, { value: progress }),
+
+    e("ul", { style:{ listStyle:"none", padding:0, marginTop:12 }},
+      items.map(function(it){
+        var on = !!checks[it.id];
+        return e("li", { key:it.id, style:{ display:"flex", alignItems:"center", margin:"8px 0" }},
+          e("div", {
+            className:"paw"+(on?" on":""),
+            onClick:function(){ toggleCheck(it.id); }
+          }, "🐾"),
+          e("span", { style:{ marginLeft:8 } }, it.label)
+        );
+      })
+    ),
+
+    e("div", { className:"card", style:{ marginTop:16 }},
+      e("h2", null, "Weight"),
+      e("p", { style:{ color:"#64748b", marginTop:6 } }, "Enter/check from the Daily tab later — chart wiring in Patch 3.")
+    ),
+
+    editing && e("div", { className:"card", style:{ marginTop:16, borderColor:"#f9c2a7" }},
+      e("h2", null, "Customize Day "+day.day),
+      e("p", { style:{ color:"#64748b", margin:"6px 0 12px" } }, "Drag to reorder; add/remove goals just for this day."),
+      e("ul", { style:{ listStyle:"none", padding:0 }},
+        localIds.map(function(id, i){
+          return e("li", {
+              key:id, draggable:true,
+              onDragStart:function(e){ handleDragStart(i,e); },
+              onDragOver:function(e){ e.preventDefault(); },
+              onDrop:function(e){ handleDrop(i,e); },
+              style:{ display:"flex", alignItems:"center", padding:"8px", marginBottom:"6px", border:"1px solid #f3d0e1", borderRadius:"12px", background:"#fff"}
+            },
+            e("span", { style:{ width:18, marginRight:8, opacity:.6 } }, "⋮⋮"),
+            e("span", { style:{ flex:1 } }, GOAL_LIBRARY[id] || id),
+            e("button", { className:"btn", onClick:function(){ removeGoal(id); } }, "Remove")
+          );
+        })
+      ),
+      e("div", null,
+        e("button", { className:"btn peach", onClick:addGoal }, "Add Goal"),
+        e("button", { className:"btn", style:{ marginLeft:8 }, onClick:function(){ setEditing(false); } }, "Cancel"),
+        e("button", { className:"btn", style:{ marginLeft:8 }, onClick:applyCustom }, "Save")
+      )
     )
   );
 };
@@ -340,11 +476,11 @@ const Settings = ({ templates, onChange }) => {
     e.preventDefault();
     if (drag.phase !== phase || drag.index === null) return;
     const arr = local[phase].slice();
-    const [moved] = arr.splice(drag.index, 1);
+    const moved = arr.splice(drag.index, 1)[0];
     arr.splice(index, 0, moved);
     const next = { ...local, [phase]: arr };
     setLocal(next);
-    onChange(next); // persist
+    onChange(next);
     setDrag({ phase: null, index: null });
   }
 
@@ -356,7 +492,6 @@ const Settings = ({ templates, onChange }) => {
   }
 
   function addItem(phase){
-    // Simple picker of anything not already included
     const pool = Object.keys(GOAL_LIBRARY).filter(id => local[phase].indexOf(id) === -1);
     if (pool.length === 0) { alert("All goals already included"); return; }
     const id = prompt("Add goal by ID:\n" + pool.join(", "));
@@ -407,29 +542,30 @@ const Settings = ({ templates, onChange }) => {
   );
 };
 
+
    // Main App
 const App = () => {
-  // settings.phaseTemplates holds the default order per phase
-  const [settings, setSettings] = useLocal("oz.settings", {
-    phaseTemplates: DEFAULT_PHASE_TEMPLATES   // will be migrated below if needed
-  });
+// settings.phaseTemplates holds the default order per phase
+const [settings, setSettings] = useLocal("oz.settings", {
+  phaseTemplates: DEFAULT_PHASE_TEMPLATES
+});
 
-  // MIGRATION: if phaseTemplates missing or malformed, reset to defaults (one-time)
-  React.useEffect(() => {
-    const pt = settings && settings.phaseTemplates;
-    const valid = pt && ["fast","cleanse","rebuild"].every(k =>
-      Array.isArray(pt[k]) && pt[k].every(id => GOAL_LIBRARY[id])
-    );
-    if (!valid) {
-      setSettings({ phaseTemplates: DEFAULT_PHASE_TEMPLATES });
-    }
+// MIGRATION: ensure valid templates (runs once)
+React.useEffect(() => {
+  const pt = settings && settings.phaseTemplates;
+  const valid = pt && ["fast","cleanse","rebuild"].every(k =>
+    Array.isArray(pt[k]) && pt[k].every(id => GOAL_LIBRARY[id])
+  );
+  if (!valid) setSettings({ phaseTemplates: DEFAULT_PHASE_TEMPLATES });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+}, []);
 
-  const [tab, setTab] = useState("dash");
+const [days, setDays] = useLocal("oz.days", defaultDays());
+const [tab, setTab] = useState("dash");
 
   return e("div", {},
-    tab === "dash" && e(Dashboard, { templates: settings.phaseTemplates }),
+  tab === "dash" && e(Dashboard, { templates: settings.phaseTemplates, days: days, setDays: setDays }),
+
     tab === "groceries" && e(GroceryList, {
       items: [
         { name: "Carrots", day: 4, price: 2.5 },
@@ -439,17 +575,17 @@ const App = () => {
     }),
     tab === "calendar" && e(Calendar),
     tab === "photos" && e(Photos),
-    tab === "settings" && e(Settings, {
-      templates: settings.phaseTemplates,
-      onChange: (next) => setSettings({ phaseTemplates: next })
-    }),
+  tab === "settings" && e(Settings, {
+  templates: settings.phaseTemplates,
+  onChange: (next) => setSettings({ phaseTemplates: next })
+}),
 
     e("div", { className: "tabs" },
       e("button", { className: "btn" + (tab === "dash" ? " active" : ""), onClick: () => setTab("dash") }, "Dashboard"),
       e("button", { className: "btn" + (tab === "groceries" ? " active" : ""), onClick: () => setTab("groceries") }, "Groceries"),
       e("button", { className: "btn" + (tab === "calendar" ? " active" : ""), onClick: () => setTab("calendar") }, "Calendar"),
       e("button", { className: "btn" + (tab === "photos" ? " active" : ""), onClick: () => setTab("photos") }, "Photos"),
-      e("button", { className: "btn" + (tab === "settings" ? " active" : ""), onClick: () => setTab("settings") }, "Settings")
+     e("button", { className: "btn" + (tab === "settings" ? " active" : ""), onClick: () => setTab("settings") }, "Settings")
     )
   );
 };
