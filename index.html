@@ -241,6 +241,22 @@ body{ padding-top:env(safe-area-inset-top); padding-bottom:env(safe-area-inset-b
       ingredients:[{key:"lentils",name:"Lentils (dry)",qty:"1/2 cup"},{key:"carrots",name:"Carrots",qty:"1/2 cup"},{key:"celery",name:"Celery",qty:"1/2 cup"},{key:"parsley",name:"Parsley",qty:"1/4 cup"},{key:"onions",name:"Onion",qty:"1/4"}],
       steps:"Simmer ~25 min."
     },
+      { id:"r-broth9", name:"Simple Veg Broth", type:"meal", day:9,
+    ingredients:[
+      {key:"carrots",name:"Carrots",qty:"2"}, {key:"celery",name:"Celery",qty:"2 stalks"},
+      {key:"onions",name:"Onion",qty:"1/2"}, {key:"parsley",name:"Parsley",qty:"a few sprigs"}
+    ],
+    steps:"Simmer 30–40 min; season lightly."
+  },
+  { id:"r-sweetpot9", name:"Baked Sweet Potato Bowl", type:"meal", day:9,
+    ingredients:[
+      {key:"sweet-potatoes",name:"Sweet potatoes",qty:"2"},
+      {key:"spinach",name:"Spinach",qty:"2 cups"},
+      {key:"olive-oil",name:"Olive oil",qty:"1 tbsp"}
+    ],
+    steps:"Bake potato, wilt spinach, drizzle oil and salt."
+  },
+
     { id:"r-oats", name:"Overnight Oats", type:"meal", day:10,
       ingredients:[{key:"rolled-oats",name:"Rolled oats",qty:"1/2 cup"},{key:"almond-milk",name:"Almond milk",qty:"1 cup"}],
       steps:"Combine and chill."
@@ -374,12 +390,19 @@ body{ padding-top:env(safe-area-inset-top); padding-bottom:env(safe-area-inset-b
 
   const Photos = () => {
     const [photos, setPhotos] = useState([]);
-    function handleUpload(ev){
-      const files = Array.from(ev.target.files||[]);
-      const urls = files.map(f=> URL.createObjectURL(f));
-      setPhotos(photos.concat(urls));
-      setTimeout(()=>{ alert("Looking strong ✨"); }, 50);
-    }
+    const AFFIRM = [
+    "Looking strong ✨",
+    "Your glow is showing ✨",
+    "Small habits, big change 💪",
+    "Oz is proud of you 🐶",
+    "Consistency looks good on you 🌟"
+  ];
+  function handleUpload(ev){
+    const files = Array.from(ev.target.files||[]);
+    const urls = files.map(f=> URL.createObjectURL(f));
+    setPhotos(photos.concat(urls));
+    setTimeout(()=>{ alert(AFFIRM[Math.floor(Math.random()*AFFIRM.length)]); }, 50);
+  }
     return e("div", { className:"wrap" },
       e("h1", null, "Progress Photos"),
       e("input", { type:"file", multiple:true, accept:"image/*", onChange:handleUpload }),
