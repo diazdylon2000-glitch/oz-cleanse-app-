@@ -107,3 +107,9 @@ html, body {
 }
 /* optional – improves drag handle look */
 li .btn { margin-left: 8px; }
+input[type="number"] {
+  border: 1px solid #f3d0e1;
+  border-radius: 10px;
+  padding: 6px 8px;
+  background: #fff;
+}
