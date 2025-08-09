@@ -182,12 +182,7 @@
     }, [key, val]);
     return [val, setVal];
   }
-  function lmntQuickAdd(){
-    // If LMNT already present in today's active list, do nothing
-    if (activeIds.indexOf("lmnt") !== -1) {
-      alert("LMNT is already on today’s checklist.");
-      return;
-    }
+
     setDays(function(prev){
       var next = prev.slice();
       var d = Object.assign({}, next[idx]);
@@ -288,16 +283,36 @@ const WeightChart = ({ series }) => {
       );
     };
 
-  // Dashboard — per-day customization + progress from real goals
+// Dashboard — per-day customization + progress from real goals
 const Dashboard = ({ templates, days, setDays }) => {
   const [idx, setIdx] = useState(0); // current day index (0-based)
 
   const day = days[idx] || days[0];
-   // weight series for chart (nulls allowed for missing days)
+
+  // weight series for chart (nulls allowed for missing days)
   const weightSeries = days.map(function(d){ return (d.weight==null ? null : d.weight); });
+
   const templateIds = templates[day.phase] || [];
   const activeIds = (day.order && day.order.length ? day.order : templateIds);
+const activeIds = (day.order && day.order.length ? day.order : templateIds);
 
+function lmntQuickAdd(){
+  if (activeIds.includes("lmnt")) {
+    alert("LMNT is already on today’s checklist.");
+    return;
+  }
+  setDays(prev => {
+    let next = prev.slice();
+    let d = { ...next[idx] };
+    let base = d.order?.length ? [...d.order] : [...templateIds];
+    base.push("lmnt");
+    d.order = base;
+    d.custom = true;
+    d.checks = { ...d.checks, lmnt: false };
+    next[idx] = d;
+    return next;
+  });
+}
   const items = activeIds.map(function(id){
     return { id:id, label: GOAL_LIBRARY[id] || id };
   });
@@ -329,6 +344,27 @@ const Dashboard = ({ templates, days, setDays }) => {
     });
   }
 
+  // LMNT quick-add (lives INSIDE Dashboard so it can see variables)
+  function lmntQuickAdd(){
+    if (activeIds.indexOf("lmnt") !== -1) {
+      alert("LMNT is already on today’s checklist.");
+      return;
+    }
+    setDays(function(prev){
+      var next = prev.slice();
+      var d = Object.assign({}, next[idx]);
+      var base = (d.order && d.order.length ? d.order.slice() : templateIds.slice());
+      base.push("lmnt");
+      d.order = base;     // becomes a custom day now
+      d.custom = true;
+      if(!d.checks) d.checks = {};
+      d.checks.lmnt = false;
+      next[idx] = d;
+      return next;
+    });
+  }
+
+  // Customization editor (per-day)
   const [editing, setEditing] = useState(false);
   const [dragIndex, setDragIndex] = useState(null);
   const [localIds, setLocalIds] = useState(activeIds);
@@ -403,9 +439,9 @@ const Dashboard = ({ templates, days, setDays }) => {
   return e("div", { className:"wrap" },
     e("header", { className:"hdr", style:{gap:8}},
       e("h1", null, "Dashboard"),
-     e("div", { className:"badge" },
-  (day.custom ? "Custom • " : "Template • ") + day.phase.toUpperCase()
-),
+      e("div", { className:"badge" },
+        (day.custom ? "Custom • " : "Template • ") + day.phase.toUpperCase()
+      ),
       e("div", null,
         e("button", { className:"btn", onClick:function(){ changeDay(-1); } }, "◀"),
         e("span", { className:"badge", style:{margin:"0 8px"} }, "Day "+day.day),
@@ -424,7 +460,8 @@ const Dashboard = ({ templates, days, setDays }) => {
       ),
       e("div", null,
         e("button", { className:"btn peach", onClick:function(){ setEditing(true); } }, "Customize Day"),
-        day.custom && e("button", { className:"btn", style:{marginLeft:8}, onClick:resetToTemplate }, "Reset to Template")
+        day.custom && e("button", { className:"btn", style:{marginLeft:8}, onClick:resetToTemplate }, "Reset to Template"),
+        e("button", { className:"btn", style:{marginLeft:8}, onClick: lmntQuickAdd }, "Add LMNT Today")
       )
     ),
 
@@ -443,33 +480,35 @@ const Dashboard = ({ templates, days, setDays }) => {
       })
     ),
 
-e("div", { className:"card", style:{ marginTop:16 }},
-  e("h2", null, "Weight"),
-  e("div", { style:{ display:"flex", alignItems:"center", gap:8, margin:"8px 0" } },
-    e("label", null, "Today’s weight"),
-    e("input", {
-      type:"number",
-      step:"0.1",
-      value: (day.weight==null ? "" : day.weight),
-      onChange: function(ev){
-        var v = ev.target.value;
-        setDays(function(prev){
-          var next = prev.slice();
-          var d = Object.assign({}, next[idx]);
-          d.weight = (v==="" ? null : Number(v));
-          next[idx] = d;
-          return next;
-        });
-      },
-      style:{ width:120 }
-    }),
-    e("span", { className:"badge" }, "Day "+day.day)
-  ),
-  e("div", { style:{ marginTop:8 } },
-    e(WeightChart, { series: weightSeries })
-  )
-)
+    // Weight card (NOTE: ends with a comma to separate next sibling)
+    e("div", { className:"card", style:{ marginTop:16 }},
+      e("h2", null, "Weight"),
+      e("div", { style:{ display:"flex", alignItems:"center", gap:8, margin:"8px 0" } },
+        e("label", null, "Today’s weight"),
+        e("input", {
+          type:"number",
+          step:"0.1",
+          value: (day.weight==null ? "" : day.weight),
+          onChange: function(ev){
+            var v = ev.target.value;
+            setDays(function(prev){
+              var next = prev.slice();
+              var d = Object.assign({}, next[idx]);
+              d.weight = (v==="" ? null : Number(v));
+              next[idx] = d;
+              return next;
+            });
+          },
+          style:{ width:120 }
+        }),
+        e("span", { className:"badge" }, "Day "+day.day)
+      ),
+      e("div", { style:{ marginTop:8 } },
+        e(WeightChart, { series: weightSeries })
+      )
+    ),
 
+    // Customization panel
     editing && e("div", { className:"card", style:{ marginTop:16, borderColor:"#f9c2a7" }},
       e("h2", null, "Customize Day "+day.day),
       e("p", { style:{ color:"#64748b", margin:"6px 0 12px" } }, "Drag to reorder; add/remove goals just for this day."),
@@ -488,161 +527,15 @@ e("div", { className:"card", style:{ marginTop:16 }},
           );
         })
       ),
-     e("div", null,
-  e("button", { className:"btn peach", onClick:function(){ setEditing(true); } }, "Customize Day"),
-  day.custom && e("button", { className:"btn", style:{marginLeft:8}, onClick:resetToTemplate }, "Reset to Template"),
-  e("button", { className:"btn", style:{marginLeft:8}, onClick: lmntQuickAdd }, "Add LMNT Today")
-)
-
-    // Simple Calendar placeholder (drag/drop recipes can be wired)
-    const Calendar = () => e("div", { className: "wrap" }, e("h1", null, "Calendar View"));
-
-    // Photos
-    const Photos = () => {
-      const [photos, setPhotos] = useState([]);
-      const handleUpload = (e) => {
-        const files = Array.from(e.target.files);
-        const urls = files.map(f => URL.createObjectURL(f));
-        setPhotos([...photos, ...urls]);
-      };
-      return e("div", { className: "wrap" },
-        e("h1", null, "Progress Photos"),
-        e("input", { type: "file", multiple: true, onChange: handleUpload }),
-        e("div", { style: { display: "flex", gap: "8px", flexWrap: "wrap", marginTop: "12px" } },
-          photos.map((url, i) =>
-            e("img", { key: i, src: url, style: { width: "100px", height: "100px", objectFit: "cover", borderRadius: "8px" } })
-          )
-        )
-      );
-    };
-// Settings: drag to reorder default goals per phase
-const Settings = ({ templates, onChange }) => {
-  const [local, setLocal] = useState(templates);
-  const [drag, setDrag] = useState({ phase: null, index: null });
-
-  useEffect(() => { setLocal(templates); }, [templates]);
-
-  function handleDragStart(phase, index, e){
-    setDrag({ phase, index });
-    try { e.dataTransfer.setData("text/plain", String(index)); } catch {}
-  }
-  function handleDrop(phase, index, e){
-    e.preventDefault();
-    if (drag.phase !== phase || drag.index === null) return;
-    const arr = local[phase].slice();
-    const moved = arr.splice(drag.index, 1)[0];
-    arr.splice(index, 0, moved);
-    const next = { ...local, [phase]: arr };
-    setLocal(next);
-    onChange(next);
-    setDrag({ phase: null, index: null });
-  }
-
-  function removeItem(phase, id){
-    const arr = local[phase].filter(x => x !== id);
-    const next = { ...local, [phase]: arr };
-    setLocal(next);
-    onChange(next);
-  }
-
-  function addItem(phase){
-    const pool = Object.keys(GOAL_LIBRARY).filter(id => local[phase].indexOf(id) === -1);
-    if (pool.length === 0) { alert("All goals already included"); return; }
-    const id = prompt("Add goal by ID:\n" + pool.join(", "));
-    if (!id || pool.indexOf(id) === -1) return;
-    const next = { ...local, [phase]: local[phase].concat([id]) };
-    setLocal(next);
-    onChange(next);
-  }
-
-  function renderPhase(phase, label){
-    const ids = local[phase] || [];
-    return e("div", { className: "card", style: { marginBottom: 16 } },
-      e("h2", null, label),
-      e("ul", { style: { listStyle: "none", padding: 0, marginTop: 8 } },
-        ids.map((id, idx) =>
-          e("li", {
-            key: id,
-            draggable: true,
-            onDragStart: (e) => handleDragStart(phase, idx, e),
-            onDragOver: (e) => e.preventDefault(),
-            onDrop: (e) => handleDrop(phase, idx, e),
-            style: {
-              display: "flex", alignItems: "center",
-              padding: "8px", marginBottom: "6px",
-              border: "1px solid #f3d0e1", borderRadius: "12px", background: "#fff"
-            }
-          },
-            e("span", { style: { width: 18, marginRight: 8, opacity: .6 } }, "⋮⋮"),
-            e("span", { style: { flex: 1 } }, GOAL_LIBRARY[id] || id),
-            e("button", { className: "btn", onClick: () => removeItem(phase, id) }, "Remove")
-          )
-        )
-      ),
       e("div", null,
-        e("button", { className: "btn peach", onClick: () => addItem(phase) }, "Add Goal")
+        e("button", { className:"btn peach", onClick:addGoal }, "Add Goal"),
+        e("button", { className:"btn", style:{ marginLeft:8 }, onClick:function(){ setEditing(false); } }, "Cancel"),
+        e("button", { className:"btn", style:{ marginLeft:8 }, onClick:applyCustom }, "Save")
       )
-    );
-  }
-
-  return e("div", { className: "wrap" },
-    e("h1", null, "Settings"),
-    e("p", { style: { margin: "6px 0 12px", color: "#64748b" } },
-      "Drag to reorder the default goals for each phase. These act as templates; individual days can still customize later."
-    ),
-    renderPhase("fast", "Fast — Phase Template"),
-    renderPhase("cleanse", "Cleanse — Phase Template"),
-    renderPhase("rebuild", "Rebuild — Phase Template")
-  );
-};
-
-
-   // Main App
-const App = () => {
-// settings.phaseTemplates holds the default order per phase
-const [settings, setSettings] = useLocal("oz.settings", {
-  phaseTemplates: DEFAULT_PHASE_TEMPLATES
-});
-
-// MIGRATION: ensure valid templates (runs once)
-React.useEffect(() => {
-  const pt = settings && settings.phaseTemplates;
-  const valid = pt && ["fast","cleanse","rebuild"].every(k =>
-    Array.isArray(pt[k]) && pt[k].every(id => GOAL_LIBRARY[id])
-  );
-  if (!valid) setSettings({ phaseTemplates: DEFAULT_PHASE_TEMPLATES });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, []);
-
-const [days, setDays] = useLocal("oz.days", defaultDays());
-const [tab, setTab] = useState("dash");
-
-  return e("div", {},
-  tab === "dash" && e(Dashboard, { templates: settings.phaseTemplates, days: days, setDays: setDays }),
-
-    tab === "groceries" && e(GroceryList, {
-      items: [
-        { name: "Carrots", day: 4, price: 2.5 },
-        { name: "Spinach", day: 2, price: 3.0 },
-        { name: "Apples", day: 1, price: 4.0 }
-      ]
-    }),
-    tab === "calendar" && e(Calendar),
-    tab === "photos" && e(Photos),
-  tab === "settings" && e(Settings, {
-  templates: settings.phaseTemplates,
-  onChange: (next) => setSettings({ phaseTemplates: next })
-}),
-
-    e("div", { className: "tabs" },
-      e("button", { className: "btn" + (tab === "dash" ? " active" : ""), onClick: () => setTab("dash") }, "Dashboard"),
-      e("button", { className: "btn" + (tab === "groceries" ? " active" : ""), onClick: () => setTab("groceries") }, "Groceries"),
-      e("button", { className: "btn" + (tab === "calendar" ? " active" : ""), onClick: () => setTab("calendar") }, "Calendar"),
-      e("button", { className: "btn" + (tab === "photos" ? " active" : ""), onClick: () => setTab("photos") }, "Photos"),
-     e("button", { className: "btn" + (tab === "settings" ? " active" : ""), onClick: () => setTab("settings") }, "Settings")
     )
   );
 };
+
 
     ReactDOM.render(e(App), document.getElementById("root"));
   </script>
