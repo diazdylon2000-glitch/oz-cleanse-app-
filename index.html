@@ -375,200 +375,238 @@
     );
   };
 
-  // Dashboard
-  const Dashboard = ({ templates, days, setDays, recipes }) => {
-    const [idx, setIdx] = useState(0);
-    const day = days[idx] || days[0];
-    const templateIds = templates[day.phase] || [];
-    const activeIds = (day.order && day.order.length ? day.order : templateIds);
-    const items = activeIds.map(id=>({id,label:GOAL_LIBRARY[id]||id}));
-    const checks = day.checks || {};
-    const doneCount = items.reduce((a,it)=> a+(checks[it.id]?1:0), 0);
-    const totalCount = Math.max(1, items.length);
-    const progress = (doneCount/totalCount)*100;
-    const weightSeries = days.map(d=> d.weight==null? null: d.weight);
+// Dashboard
+const Dashboard = ({ templates, days, setDays, recipes }) => {
+  const [idx, setIdx] = React.useState(0);
+  const day = days[idx] || days[0];
+  const templateIds = templates[day.phase] || [];
+  const activeIds = (day.order && day.order.length ? day.order : templateIds);
+  const items = activeIds.map(id => ({ id, label: GOAL_LIBRARY[id] || id }));
+  const checks = day.checks || {};
+  const doneCount = items.reduce((a, it) => a + (checks[it.id] ? 1 : 0), 0);
+  const totalCount = Math.max(1, items.length);
+  const progress = (doneCount / totalCount) * 100;
+  const weightSeries = days.map(d => d.weight == null ? null : d.weight);
 
-    // Celebrate on 100%
-    useEffect(()=>{
-      if(Math.round(progress)===100){
-        if(window.confetti){
-          window.confetti({ particleCount: 80, spread: 70, origin:{y:.6} });
-        }
-        const phrases=["Paw-some job! 🐾","You nailed it today! 💪","Oz is proud of you! 🐶","100% — You’re unstoppable! 🌟","Way to crush it! 🎉"];
-        console.log(phrases[Math.floor(Math.random()*phrases.length)]);
-      }
-    }, [progress]);
-function nextTwoDayIngredients(currentDay, includeToday){
-  const target = [];
-  const d1 = includeToday ? currentDay.day : currentDay.day+1;
-  const d2 = includeToday ? currentDay.day+1 : currentDay.day+2;
-  const want = new Set([d1,d2]);
-  const bag = {};
-  (recipes||[]).forEach(r=>{
-    if(!r.day || !want.has(r.day)) return;
-    (r.ingredients||[]).forEach(it=>{
-      const key=(it.key||it.name||"").toLowerCase();
-      if(!bag[key]){
-        bag[key]={ name: it.name, qtyList: [], days: new Set() };
-      }
-      if(it.qty) bag[key].qtyList.push(it.qty);
-      bag[key].days.add(r.day);
+  // celebrate on 100%
+  React.useEffect(() => {
+    if (Math.round(progress) === 100 && window.confetti) {
+      window.confetti({ particleCount: 80, spread: 70, origin: { y: .6 } });
+      console.log(["Paw-some job! 🐾","You nailed it today! 💪","Oz is proud of you! 🐶","100% — You’re unstoppable! 🌟","Way to crush it! 🎉"][Math.floor(Math.random()*5)]);
+    }
+  }, [progress]);
+
+  // helpers
+  function nextTwoDayIngredients(currentDay, includeToday){
+    const d1 = includeToday ? currentDay.day : currentDay.day + 1;
+    const d2 = includeToday ? currentDay.day + 1 : currentDay.day + 2;
+    const want = new Set([d1, d2]);
+    const bag = {};
+    (recipes || []).forEach(r => {
+      if (!r.day || !want.has(r.day)) return;
+      (r.ingredients || []).forEach(it => {
+        const key = (it.key || it.name || "").toLowerCase();
+        if (!bag[key]) bag[key] = { name: it.name, qtyList: [], days: new Set() };
+        if (it.qty) bag[key].qtyList.push(it.qty);
+        bag[key].days.add(r.day);
+      });
     });
-  });
-  Object.keys(bag).forEach(k=> bag[k].days = Array.from(bag[k].days).sort((a,b)=>a-b));
-  return Object.values(bag).sort((a,b)=> (a.name||"").localeCompare(b.name||""));
-}
-const nextItems = nextTwoDayIngredients(day, true); // today + tomorrow
+    Object.keys(bag).forEach(k => bag[k].days = Array.from(bag[k].days).sort((a,b)=>a-b));
+    return Object.values(bag).sort((a,b)=>(a.name||"").localeCompare(b.name||""));
+  }
+  const nextItems = nextTwoDayIngredients(day, true); // today + tomorrow
 
-    function toggleCheck(id){
-      setDays(prev=>{
-        const next = prev.slice();
-        const d = Object.assign({}, next[idx]);
-        const c = Object.assign({}, d.checks||{});
-        c[id] = !c[id];
-        d.checks = c;
-        next[idx] = d;
-        return next;
-      });
-    }
-    function setPhase(p){
-      setDays(prev=>{
-        const next = prev.slice();
-        const d = Object.assign({}, next[idx]);
-        d.phase = p; next[idx]=d; return next;
-      });
-    }
-    function lmntQuickAdd(){
-      if(activeIds.indexOf("lmnt")!==-1){ alert("LMNT is already on today’s checklist."); return; }
-      setDays(prev=>{
-        const next = prev.slice();
-        const d = Object.assign({}, next[idx]);
-        const base = (d.order&&d.order.length? d.order.slice() : templateIds.slice());
-        base.push("lmnt"); d.order=base; d.custom=true;
-        const c = Object.assign({}, d.checks||{}); c.lmnt=false; d.checks=c;
-        next[idx]=d; return next;
-      });
-    }
-    const [editing,setEditing]=useState(false);
-    const [dragIndex,setDragIndex]=useState(null);
-    const [localIds,setLocalIds]=useState(activeIds);
-    useEffect(()=>{ setLocalIds(activeIds); }, [idx, day.phase, day.order]);
-    function applyCustom(){
-      setDays(prev=>{
-        const next=prev.slice(); const d=Object.assign({}, next[idx]);
-        d.order=localIds.slice(); d.custom=true; next[idx]=d; return next;
-      }); setEditing(false);
-    }
-    function resetToTemplate(){
-      setDays(prev=>{
-        const next=prev.slice(); const d=Object.assign({}, next[idx]);
-        d.order=null; d.custom=false;
-        const allowed={}; (templates[d.phase]||[]).forEach(g=>allowed[g]=true);
-        const nc={}; Object.keys(d.checks||{}).forEach(k=>{ if(allowed[k]) nc[k]=d.checks[k]; });
-        d.checks=nc; next[idx]=d; return next;
-      }); setEditing(false);
-    }
-    function removeGoal(id){ setLocalIds(prev=> prev.filter(x=>x!==id)); }
-    function addGoal(){
-      const pool = Object.keys(GOAL_LIBRARY).filter(id=> localIds.indexOf(id)===-1);
-      if(pool.length===0){ alert("All goals already included"); return; }
-      const id = prompt("Add goal by ID:\n"+pool.join(", ")); if(!id || pool.indexOf(id)===-1) return;
-      setLocalIds(prev=> prev.concat([id]));
-    }
-    function handleDragStart(i,ev){ setDragIndex(i); try{ ev.dataTransfer.setData("text/plain", String(i)); }catch(e){} }
-    function handleDrop(i,ev){
-      ev.preventDefault(); if(dragIndex===null || dragIndex===i) return;
-      setLocalIds(prev=>{ const arr=prev.slice(); const mv=arr.splice(dragIndex,1)[0]; arr.splice(i,0,mv); return arr; });
-      setDragIndex(null);
-    }
-    function changeDay(dir){ setIdx(cur=>{ let n=cur+dir; if(n<0) n=days.length-1; if(n>=days.length) n=0; return n; }); }
+  function toggleCheck(id){
+    setDays(prev => {
+      const next = prev.slice();
+      const d = { ...next[idx] };
+      const c = { ...(d.checks || {}) };
+      c[id] = !c[id];
+      d.checks = c;
+      next[idx] = d;
+      return next;
+    });
+  }
+  function setPhase(p){
+    setDays(prev => {
+      const next = prev.slice();
+      const d = { ...next[idx] };
+      d.phase = p;
+      next[idx] = d;
+      return next;
+    });
+  }
+  function lmntQuickAdd(){
+    if (activeIds.indexOf("lmnt") !== -1) { alert("LMNT is already on today’s checklist."); return; }
+    setDays(prev => {
+      const next = prev.slice();
+      const d = { ...next[idx] };
+      const base = (d.order && d.order.length ? d.order.slice() : templateIds.slice());
+      base.push("lmnt");
+      d.order = base; d.custom = true;
+      const c = { ...(d.checks || {}) }; c.lmnt = false; d.checks = c;
+      next[idx] = d;
+      return next;
+    });
+  }
+  const [editing, setEditing] = React.useState(false);
+  const [dragIndex, setDragIndex] = React.useState(null);
+  const [localIds, setLocalIds] = React.useState(activeIds);
+  React.useEffect(() => { setLocalIds(activeIds); }, [idx, day.phase, day.order]);
+  function applyCustom(){
+    setDays(prev => {
+      const next = prev.slice();
+      const d = { ...next[idx] };
+      d.order = localIds.slice();
+      d.custom = true;
+      next[idx] = d;
+      return next;
+    });
+    setEditing(false);
+  }
+  function resetToTemplate(){
+    setDays(prev => {
+      const next = prev.slice();
+      const d = { ...next[idx] };
+      d.order = null; d.custom = false;
+      const allowed = {}; (templates[d.phase] || []).forEach(g => allowed[g] = true);
+      const nc = {};
+      Object.keys(d.checks || {}).forEach(k => { if (allowed[k]) nc[k] = d.checks[k]; });
+      d.checks = nc;
+      next[idx] = d;
+      return next;
+    });
+    setEditing(false);
+  }
+  function removeGoal(id){ setLocalIds(prev => prev.filter(x => x !== id)); }
+  function addGoal(){
+    const pool = Object.keys(GOAL_LIBRARY).filter(id => localIds.indexOf(id) === -1);
+    if (pool.length === 0) { alert("All goals already included"); return; }
+    const id = prompt("Add goal by ID:\n"+pool.join(", "));
+    if (!id || pool.indexOf(id) === -1) return;
+    setLocalIds(prev => prev.concat([id]));
+  }
+  function handleDragStart(i,ev){ setDragIndex(i); try{ ev.dataTransfer.setData("text/plain", String(i)); }catch(e){} }
+  function handleDrop(i,ev){
+    ev.preventDefault();
+    if (dragIndex === null || dragIndex === i) return;
+    setLocalIds(prev => { const arr = prev.slice(); const mv = arr.splice(dragIndex,1)[0]; arr.splice(i,0,mv); return arr; });
+    setDragIndex(null);
+  }
+  function changeDay(dir){ setIdx(cur => { let n = cur + dir; if (n < 0) n = days.length - 1; if (n >= days.length) n = 0; return n; }); }
 
-- e("div",{className:"mast card"},
-+ return e(React.Fragment, null,
-+   e("div",{className:"mast card"},
-  e("div",{className:"mastRow"},
-    e("div",{className:"mastLeft"},
-      e("img",{src:"oz.png",alt:"Oz"}),
-      e("div",{className:"mastTitle"},
-        e("b",null,"Oz Cleanse Companion"),
-        e("small",null,(day.custom?"Custom • ":"Template • ")+day.phase.toUpperCase())
-      )
-    ),
-    e("div",null,
-      e("button",{className:"btn",onClick:()=>changeDay(-1)},"◀"),
-      e("span",{className:"badge",style:{margin:"0 8px"}},"Day "+day.day),
-      e("button",{className:"btn",onClick:()=>changeDay(1)},"▶")
-    )
-  ),
-  e("div",{className:"mastRow",style:{marginTop:8}},
-    e("div",null,
-      e("select",{value:day.phase,onChange:(ev)=>setPhase(ev.target.value),className:"btn"},
-        e("option",{value:"fast"},"Fast"),
-        e("option",{value:"cleanse"},"Cleanse"),
-        e("option",{value:"rebuild"},"Rebuild")
-      )
-    ),
-    e("div",null,
-      e("button",{className:"btn peach",onClick:()=>setEditing(true)},"Customize Day"),
-      day.custom && e("button",{className:"btn",style:{marginLeft:8},onClick:resetToTemplate},"Reset to Template"),
-      e("button",{className:"btn",style:{marginLeft:8},onClick:lmntQuickAdd},"Add LMNT Today")
-    )
-  )
-),
+  return e(React.Fragment, null,
 
-      e(ProgressBar,{value:progress}),
-
-      e(Checklist,{items, state:checks, onToggle:toggleCheck}),
-
-      e("div",{className:"card",style:{marginTop:16}},
-        e("h2",null,"Weight"),
-        e("div",{style:{display:"flex",alignItems:"center",gap:8,margin:"8px 0"}},
-          e("label",null,"Today’s weight"),
-          e("input",{
-            type:"number", step:"0.1",
-            value:(day.weight==null?"":day.weight),
-            onChange:(ev)=>{
-              const v = ev.target.value;
-              setDays(prev=>{
-                const next=prev.slice(); const d=Object.assign({}, next[idx]);
-                d.weight=(v===""?null:Number(v));
-                if(v!=="" && ((d.checks && "weight" in d.checks) || activeIds.indexOf("weight")!==-1)){
-                  const c=Object.assign({}, d.checks||{}); c.weight=true; d.checks=c;
-                }
-                next[idx]=d; return next;
-              });
-            },
-            style:{width:120}
-          }),
-          e("span",{className:"badge"},"Day "+day.day)
-        ),
-        e("div",{style:{marginTop:8}}, e(WeightChart,{series:weightSeries}))
-      ),
-
-      editing && e("div",{className:"card",style:{marginTop:16,borderColor:"#f9c2a7"}},
-        e("h2",null,"Customize Day "+day.day),
-        e("p",{style:{color:"#64748b",margin:"6px 0 12px"}},"Drag to reorder; add/remove goals just for this day."),
-        e("ul",{style:{listStyle:"none",padding:0}},
-          localIds.map((id,i)=> e("li",{
-              key:id,draggable:true,
-              onDragStart:(ev)=>handleDragStart(i,ev),
-              onDragOver:(ev)=>ev.preventDefault(),
-              onDrop:(ev)=>handleDrop(i,ev),
-              style:{display:"flex",alignItems:"center",padding:8,marginBottom:6,border:"1px solid #f3d0e1",borderRadius:12,background:"#fff"}
-            },
-            e("span",{style:{width:18,marginRight:8,opacity:.6}},"⋮⋮"),
-            e("span",{style:{flex:1}},GOAL_LIBRARY[id]||id),
-            e("button",{className:"btn",onClick:()=>removeGoal(id)},"Remove")
-          ))
+    // mast
+    e("div",{className:"mast card"},
+      e("div",{className:"mastRow"},
+        e("div",{className:"mastLeft"},
+          e("img",{src:"oz.png",alt:"Oz"}),
+          e("div",{className:"mastTitle"},
+            e("b",null,"Oz Cleanse Companion"),
+            e("small",null,(day.custom ? "Custom • " : "Template • ") + day.phase.toUpperCase())
+          )
         ),
         e("div",null,
-          e("button",{className:"btn peach",onClick:addGoal},"Add Goal"),
-          e("button",{className:"btn",style:{marginLeft:8},onClick:()=>setEditing(false)},"Cancel"),
-          e("button",{className:"btn",style:{marginLeft:8},onClick:applyCustom},"Save")
+          e("button",{className:"btn",onClick:()=>changeDay(-1)},"◀"),
+          e("span",{className:"badge",style:{margin:"0 8px"}},"Day "+day.day),
+          e("button",{className:"btn",onClick:()=>changeDay(1)},"▶")
+        )
+      ),
+      e("div",{className:"mastRow",style:{marginTop:8}},
+        e("div",null,
+          e("select",{value:day.phase,onChange:(ev)=>setPhase(ev.target.value),className:"btn"},
+            e("option",{value:"fast"},"Fast"),
+            e("option",{value:"cleanse"},"Cleanse"),
+            e("option",{value:"rebuild"},"Rebuild")
+          )
+        ),
+        e("div",null,
+          e("button",{className:"btn peach",onClick:()=>setEditing(true)},"Customize Day"),
+          day.custom && e("button",{className:"btn",style:{marginLeft:8},onClick:resetToTemplate},"Reset to Template"),
+          e("button",{className:"btn",style:{marginLeft:8},onClick:lmntQuickAdd},"Add LMNT Today")
         )
       )
-    );
-  };
+    ),
+
+    // progress
+    e(ProgressBar,{value:progress}),
+
+    // checklist
+    e(Checklist,{items, state:checks, onToggle:toggleCheck}),
+
+    // next 2 days ingredients (today + tomorrow)
+    e("div",{className:"card",style:{marginTop:16}},
+      e("h2",null,"Next 2 Days — Ingredients"),
+      nextItems.length===0
+        ? e("p",{style:{color:"#64748b"}},"No recipes scheduled in the next 2 days.")
+        : e("ul",{style:{listStyle:"none",padding:0,marginTop:8}},
+            nextItems.map(item =>
+              e("li",{key:item.name,style:{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:"1px solid #f3d0e1"}},
+                e("span",null,item.name," ",
+                  e("span",{className:"badge"},
+                    item.days.length===1 ? ("Day "+item.days[0]) : ("Day "+item.days[0]+"–"+item.days[item.days.length-1])
+                  )
+                ),
+                e("span",{style:{color:"#64748b",fontSize:12}}, item.qtyList.join(" + ") || "")
+              )
+            )
+          )
+    ),
+
+    // weight card
+    e("div",{className:"card",style:{marginTop:16}},
+      e("h2",null,"Weight"),
+      e("div",{style:{display:"flex",alignItems:"center",gap:8,margin:"8px 0"}},
+        e("label",null,"Today’s weight"),
+        e("input",{
+          type:"number", step:"0.1",
+          value:(day.weight==null?"":day.weight),
+          onChange:(ev)=>{
+            const v = ev.target.value;
+            setDays(prev=>{
+              const next = prev.slice();
+              const d = { ...next[idx] };
+              d.weight = (v==="" ? null : Number(v));
+              if (v !== "" && ((d.checks && "weight" in d.checks) || activeIds.indexOf("weight") !== -1)) {
+                const c = { ...(d.checks || {}) }; c.weight = true; d.checks = c;
+              }
+              next[idx] = d;
+              return next;
+            });
+          },
+          style:{width:120}
+        }),
+        e("span",{className:"badge"},"Day "+day.day)
+      ),
+      e("div",{style:{marginTop:8}}, e(WeightChart,{series:weightSeries}))
+    ),
+
+    // editor
+    editing && e("div",{className:"card",style:{marginTop:16,borderColor:"#f9c2a7"}},
+      e("h2",null,"Customize Day "+day.day),
+      e("p",{style:{color:"#64748b",margin:"6px 0 12px"}},"Drag to reorder; add/remove goals just for this day."),
+      e("ul",{style:{listStyle:"none",padding:0}},
+        localIds.map((id,i)=> e("li",{
+            key:id,draggable:true,
+            onDragStart:(ev)=>handleDragStart(i,ev),
+            onDragOver:(ev)=>ev.preventDefault(),
+            onDrop:(ev)=>handleDrop(i,ev),
+            style:{display:"flex",alignItems:"center",padding:8,marginBottom:6,border:"1px solid #f3d0e1",borderRadius:12,background:"#fff"}
+          },
+          e("span",{style:{width:18,marginRight:8,opacity:.6}},"⋮⋮"),
+          e("span",{style:{flex:1}},GOAL_LIBRARY[id]||id),
+          e("button",{className:"btn",onClick:()=>removeGoal(id)},"Remove")
+        ))
+      ),
+      e("div",null,
+        e("button",{className:"btn peach",onClick:addGoal},"Add Goal"),
+        e("button",{className:"btn",style:{marginLeft:8},onClick:()=>setEditing(false)},"Cancel"),
+        e("button",{className:"btn",style:{marginLeft:8},onClick:applyCustom},"Save")
+      )
+    )
+  );
+};
 
   /* ---------- App ---------- */
   const App = () => {
