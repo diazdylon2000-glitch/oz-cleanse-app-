@@ -80,6 +80,18 @@ body{ padding-top:env(safe-area-inset-top); padding-bottom:env(safe-area-inset-b
 .mastTitle{display:flex;flex-direction:column}
 .mastTitle b{font-size:18px;line-height:1}
 .mastTitle small{color:#64748b}
+    /* Dashboard header polish + arrow alignment */
+.dash-header{display:flex;align-items:center;justify-content:space-between}
+.dash-header-left{display:flex;align-items:center;gap:10px}
+.oz-icon{width:40px;height:40px;border-radius:9999px;object-fit:cover;border:2px solid #fff}
+.dash-title{font-size:18px;line-height:1;margin:0}
+.dash-subtitle{font-size:12px;color:#64748b;margin-top:4px}
+
+.day-nav{display:flex;align-items:center;gap:8px}
+.day-btn{background:#fff;border:2px solid #f3d0e1;border-radius:12px;padding:6px 10px;cursor:pointer}
+.day-btn:active{transform:translateY(1px)}
+.day-label{font-weight:600;border:1px solid #e7ccd7;background:#fff;border-radius:9999px;padding:4px 10px}
+
     html,body{margin:0;background:var(--cream);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
     h1,h2{margin:0 0 8px 0}
     .wrap{max-width:940px;margin:16px auto 96px;padding:0 16px}
@@ -590,31 +602,22 @@ const Dashboard = ({ templates, days, setDays, recipes }) => {
   return e(React.Fragment, null,
 
     // mast
-    e("div",{className:"mast card"},
-      e("div",{className:"mastRow"},
-        e("div",{className:"mastLeft"},
-          e("img",{src:"oz.png",alt:"Oz"}),
-          e("div",{className:"mastTitle"},
-            e("b",null,"Oz Cleanse Companion"),
-            e("small",null,(day.custom ? "Custom • " : "Template • ") + day.phase.toUpperCase())
-          )
-        ),
-        e("div",null,
-          e("button",{className:"btn",onClick:()=>changeDay(-1)},"◀"),
-          e("span",{className:"badge",style:{margin:"0 8px"}},"Day "+day.day),
-          e("button",{className:"btn",onClick:()=>changeDay(1)},"▶")
-        )
-      ),
-      e("div",{className:"mastRow",style:{marginTop:8}},
-        e("div",null,
-          e("select",{value:day.phase,onChange:(ev)=>setPhase(ev.target.value),className:"btn"},
-            e("option",{value:"fast"},"Fast"),
-            e("option",{value:"cleanse"},"Cleanse"),
-            e("option",{value:"rebuild"},"Rebuild")
-          )
-        )
+e("div",{className:"mast card dash-header"},
+  e("div",{className:"dash-header-left"},
+    e("img",{src:"oz.png",alt:"Oz",className:"oz-icon"}),
+    e("div",null,
+      e("h2",{className:"dash-title"},"Oz Cleanse Companion"),
+      e("div",{className:"dash-subtitle"},
+        (day.custom ? "Custom • " : "Template • "), day.phase.toUpperCase()
       )
-    ),
+    )
+  ),
+  e("div",{className:"day-nav"},
+    e("button",{className:"day-btn",onClick:()=>changeDay(-1)},"◀"),
+    e("span",{className:"day-label"},"Day "+day.day),
+    e("button",{className:"day-btn",onClick:()=>changeDay(1)},"▶")
+  )
+),
 
     // progress
     e(ProgressBar,{value:progress}),
