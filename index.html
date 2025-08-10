@@ -252,18 +252,64 @@ const Checklist = ({ items, state, onToggle }) =>
 const WeightChart = ({ series }) => {
   const canvasRef = useRef(null);
   const chartRef = useRef(null);
-  useEffect(()=>{
+
+  useEffect(() => {
     const ctx = canvasRef.current.getContext("2d");
-    if(chartRef.current){ try{ chartRef.current.destroy(); }catch(e){} }
+    if (chartRef.current) { try { chartRef.current.destroy(); } catch(e){} }
+
     chartRef.current = new Chart(ctx, {
-      type:"line",
-      data:{ labels: series.map((_,i)=>"Day "+(i+1)),
-             datasets:[{ data:series, borderColor:"#ec4899", backgroundColor:"rgba(236,72,153,.15)", tension:.35, spanGaps:true, pointRadius:2 }] },
-      options:{ responsive:true, plugins:{ legend:{ display:false }}, scales:{ y:{ ticks:{ callback:v=>v||"" } } }, animation:{ duration:200 } }
+      type: "line",
+      data: {
+        labels: series.map((_, i) => "Day " + (i + 1)),
+        datasets: [{
+          data: series,
+          borderColor: "#ec4899",
+          backgroundColor: "rgba(236,72,153,.15)",
+          tension: 0.35,
+          spanGaps: true,
+          pointRadius: 2,
+          pointHitRadius: 8
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        layout: { padding: { top: 4, right: 4, bottom: 8, left: 4 } },
+        scales: {
+          x: {
+            ticks: {
+              color: "#6b7280",        // readable gray
+              font: { size: 11 },
+              maxRotation: 0,
+              autoSkip: true
+            },
+            grid: { display: false }
+          },
+          y: {
+            ticks: {
+              color: "#6b7280",
+              font: { size: 11 },
+              callback: v => (v == null ? "" : v)
+            },
+            grid: { color: "rgba(0,0,0,.06)" }
+          }
+        },
+        animation: { duration: 200 }
+      }
     });
-    return ()=>{ try{ chartRef.current && chartRef.current.destroy(); }catch(e){} };
+
+    const onOrient = () => chartRef.current && chartRef.current.resize();
+    window.addEventListener("orientationchange", onOrient);
+
+    return () => {
+      window.removeEventListener("orientationchange", onOrient);
+      try { chartRef.current && chartRef.current.destroy(); } catch(e){}
+    };
   }, [series]);
-  return e("canvas", { ref:canvasRef, height:120 });
+
+  // give the chart room so x-axis labels aren't clipped
+  return e("div", { style: { height: 160 } }, e("canvas", { ref: canvasRef }));
 };
 
 /* --------- Pages --------- */
@@ -422,11 +468,11 @@ const COACH_RULES = [
 ];
 
 /* --------- Dashboard --------- */
-const Dashboard = ({ templates, days, setDays, recipes }) => {
-  const [idx, setIdx] = useState(0);
+function Dashboard({ templates, days, setDays, recipes }) {
+  const [idx, setIdx] = React.useState(0);
   const day = days[idx] || days[0];
 
-  // Next ingredients (today+tomorrow or next two days with recipes)
+  /* ---------- next-ingredients: today+tomorrow (or next two recipe days) ---------- */
   function nextTwoDayIngredients(currentDay){
     const tryDays = (d1, d2) => {
       const want = new Set([d1, d2]);
@@ -434,29 +480,31 @@ const Dashboard = ({ templates, days, setDays, recipes }) => {
       (recipes || []).forEach(r => {
         if (!r.day || !want.has(r.day)) return;
         (r.ingredients || []).forEach(it => {
-          const key = (it.key || it.name || "").toLowerCase();
-          if (!bag[key]) bag[key] = { name: it.name, qtyList: [], days: new Set() };
-          if (it.qty) bag[key].qtyList.push(it.qty + (r.type==="juice" && r.servings?` ×${r.servings}`:""));
-          bag[key].days.add(r.day);
+          const k = (it.key || it.name || "").toLowerCase();
+          if (!bag[k]) bag[k] = { name: it.name, qtyList: [], days: new Set() };
+          const tag = (r.type==="juice" && r.servings) ? ` ×${r.servings}` : "";
+          if (it.qty) bag[k].qtyList.push(String(it.qty)+tag);
+          bag[k].days.add(r.day);
         });
       });
       Object.keys(bag).forEach(k => bag[k].days = Array.from(bag[k].days).sort((a,b)=>a-b));
       return Object.values(bag).sort((a,b)=>(a.name||"").localeCompare(b.name||""));
     };
+
     const strict = tryDays(currentDay.day, currentDay.day + 1);
     if (strict.length) return { items: strict, label: "Today + Tomorrow — Ingredients" };
 
     const futureDays = Array.from(new Set((recipes||[]).filter(r => r.day >= currentDay.day).map(r => r.day))).sort((a,b)=>a-b);
     const pool = futureDays.slice(0,2);
-    if (pool.length === 0) return { items: [], label: "Upcoming Ingredients" };
+    if (!pool.length) return { items: [], label: "Upcoming Ingredients" };
 
     const fallback = tryDays(pool[0], pool[1] || pool[0]);
-    const label = pool.length === 2 ? `Upcoming Ingredients — Day ${pool[0]} & ${pool[1]}` : `Upcoming Ingredients — Day ${pool[0]}`;
-    return { items: fallback, label };
+    const label = pool.length===2 ? `Upcoming Ingredients — Day ${pool[0]} & ${pool[1]}` : `Upcoming Ingredients — Day ${pool[0]}`;
+    return { items:fallback, label };
   }
   const { items: nextItems, label: nextLabel } = nextTwoDayIngredients(day);
 
-  // Checklist from template or custom order
+  /* ---------- checklist + progress ---------- */
   const templateIds = templates[day.phase] || [];
   const activeIds = (day.order && day.order.length ? day.order : templateIds);
   const items = activeIds.map(id => ({ id, label: GOAL_LIBRARY[id] || id }));
@@ -466,7 +514,11 @@ const Dashboard = ({ templates, days, setDays, recipes }) => {
   const progress = (doneCount / totalCount) * 100;
   const weightSeries = days.map(d => (d.weight == null ? null : d.weight));
 
-  useEffect(()=>{ if (Math.round(progress) === 100) window.safeConfetti({ particleCount: 90, spread: 70, origin: { y: .6 } }); }, [progress]);
+  React.useEffect(() => {
+    if (Math.round(progress) === 100 && window.safeConfetti) {
+      window.safeConfetti({ particleCount: 90, spread: 70, origin: { y: .6 } });
+    }
+  }, [progress]);
 
   function toggleCheck(id){
     setDays(prev => {
@@ -484,135 +536,219 @@ const Dashboard = ({ templates, days, setDays, recipes }) => {
   }
   function changeDay(dir){ setIdx(cur => { let n = cur + dir; if (n < 0) n = days.length - 1; if (n >= days.length) n = 0; return n; }); }
 
-  // Smart Coach — detect symptoms + mood from notes
-  const [coachText, setCoachText] = useState("");
+  /* ---------- Smart Coach (UI only; does NOT modify notes) ---------- */
+  const [coachText, setCoachText] = React.useState("");
+
+  // More matchers (tripled breadth vs earlier)
   const SYM_MATCHERS = [
-    {id:"headache",rx:/\b(headache|migraine|head pain)\b/i},
-    {id:"dizziness",rx:/\b(dizzy|light[-\s]?headed|vertigo)\b/i},
-    {id:"nausea",rx:/\b(nausea|queasy|sick to (my|the) stomach)\b/i},
-    {id:"fatigue",rx:/\b(tired|fatigue|exhaust(ed|ion)|wiped|low energy)\b/i},
-    {id:"brain-fog",rx:/\b(brain[-\s]?fog|foggy|can.?t focus)\b/i},
-    {id:"constipation",rx:/\b(constipat(ed|ion)|no (bm|bowel)|hard stool)\b/i},
-    {id:"cramps",rx:/\b(cramps?|charley horse|spasm)\b/i},
-    {id:"cold",rx:/\b(chills?|feeling cold|freezing)\b/i},
-    {id:"insomnia",rx:/\b(can.?t sleep|insomnia|up all night|poor sleep)\b/i},
-    {id:"hunger",rx:/\b(hungry|starv(ed|ing)|crav(ing|es))\b/i},
-    {id:"anxiety",rx:/\b(anxious|anxiety|panicky|overwhelm(ed)?)\b/i},
-    {id:"bloating",rx:/\b(bloat(ed|ing)|gassy|gas)\b/i}
+    {id:"headache",     rx:/\b(headache|migraine|head pain|temple ache)\b/i},
+    {id:"dizziness",    rx:/\b(dizzy|light[-\s]?headed|vertigo|spinning)\b/i},
+    {id:"nausea",       rx:/\b(nausea|queasy|sick (to|in) (my|the) stomach)\b/i},
+    {id:"fatigue",      rx:/\b(tired|fatigue|exhaust(ed|ion)|drained|wiped)\b/i},
+    {id:"brain-fog",    rx:/\b(brain[-\s]?fog|foggy|can.?t focus|spacey)\b/i},
+    {id:"constipation", rx:/\b(constipat(ed|ion)|no (bm|bowel)|hard stool)\b/i},
+    {id:"cramps",       rx:/\b(cramps?|charley horse|spasm|tight calves)\b/i},
+    {id:"cold",         rx:/\b(chills?|feeling cold|freezing|cold hands)\b/i},
+    {id:"insomnia",     rx:/\b(can.?t sleep|insomnia|up all night|poor sleep|restless)\b/i},
+    {id:"hunger",       rx:/\b(hungry|starv(ed|ing)|crav(ing|es)|snack(y|ish))\b/i},
+    {id:"anxiety",      rx:/\b(anxious|anxiety|panicky|overwhelm(ed)?)\b/i},
+    {id:"bloating",     rx:/\b(bloat(ed|ing)|gassy|gas|puffy)\b/i},
+    {id:"heartburn",    rx:/\b(heartburn|acid reflux|indigestion)\b/i},
+    {id:"soreness",     rx:/\b(sore|achey|muscle pain|DOMS)\b/i},
+    {id:"dehydration",  rx:/\b(dry mouth|thirsty|dark urine)\b/i}
   ];
-  function inferMoodFrom(text){
+
+  const COACH_RULES = [
+    { id:"headache", test:ctx=>ctx.syms.has("headache"),
+      tips:["Sip 8–12 oz water over 15 minutes.",
+            "Add a pinch of sea salt or electrolyte.",
+            "Dim screens and rest eyes for 5–10 minutes."] },
+    { id:"dizziness", test:ctx=>ctx.syms.has("dizziness"),
+      tips:["Sit or lie until steady.",
+            "Small juice or a pinch of salt if fasting.",
+            "Breathe in 4 / out 6."] },
+    { id:"nausea", test:ctx=>ctx.syms.has("nausea"),
+      tips:["Sip cool water or ginger/peppermint tea.",
+            "Fresh air + slow, deep breaths.",
+            "Avoid quick posture changes."] },
+    { id:"fatigue", test:ctx=>ctx.syms.has("fatigue"),
+      tips:["15–20 minute rest.",
+            "Hydrate or take electrolytes.",
+            "2 minutes of gentle stretching."] },
+    { id:"brain-fog", test:ctx=>ctx.syms.has("brain-fog"),
+      tips:["Stand + shoulder rolls for 60s.",
+            "8–12 oz water.",
+            "5 minutes of sunlight if possible."] },
+    { id:"constipation", test:ctx=>ctx.syms.has("constipation"),
+      tips:["Increase water + electrolytes.",
+            "At rebuild: chia or leafy greens.",
+            "Short walk after meals."] },
+    { id:"cramps", test:ctx=>ctx.syms.has("cramps"),
+      tips:["Electrolytes today.",
+            "Gentle calf/quad stretches.",
+            "Magnesium-rich foods at rebuild."] },
+    { id:"cold", test:ctx=>ctx.syms.has("cold"),
+      tips:["Warm tea + extra layer.",
+            "Warm shower.",
+            "Short walk to boost circulation."] },
+    { id:"insomnia", test:ctx=>ctx.syms.has("insomnia"),
+      tips:["No screens 60 min before bed.",
+            "Magnesium + warm non-caffeinated tea.",
+            "Cool, dark bedroom."] },
+    { id:"hunger", test:ctx=>ctx.syms.has("hunger"),
+      tips:["Drink water first.",
+            "Have scheduled juice slowly.",
+            "5-minute walk or distraction reset."] },
+    { id:"anxiety", test:ctx=>ctx.syms.has("anxiety"),
+      tips:["Box breathing 4-4-4-4 for 1 minute.",
+            "Grounding: name 5 things you see.",
+            "Write one sentence intention."] },
+    { id:"bloating", test:ctx=>ctx.syms.has("bloating"),
+      tips:["Smaller, slower sips.",
+            "10–15 minute gentle walk.",
+            "Peppermint or fennel tea."] },
+    { id:"heartburn", test:ctx=>ctx.syms.has("heartburn"),
+      tips:["Avoid lying down 2–3 hours after intake.",
+            "Smaller portions, slower sips.",
+            "Ginger tea; avoid very acidic juices today."] },
+    { id:"soreness", test:ctx=>ctx.syms.has("soreness"),
+      tips:["Light mobility flows.",
+            "Warm shower then gentle stretching.",
+            "Steady hydration for recovery."] },
+    { id:"dehydration", test:ctx=>ctx.syms.has("dehydration"),
+      tips:["16–20 oz water now.",
+            "Add electrolytes.",
+            "Check urine — aim for pale straw color."] }
+  ];
+
+  const COACH_AFFIRM = [
+    "You’ve got this! 💪","Proud of your effort today. 🌟","Oz is wagging his tail for you! 🐶",
+    "One step at a time — you’re doing amazing.","Keep going, your future self will thank you.",
+    "Tiny wins add up.","Consistency beats intensity.","You’re building something real.",
+    "Strong body, kind mind.","Your glow is coming through.","Hydration nation ✨","Breathe, sip, reset.",
+    "Today counts.","I see your effort.","Momentum looks good on you.","You’re learning your body.",
+    "You can do hard things.","Grace + grit.","Keep stacking wins.","Be proud of showing up.",
+    "Progress, not perfection.","Calm is a superpower.","You’re getting lighter in every way.",
+    "Nice and steady.","You’re in the arena.","This is self-respect in action.",
+    "The best time is now.","Joy in the journey.","Your effort matters."
+  ];
+
+  function inferMood(text){
     let score = 6;
     const t = (text||"").toLowerCase();
     const neg = [/overwhelm|anxious|stressed|down|sad|discouraged|frustrat/,/tired|exhaust|wiped|drained/,/pain|hurt|ache/].reduce((n,rx)=> n+(rx.test(t)?1:0),0);
     const pos = [/proud|strong|good|better|energized|motivated|win|progress|calm|happy|light/].reduce((n,rx)=> n+(rx.test(t)?1:0),0);
-    score += pos - 2*neg;
-    return Math.max(1, Math.min(10, score));
+    score += pos - 2*neg; return Math.max(1, Math.min(10, score));
   }
-  function analyzeFromNotes(){
+
+  function coachFromNotes(){
     const text = (day.note || "").trim();
     if(!text){ setCoachText("Write a note, then tap Coach."); return; }
+
     const found = new Set(SYM_MATCHERS.filter(m=>m.rx.test(text)).map(m=>m.id));
-    const mood = inferMoodFrom(text);
+    const mood = inferMood(text);
     const ctx = { syms: found, phase: day.phase };
-    const hits = COACH_RULES.filter(r=>{ try{return r.test(ctx);}catch{return false;}});
-    const tips = hits.flatMap(h=>h.tips).slice(0,8);
+    const tips = COACH_RULES.filter(r=>{ try{return r.test(ctx);}catch{return false;} })
+                            .flatMap(h=>h.tips).slice(0,8);
 
     const moodBoost = (mood<=3)
-      ? ["You’re not alone — let’s make today gentle.","Pick one tiny win now (8–10 oz water, 3 deep breaths).", COACH_AFFIRM[Math.floor(Math.random()*COACH_AFFIRM.length)]]
+      ? ["You’re not alone — let’s make today gentle.",
+         "One tiny win now (8–10 oz water, 3 deep breaths).",
+         COACH_AFFIRM[Math.floor(Math.random()*COACH_AFFIRM.length)]]
       : (mood<=6)
-        ? ["Nice work staying steady. One small upgrade today.", COACH_AFFIRM[Math.floor(Math.random()*COACH_AFFIRM.length)]]
-        : [COACH_AFFIRM[Math.floor(Math.random()*COACH_AFFIRM.length)], "Ride the wave, stay kind to yourself."];
+        ? ["Nice work staying steady. One small upgrade today.",
+           COACH_AFFIRM[Math.floor(Math.random()*COACH_AFFIRM.length)]]
+        : [COACH_AFFIRM[Math.floor(Math.random()*COACH_AFFIRM.length)],
+           "Ride the wave, stay kind to yourself."];
 
     const header = found.size ? `I noticed: ${Array.from(found).join(", ")}.` : "No specific symptoms spotted — here’s a steady plan.";
-    const body = tips.length ? ("Try these:\n• " + tips.join("\n• ")) : "Hydrate now, 5 slow breaths, short walk, then reassess.";
+    const body = tips.length ? ("Try these:\n• " + tips.join("\n• ")) : "Hydrate now, 5 slow breaths, a short walk, then reassess.";
     setCoachText(`${header}\n\n${body}\n\n${moodBoost.join(" ")}`);
   }
-  function appendCoachToNotes(){
-    if(!coachText) return;
-    const divider = (day.note && day.note.trim()? "\n\n" : "");
-    const stamp = new Date().toLocaleString();
-    const toAdd = `${divider}Coach (${stamp}):\n${coachText}`;
-    setDays(prev=>{
-      const next = prev.slice();
-      const d2 = {...next[idx]};
-      d2.note = (d2.note||"") + toAdd;
-      next[idx] = d2;
-      return next;
-    });
-    setCoachText("");
-  }
 
+  /* ---------- UI ---------- */
   return e(React.Fragment, null,
-    // mast
-e("div",{className:"mast card"},
-  e("div",{className:"mastRow"},
-    e("div",{className:"mastLeft"},
-      e("img",{src:"oz.png",alt:"Oz"}),
-      e("div",{className:"mastTitle"},
-        e("b",null,"Oz Companion"),
-        e("small",null, day.phase.toUpperCase())
+
+    // Masthead card (day controls + phase select)
+    e("div",{className:"mast card"},
+      e("div",{className:"mastRow"},
+        e("div",{className:"mastLeft"},
+          e("img",{src:"oz.png",alt:"Oz"}),
+          e("div",{className:"mastTitle"},
+            e("b",null,"Oz Companion"),
+            e("small",null,(day.custom ? "Custom • " : "Template • ")+day.phase.toUpperCase())
+          )
+        ),
+        e("div",null,
+          e("button",{className:"btn",onClick:()=>changeDay(-1)},"◀"),
+          e("span",{className:"badge",style:{margin:"0 8px"}},"Day "+day.day),
+          e("button",{className:"btn",onClick:()=>changeDay(1)},"▶")
+        )
+      ),
+      e("div",{className:"mastRow",style:{marginTop:8}},
+        e("div",null,
+          e("select",{value:day.phase,onChange:(ev)=>setPhase(ev.target.value),className:"btn"},
+            e("option",{value:"fast"},"Fast"),
+            e("option",{value:"cleanse"},"Cleanse"),
+            e("option",{value:"rebuild"},"Rebuild")
+          )
+        )
       )
     ),
-    e("div",{className:"day-nav"},
-      e("button",{className:"day-btn",onClick:()=>changeDay(-1),"aria-label":"Previous day"},"◀"),
-      e("span",{className:"day-label"},"Day "+day.day),
-      e("button",{className:"day-btn",onClick:()=>changeDay(1),"aria-label":"Next day"},"▶")
-    )
-  ),
-  e("div",{className:"mastRow",style:{marginTop:8}},
-    e("select",{value:day.phase,onChange:(ev)=>setPhase(ev.target.value),className:"btn","aria-label":"Phase"},
-      e("option",{value:"fast"},"Fast"),
-      e("option",{value:"cleanse"},"Cleanse"),
-      e("option",{value:"rebuild"},"Rebuild")
-    )
-  )
-),
 
-    // progress
-    e(ProgressBar,{value:progress}),
+    // Progress bar
+    e("div",{className:"prog"}, e("div",{className:"fill",style:{width:Math.max(0,Math.min(100,progress))+"%"}})),
 
-    // checklist
-    e(Checklist,{items, state:checks, onToggle:toggleCheck}),
+    // Checklist with paw toggles
+    e("ul",{className:"list"},
+      items.map(it =>
+        e("li",{key:it.id,className:"item"},
+          e("button",{className:"paw"+(checks[it.id]?" on":""),onClick:()=>toggleCheck(it.id)}, checks[it.id]?"🐾":""),
+          e("label",null,it.label)
+        )
+      )
+    ),
 
-  // Daily Notes + Smart Coach (no preview button)
-e("div",{className:"card",style:{marginTop:16}},
-  e("h2",null,"Daily Notes"),
-  e("div",{className:"coachHeader"},
-    e("div",{className:"pill"},"🧠 Smart Coach"),
-    e("small",null,"Understands your note and suggests relief + motivation")
-  ),
-  e("div",{className:"coachBtns"},
-    e("button",{className:"btn primary",onClick:analyzeFromNotes},"Coach"),
-    e("button",{className:"btn",onClick:appendCoachToNotes,disabled:!coachText},"Add to notes")
-  ),
-  coachText && e("div",{className:"coachOut"}, coachText),
-  e("textarea",{
-    value: day.note || "",
-    onChange:(ev)=>{
-      const val = ev.target.value;
-      setDays(prev=>{
-        const next = prev.slice();
-        const d = {...next[idx]};
-        d.note = val;
-        next[idx] = d;
-        return next;
-      });
-    },
-    rows:4, className:"noteArea"
-  })
-),
-    // Next ingredients
+    // Daily Notes + Smart Coach (NO preview; does not modify notes)
     e("div",{className:"card",style:{marginTop:16}},
-      e("h2", null, nextLabel),
-      nextItems.length === 0
+      e("h2",null,"Daily Notes"),
+      e("div",{style:{display:"flex",alignItems:"center",gap:10,margin:"6px 0 10px"}},
+        e("span",{className:"badge"},"🧠 Smart Coach"),
+        e("small",null,"Understands your note and suggests relief + motivation")
+      ),
+      e("div",{style:{display:"flex",gap:8,marginBottom:10}},
+        e("button",{className:"btn peach",onClick:coachFromNotes},"Coach")
+      ),
+      coachText && e("div",{className:"coachOut"}, coachText),
+      e("textarea",{
+        value: day.note || "",
+        onChange:(ev)=>{
+          const val = ev.target.value;
+          setDays(prev=>{
+            const next = prev.slice();
+            const d = {...next[idx]};
+            d.note = val;
+            next[idx] = d;
+            return next;
+          });
+        },
+        rows:4,
+        className:"noteArea"
+      })
+    ),
+
+    // Upcoming ingredients
+    e("div",{className:"card",style:{marginTop:16}},
+      e("h2",null,nextLabel),
+      nextItems.length===0
         ? e("p",{style:{color:"#64748b"}},"No recipes scheduled soon.")
         : e("ul",{style:{listStyle:"none",padding:0,marginTop:8}},
             nextItems.map(item =>
               e("li",{key:item.name,style:{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:"1px solid #f3d0e1"}},
-                e("span", null,
-                  item.name, " ",
+                e("span",null,
+                  item.name," ",
                   e("span",{className:"badge"},
-                    item.days.length === 1 ? ("Day " + item.days[0]) : ("Day " + item.days[0] + "–" + item.days[item.days.length - 1])
+                    item.days.length===1 ? ("Day "+item.days[0]) : ("Day "+item.days[0]+"–"+item.days[item.days.length-1])
                   )
                 ),
                 e("span",{style:{color:"#64748b",fontSize:12}}, item.qtyList.join(" + ") || "")
@@ -621,7 +757,7 @@ e("div",{className:"card",style:{marginTop:16}},
           )
     ),
 
-    // weight card
+    // Weight
     e("div",{className:"card",style:{marginTop:16}},
       e("h2",null,"Weight"),
       e("div",{style:{display:"flex",alignItems:"center",gap:8,margin:"8px 0"}},
@@ -638,7 +774,8 @@ e("div",{className:"card",style:{marginTop:16}},
               if (v !== "" && ((d.checks && "weight" in d.checks) || activeIds.indexOf("weight") !== -1)) {
                 const c = { ...(d.checks || {}) }; c.weight = true; d.checks = c;
               }
-              next[idx] = d; return next;
+              next[idx] = d;
+              return next;
             });
           },
           style:{width:120}
@@ -648,7 +785,7 @@ e("div",{className:"card",style:{marginTop:16}},
       e("div",{style:{marginTop:8}}, e(WeightChart,{series:weightSeries}))
     )
   );
-};
+}
 
 /* --------- App --------- */
 const App = () => {
