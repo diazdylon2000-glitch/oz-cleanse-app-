@@ -712,32 +712,61 @@ const Dashboard = ({ templates, days, setDays, recipes, goals }) => {
 
 // === Daily Notes + Smart Coach (replace this whole block) ===
 e("div",{className:"card",style:{marginTop:16}},
-  // Header row with badge + subtitle + Coach button
-  e("div",{
-    style:{
-      display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,
-      padding:"14px 12px",border:"1px solid #f3d0e1",borderRadius:14,
-      background:"linear-gradient(90deg,#ffe4ef,#e9d5ff)"
-    }
-  },
-    e("div",{style:{display:"flex",alignItems:"center",gap:12,minWidth:0}},
+ // === Header (Oz Companion + Phase) ===
+e("div",{
+  style:{
+    display:"flex",
+    alignItems:"center",
+    justifyContent:"space-between",
+    padding:"10px 12px",
+    background:"linear-gradient(90deg,#ffe4ef,#ffe9d6)",
+    borderRadius:14
+  }
+},
+  // Left side: Avatar + Name + Subtitle
+  e("div",{style:{display:"flex",alignItems:"center",gap:10}},
+    e("img",{
+      src:profilePic,
+      style:{width:42,height:42,borderRadius:"50%"}
+    }),
+    e("div",null,
       e("div",{
         style:{
-          borderRadius:14,border:"1px solid #f3d0e1",background:"#fff",
-          padding:"10px 14px",fontWeight:800,fontSize:18,whiteSpace:"nowrap"
+          fontSize:"1.4rem",
+          fontWeight:"bold",
+          lineHeight:"1.2",
+          whiteSpace:"nowrap"
         }
-      },"🧠 Smart Coach"),
-      e("div",{style:{color:"#475569",minWidth:0,overflow:"hidden",textOverflow:"ellipsis"}},
-        "Understands your note and suggests relief + motivation"
-      )
-    ),
-    e("div",null,
-      e("button",
-        { className:"btn primary", onClick:coach, style:{whiteSpace:"nowrap"} },
-        "Coach"
-      )
+      },"Oz Companion"),
+      e("div",{
+        style:{
+          fontSize:"0.7rem",
+          fontWeight:"500",
+          letterSpacing:"1px",
+          color:"#666",
+          textTransform:"uppercase"
+        }
+      }, currentPhase) // e.g., FAST / CLEANSE / REBUILD
     )
   ),
+
+  // Right side: Day navigation
+  e("div",{style:{display:"flex",alignItems:"center",gap:8}},
+    e("button",{className:"navBtn",onClick:prevDay},"◀"),
+    e("div",{
+      style:{
+        fontWeight:"bold",
+        fontSize:"1rem",
+        padding:"6px 10px",
+        background:"#fff",
+        borderRadius:"50%",
+        minWidth:"38px",
+        textAlign:"center"
+      }
+    },"Day " + currentDay),
+    e("button",{className:"navBtn",onClick:nextDay},"▶")
+  )
+)
 
   // Coach output (UI only)
   coachText && e("div",
