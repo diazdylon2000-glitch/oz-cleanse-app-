@@ -356,42 +356,46 @@ body{ padding-top:env(safe-area-inset-top); padding-bottom:env(safe-area-inset-b
     );
   };
 
-  const Calendar = ({ days, recipes, settings }) => {
-    function dateFor(dayNum){
-      const dstr = settings.phaseTemplates.__startDate || "";
-      if(!dstr) return null;
-      const base = new Date(dstr+"T00:00:00");
-      if(isNaN(base)) return null;
-      const dt = new Date(base.getTime() + (dayNum-1)*86400000);
-      return dt.toLocaleDateString();
-    }
-return e("div", { className:"wrap" },
-  e("h1", null, "Calendar"),
-  e("ul", { style:{ listStyle:"none", padding:0, marginTop:8 } },
- days.map(d=>{
-  const dRecipes = recipes.filter(r=> r.day===d.day);
-  const dd = dateFor(d.day);
-  return e("li", { key:d.day, className:"card", style:{ marginBottom:8 }},
-    e("div", { style:{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:8 }},
-      e("div", null,
-        e("div", { style:{ fontWeight:600 } }, "Day ", d.day, " — ", d.phase.toUpperCase()),
-        dd && e("div", { className:"badge", style:{ marginTop:6 } }, dd)
-      ),
-      e("div", { style:{ display:"flex", gap:6, flexWrap:"wrap", minHeight:24 }},
-        dRecipes.length
-          ? dRecipes.map(r =>
-              e("span", { key:r.id, className:"badge" },
-                (r.type==="juice"?"🧃 ":"🍽️ "), r.name
-              )
+const Calendar = ({ days, recipes, settings }) => {
+  function dateFor(dayNum){
+    const dstr = settings.phaseTemplates.__startDate || "";
+    if(!dstr) return null;
+    const base = new Date(dstr+"T00:00:00");
+    if(isNaN(base)) return null;
+    const dt = new Date(base.getTime() + (dayNum-1)*86400000);
+    return dt.toLocaleDateString();
+  }
+
+  return e("div", { className:"wrap" },
+    e("h1", null, "Calendar"),
+    e("ul", { style:{ listStyle:"none", padding:0, marginTop:8 } },
+      days.map(d => {
+        const dRecipes = recipes.filter(r => r.day === d.day);
+        const dd = dateFor(d.day);
+        return e("li", { key:d.day, className:"card", style:{ marginBottom:8 } },
+          e("div", { style:{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:8 } },
+            e("div", null,
+              e("div", { style:{ fontWeight:600 } }, "Day ", d.day, " — ", d.phase.toUpperCase()),
+              dd && e("div", { className:"badge", style:{ marginTop:6 } }, dd)
+            ),
+            e("div", { style:{ display:"flex", gap:6, flexWrap:"wrap", minHeight:24 } },
+              dRecipes.length
+                ? dRecipes.map(r =>
+                    e("span", { key:r.id, className:"badge" }, (r.type==="juice"?"🧃 ":"🍽️ "), r.name)
+                  )
+                : (
+                    d.note
+                      ? e("span", { className:"badge" },"📝 Note")
+                      : e("span", { style:{ fontSize:12, color:"#64748b" } }, "—")
+                  )
             )
-          : (d.note
-              ? e("span",{className:"badge", style:{marginLeft:6}},"📝 Note")
-              : e("span", { style:{ fontSize:12, color:"#64748b" } }, "—")
-            )
-      )
+          )
+        );
+      })
     )
   );
-})
+};
+
 
 
 
@@ -670,10 +674,11 @@ e("div",{className:"card",style:{marginTop:16}},
     style:{
       width:"100%", resize:"vertical",
       border:"1px solid #f3d0e1", borderRadius:12, padding:"8px",
-      fontSize:16 // iOS no-zoom typing
+      fontSize:16
     }
   })
 ),
+
 
 // Next-ingredients card
 e("div",{className:"card",style:{marginTop:16}},
