@@ -258,14 +258,34 @@ function aggregateGroceries(recipes){
 }
 
 /* ---------------- Components ---------------- */
+/* ---------------- Components ---------------- */
 const ProgressBar = ({ value }) =>
-  e("div", { className:"prog" }, e("div", { className:"fill", style:{ width: Math.max(0, Math.min(100, value))+"%" } })));
+  e(
+    "div",
+    { className: "prog" },
+    e("div", {
+      className: "fill",
+      style: { width: Math.max(0, Math.min(100, value)) + "%" }
+    })
+  );
 
 const Checklist = ({ items, state, onToggle }) =>
-  e("ul", { className:"list" },
+  e(
+    "ul",
+    { className: "list" },
     items.map(it =>
-      e("li", { key:it.id, className:"item" },
-        e("button", { className:"paw"+(state[it.id]?" on":""), onClick:()=>onToggle(it.id), "aria-pressed":!!state[it.id], title: state[it.id] ? "Uncheck" : "Check" }, state[it.id]?"🐾":""),
+      e(
+        "li",
+        { key: it.id, className: "item" },
+        e(
+          "button",
+          {
+            className: "paw" + (state[it.id] ? " on" : ""),
+            onClick: () => onToggle(it.id),
+            "aria-pressed": !!state[it.id]
+          },
+          state[it.id] ? "🐾" : ""
+        ),
         e("label", null, it.label)
       )
     )
