@@ -628,34 +628,38 @@ const Dashboard = ({ templates, days, setDays, recipes, goals, allowPulse }) => 
     ),
 
     // Smart Coach (card-as-button)
-    e("div",{className:"card",style:{marginTop:16}},
-      e("div",{
-        className:"coachBtn coachPulse "+(allowPulse && hasFresh ? "pulsing": ""),
-        role:"button",
-        tabIndex:0,
-        "aria-label":"Smart Coach. Tap to analyze your note and get suggestions.",
-        onClick:runCoach,
-        onKeyDown:(ev)=>{ if(ev.key==="Enter"||ev.key===" ") {ev.preventDefault(); runCoach();} }
-      },
-        e("div",{className:"coachLeft"},
-          e("div",{className:"coachPill"},"🧠 Smart Coach"),
-          e("div",{className:"coachHint"},"Understands your note and suggests relief + motivation")
-        ),
-        e("div",{className:"badge"},"Tap")
-      ),
-      coachText && e("div",{className:"coachOut"}, coachText),
-      e("textarea",{
-        value: day.note || "",
-        onChange:(ev)=>{
-          const val = ev.target.value;
-          setCoachText(""); // clear old output once note edits begin
-          setDays(prev=>{ const next=prev.slice(); const d={...next[idx]}; d.note=val; next[idx]=d; return next; });
-        },
-        rows:4, className:"noteArea", placeholder:"Jot a few words about how you feel…"
-      })
+  e("div",{className:"card",style:{marginTop:16}},
+  e("div",{className:"coachHead"},
+    e("button",{
+      className:"coachPill",
+      onClick:coach,                  // this is your coach() function
+      "aria-label":"Run Smart Coach"
+    },
+      "🧠 Smart Coach"
     ),
+    e("div",{className:"coachHint"},"Understands your note and suggests relief + motivation")
+  ),
 
-    // Next ingredients
+  // coach output (UI only)
+  coachText && e("div",{
+    className:"coachOut",
+    style:{marginTop:10}
+  }, coachText),
+
+  // your note field
+  e("textarea",{
+    value: day.note || "",
+    onChange:(ev)=>{
+      const val = ev.target.value;
+      setDays(prev=>{
+        const next = prev.slice();
+        const d = {...next[idx]}; d.note = val; next[idx] = d; return next;
+      });
+    },
+    rows:4, className:"noteArea", style:{marginTop:10}
+  })
+)
+           // Next ingredients
     e("div",{className:"card",style:{marginTop:16}},
       e("h2", null, nextLabel),
       nextItems.length === 0
