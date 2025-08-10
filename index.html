@@ -70,10 +70,6 @@ body{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bot
 .paw{display:inline-flex;align-items:center;justify-content:center;height:36px;width:36px;border-radius:9999px;border:1px solid #f0cbb0;background:#fff;transition:transform .12s, background .2s;cursor:pointer}
 .paw.on{background:linear-gradient(90deg,#f9d49a,#ffd2c8);transform:scale(1.02)}
 
-        .btn.primary{background:#0f172a;color:#fff;border-color:#0f172a}
-.noteArea{width:100%;resize:vertical;border:1px solid #f3d0e1;border-radius:12px;padding:10px;font-size:16px}
-.coachOut{white-space:pre-wrap}
-
 /* Coach UI */
 .coach{margin-top:16px}
 .coachHead{
@@ -705,7 +701,7 @@ const Dashboard = ({ templates, days, setDays, recipes, goals }) => {
       e("button",{className:"day-btn",onClick:()=>changeDay(1),"aria-label":"Next day"},"▶")
     )
   )
-)
+),
     // Progress
     e(ProgressBar,{value:progress}),
 
@@ -730,7 +726,7 @@ e("div",{className:"card",style:{marginTop:16}},
       }},"🧠 Smart Coach"),
       e("div",{style:{color:"#475569"}}, "Understands your note and suggests relief + motivation")
     ),
-    e("button",{className:"btn primary",onClick:analyzeFromNotes,style:{whiteSpace:"nowrap"}}, "Coach")
+e("button",{className:"btn primary",onClick:analyzeFromNotes
   ),
 
   // coach output lives visually here ONLY (not copied to note automatically)
@@ -855,10 +851,9 @@ const Settings = ({ templates, onChange, onImportPlan, goals, setGoals }) => {
       e("p",{style:{color:"#64748b",margin:"6px 0 12px"}},"Reloads all juices/meals and rebuilds the grocery list."),
       e("button",{className:"btn",onClick:onImportPlan},"Import Plan")
     ),
-   e("button",{className:"btn peach",style:{marginLeft:8},onClick:importFromChatGPTPrompt},
+  e("button",{className:"btn peach",style:{marginLeft:8},onClick:importFromChatGPTPrompt},
   "Import plan from ChatGPT text"
-)        
-           
+),
     // Modal
     e("div",{className:"modal"+(showModal?" show":""), onClick:(ev)=>{ if(ev.target.classList.contains("modal")) setShowModal(false); }},
       e("div",{className:"sheet"},
