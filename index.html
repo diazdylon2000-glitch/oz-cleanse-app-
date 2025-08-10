@@ -574,8 +574,8 @@ e("div",{className:"mast card"},
     // checklist
     e(Checklist,{items, state:checks, onToggle:toggleCheck}),
 
-    // Daily Notes + Smart Coach (no preview button)
- e("div",{className:"card",style:{marginTop:16}},
+  // Daily Notes + Smart Coach (no preview button)
+e("div",{className:"card",style:{marginTop:16}},
   e("h2",null,"Daily Notes"),
   e("div",{className:"coachHeader"},
     e("div",{className:"pill"},"🧠 Smart Coach"),
@@ -601,31 +601,6 @@ e("div",{className:"mast card"},
     rows:4, className:"noteArea"
   })
 ),
-        e("div",{className:"coachBadge"}, "🧠 Smart Coach",
-          e("span",{style:{marginLeft:8, color:"#64748b"}},"Understands your note and suggests relief + motivation")),
-        e("div",{className:"coachBtns"},
-          e("button",{className:"coachBtn peach",onClick:analyzeFromNotes},"Coach"),
-          e("button",{className:"coachBtn",onClick:appendCoachToNotes,disabled:!coachText},"Add to notes")
-        ),
-        coachText && e("div",{className:"coachOut"}, coachText)
-      ),
-      e("textarea",{
-        value: day.note || "",
-        onChange:(ev)=>{
-          const val = ev.target.value;
-          setDays(prev=>{
-            const next = prev.slice();
-            const d = {...next[idx]};
-            d.note = val;
-            next[idx] = d;
-            return next;
-          });
-        },
-        rows:4,
-        style:{width:"100%",resize:"vertical",border:"1px solid #f3d0e1",borderRadius:12,padding:"8px",fontSize:16}
-      })
-    ),
-
     // Next ingredients
     e("div",{className:"card",style:{marginTop:16}},
       e("h2", null, nextLabel),
