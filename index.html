@@ -1,788 +1,442 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <title>Oz Cleanse Companion — V14+</title>
-  <meta name="theme-color" content="#f9c2a7"/>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>Oz Cleanse Companion — V14+</title>
+<meta name="theme-color" content="#f9c2a7"/>
 
-  <!-- React + Chart.js + Confetti (mobile-safe with fallbacks) -->
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"
-          crossorigin
-          onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js'"></script>
+<!-- React + Chart.js + Confetti (with fallbacks for iOS) -->
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin
+  onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js'"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin
+  onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js'"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js" crossorigin
+  onerror="this.onerror=null;this.src='https://unpkg.com/chart.js@4.4.3/dist/chart.umd.js'"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" crossorigin
+  onerror="this.onerror=null;this.src='https://unpkg.com/canvas-confetti@1.6.0/dist/confetti.browser.min.js'"></script>
 
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"
-          crossorigin
-          onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js'"></script>
+<style>
+:root{--peach:#ffb08f;--peach-200:#ffd8c8;--peach-100:#fff1ea;--rose:#ec4899;--ink:#334155;--line:#f3d0e1;--chip:#ffe4ef;--cream:#fff7f1;--shadow:0 8px 24px rgba(236,72,153,.08)}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--cream);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"
-          crossorigin
-          onerror="this.onerror=null;this.src='https://unpkg.com/chart.js@4.4.3/dist/chart.umd.js'"></script>
+/* Splash + bubble (mobile safe) */
+.splash{position:fixed;inset:0;background:#fef3ec;display:flex;align-items:center;justify-content:center;z-index:80}
+.splash img{width:170px;height:170px;border-radius:9999px;object-fit:cover;border:6px solid #fff;box-shadow:0 24px 60px rgba(149,92,51,.25)}
+.bubble{position:fixed;left:50%;top:62%;transform:translate(-50%,-10px);max-width:min(90vw,360px);z-index:81;background:#fff;border:2px solid #f3d0e1;border-radius:16px;box-shadow:0 10px 32px rgba(236,72,153,.15);padding:12px 14px;font-size:13px;line-height:1.25;word-break:break-word;hyphens:auto}
+.bubble:before,.bubble:after{display:none}
+@media (min-width:600px){
+  .bubble{left:50%;top:54%;transform:translateX(92px);max-width:260px}
+  .bubble:after,.bubble:before{display:block;content:'';position:absolute;top:28px;border:10px solid transparent}
+  .bubble:after{left:-10px;border-right-color:#f3d0e1}
+  .bubble:before{left:-8px;z-index:1;border-right-color:#fff}
+}
+.fadeOut{animation:fadeOut .6s ease forwards}
+@keyframes fadeOut{to{opacity:0;visibility:hidden}}
+body{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
 
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"
-          crossorigin
-          onerror="this.onerror=null;this.src='https://unpkg.com/canvas-confetti@1.6.0/dist/confetti.browser.min.js'"></script>
+/* UI */
+.wrap{max-width:940px;margin:16px auto 96px;padding:0 16px}
+.card{background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:16px}
+.badge{display:inline-block;padding:2px 10px;border:1px solid #e7ccd7;background:#fff;border-radius:9999px;font-size:12px}
+.btn{border:1px solid var(--line);background:#fff;padding:10px 12px;border-radius:14px;cursor:pointer}
+.btn.peach{background:linear-gradient(90deg,#ffc7a9,#ffe1d6);border-color:#ffd9c8}
+.tabs{position:fixed;left:0;right:0;bottom:0;display:flex;gap:8px;padding:8px;background:#fff;border-top:1px solid var(--line)}
+.tabs .btn{flex:1}
+.tabs .btn.active{background:var(--chip)}
+.paw{display:inline-flex;align-items:center;justify-content:center;height:36px;width:36px;border-radius:9999px;border:1px solid #f0cbb0;background:#fff;transition:transform .12s, background .2s;cursor:pointer}
+.paw.on{background:linear-gradient(90deg,#f9d49a,#ffd2c8);transform:scale(1.02)}
+.prog{height:10px;border-radius:9999px;background:#fde7e0;overflow:hidden}
+.fill{height:100%;background:linear-gradient(90deg,#ffa56e,#ec4899);width:0;transition:width .35s ease}
 
-  <style>
-    :root{
-      --peach:#ffb08f; --peach-200:#ffd8c8; --peach-100:#fff1ea;
-      --rose:#ec4899; --ink:#334155; --line:#f3d0e1; --chip:#ffe4ef;
-      --cream:#fff7f1; --shadow:0 8px 24px rgba(236,72,153,.08);
-    }
-    *{box-sizing:border-box}
-    html,body{margin:0;background:var(--cream);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
-    h1,h2{margin:0 0 8px 0}
+/* Mast + arrows */
+.mast{position:relative;border:1px solid var(--line);border-radius:16px;padding:12px;background:linear-gradient(90deg,#fff7f1,#ffe9e0)}
+.mastRow{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.mastLeft{display:flex;align-items:center;gap:10px}
+.mastLeft img{height:40px;width:40px;border-radius:9999px;object-fit:cover;border:2px solid #fff}
+.mastTitle b{font-size:18px;line-height:1}
+.mastTitle small{color:#64748b}
+.day-nav{display:flex;align-items:center;gap:8px}
+.day-btn{background:#fff;border:2px solid #f3d0e1;border-radius:12px;padding:6px 10px}
+.day-label{font-weight:600;border:1px solid #e7ccd7;background:#fff;border-radius:9999px;padding:8px 14px}
 
-    /* Splash with Oz + speech bubble */
-    .splash{position:fixed;inset:0;background:#fef3ec;display:flex;align-items:center;justify-content:center;z-index:80}
-    .splash img{width:170px;height:170px;border-radius:9999px;object-fit:cover;border:6px solid #fff;box-shadow:0 24px 60px rgba(149,92,51,.25)}
-    .bubble{
-      position:fixed; left:50%; top:62%; transform:translate(-50%,-10px);
-      max-width:min(90vw,360px); z-index:81; background:#fff;
-      border:2px solid #f3d0e1; border-radius:16px; box-shadow:0 10px 32px rgba(236,72,153,.15);
-      padding:12px 14px; font-size:13px; line-height:1.25; word-break:break-word; hyphens:auto;
-    }
-    .bubble:before,.bubble:after{ display:none; }
-
-    /* Bring back side bubble on wider screens */
-    @media (min-width: 600px){
-      .bubble{ left:50%; top:54%; transform:translateX(92px); max-width:260px; }
-      .bubble:after,.bubble:before{ display:block; content:''; position:absolute; top:28px; border:10px solid transparent; }
-      .bubble:after{ left:-10px; border-right-color:#f3d0e1; }
-      .bubble:before{ left:-8px; z-index:1; border-right-color:#fff; }
-    }
-
-    /* Safe area for iPhone notch/home bar */
-    body{ padding-top:env(safe-area-inset-top); padding-bottom:env(safe-area-inset-bottom); }
-    .fadeOut{animation:fadeOut .6s ease forwards}
-    @keyframes fadeOut{to{opacity:0;visibility:hidden}}
-
-    /* Layout + cards */
-    .wrap{max-width:940px;margin:16px auto 96px;padding:0 16px}
-    .card{background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:16px}
-    .badge{display:inline-block;padding:2px 10px;border:1px solid #e7ccd7;background:#fff;border-radius:9999px;font-size:12px}
-    .btn{border:1px solid var(--line);background:#fff;padding:10px 12px;border-radius:14px;cursor:pointer}
-    .btn.peach{background:linear-gradient(90deg,#ffc7a9,#ffe1d6);border-color:#ffd9c8}
-    .tabs{position:fixed;left:0;right:0;bottom:0;display:flex;gap:8px;padding:8px;background:#fff;border-top:1px solid var(--line)}
-    .tabs .btn{flex:1}
-    .tabs .btn.active{background:var(--chip)}
-    .paw{display:inline-flex;align-items:center;justify-content:center;height:36px;width:36px;border-radius:9999px;border:1px solid #f0cbb0;background:#fff;transition:transform .12s, background .2s;cursor:pointer}
-    .paw.on{background:linear-gradient(90deg,#f9d49a,#ffd2c8);transform:scale(1.02)}
-    .prog{height:10px;border-radius:9999px;background:#fde7e0;overflow:hidden}
-    .fill{height:100%;background:linear-gradient(90deg,#ffa56e,#ec4899);width:0;transition:width .35s ease}
-
-    /* Mast header + arrows */
-    .mast{position:relative;border:1px solid var(--line);border-radius:16px;padding:12px;background:linear-gradient(90deg,#fff7f1,#ffe9e0)}
-    .dash-header{display:flex;align-items:center;justify-content:space-between}
-    .dash-header-left{display:flex;align-items:center;gap:10px}
-    .oz-icon{width:40px;height:40px;border-radius:9999px;object-fit:cover;border:2px solid #fff}
-    .dash-title{font-size:18px;line-height:1;margin:0}
-    .dash-subtitle{font-size:12px;color:#64748b;margin-top:4px}
-    .day-nav{display:flex;align-items:center;gap:8px}
-    .day-btn{background:#fff;border:2px solid #f3d0e1;border-radius:12px;padding:6px 10px;cursor:pointer}
-    .day-btn:active{transform:translateY(1px)}
-    .day-label{font-weight:600;border:1px solid #e7ccd7;background:#fff;border-radius:9999px;padding:4px 10px}
-
-    #errorBanner{display:none;position:fixed;top:0;left:0;right:0;background:#ff4d4d;color:#fff;padding:10px;font-size:14px;z-index:10000;text-align:center}
-  </style>
+#errorBanner{display:none;position:fixed;top:0;left:0;right:0;background:#ff4d4d;color:#fff;padding:10px;font-size:14px;z-index:10000;text-align:center}
+</style>
 </head>
 <body>
-  <div id="errorBanner"></div>
-  <div id="ozSplash" class="splash"><img id="ozImg" alt="Oz" src="oz.png"/></div>
-  <div id="ozBubble" class="bubble">Hydration is happiness 🐾</div>
-  <div id="root"></div>
-
-  <script>
-  (function(){
-    // splash bubble text
-    var A=["You’ve got this!","Oz is proud of you 🐶","Small habits, big change","Sip, breathe, reset","Progress, not perfection"];
-    var b=document.getElementById("ozBubble"); if(b) b.textContent=A[Math.floor(Math.random()*A.length)];
-    // fade out splash
-    window.addEventListener("load",function(){
-      setTimeout(function(){
-        var s=document.getElementById("ozSplash"), bb=document.getElementById("ozBubble");
-        if(s) s.classList.add("fadeOut"); if(bb) bb.classList.add("fadeOut");
-        setTimeout(function(){ if(s) s.style.display="none"; if(bb) bb.style.display="none"; }, 620);
-      }, 1100);
-    });
-  })();
-  </script>
-
-  <script>
-  (function(){
-    function banner(msg){
-      var el = document.getElementById('errorBanner');
-      if (!el) return;
-      el.textContent = msg;
-      el.style.display = 'block';
-    }
-
-    var issues = [];
-    if (!window.React) issues.push("React failed to load");
-    if (!window.ReactDOM) issues.push("ReactDOM failed to load");
-    if (!window.Chart) issues.push("Chart.js failed to load");
-    if (!window.confetti) issues.push("Confetti failed to load");
-    if (issues.length) banner("CDN problem: " + issues.join(" • ") + " — try another network or reload.");
-
-    window.safeConfetti = function(opts){ try { if (window.confetti) window.confetti(opts); } catch(e){} };
-
-    window.addEventListener('error',function(e){
-      var el=document.getElementById('errorBanner');
-      el.textContent='Error: '+(e.error&&e.error.message?e.error.message:e.message);
-      el.style.display='block';
-    });
-    window.addEventListener('unhandledrejection', function(e){
-      banner("Promise error: " + (e.reason && e.reason.message ? e.reason.message : "unhandled rejection"));
-    });
-  })();
-  </script>
-
-  <script>
-  "use strict";
-  const e = React.createElement;
-  const { useState, useEffect } = React;
-
-  /* ---------- helpers ---------- */
-  function useLocal(key, initialValue){
-    const [val, setVal] = React.useState(() => {
-      try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : initialValue; }
-      catch { return initialValue; }
-    });
-    React.useEffect(() => { try { localStorage.setItem(key, JSON.stringify(val)); } catch {} }, [key, val]);
-    return [val, setVal];
-  }
-
-  /* ---------- data ---------- */
- window.GOAL_LIBRARY = GOAL_LIBRARY;
-    water:"💧 Drink 120–150 oz water",
-    tea:"🍵 Tea",
-    coffee:"☕ Coffee",
-    juice:"🧃 Juices",
-    lmnt:"🧂 Electrolytes",
-    exercise:"🏃 Exercise",
-    wholefood:"🥗 Whole food meals",
-    weight:"👣 Weight check-in"
-  };
-
-  const DEFAULT_PHASE_TEMPLATES = {
-    fast:["water","tea","coffee","lmnt","exercise","weight"],
-    cleanse:["water","tea","coffee","juice","lmnt","exercise","weight"],
-    rebuild:["water","lmnt","exercise","wholefood","weight"]
-  };
-
-  function defaultDays(){
-    const phases=["fast","fast","fast","cleanse","cleanse","cleanse","cleanse","rebuild","rebuild","rebuild","rebuild"];
-    return phases.map((ph,i)=>({day:i+1,phase:ph,order:null,checks:{},custom:false,note:"",weight:null}));
-  }
-
-  // Recipes (includes Day 9)
-  const PLAN_RECIPES = [
-    { id:"r-melon", name:"Melon Mint Morning", type:"juice", day:4,
-      ingredients:[{key:"melons",name:"Melon",qty:"1"},{key:"mint",name:"Mint",qty:"1/2 cup"},{key:"limes",name:"Lime",qty:"1"}],
-      steps:"Juice melon → mint → lime."
-    },
-    { id:"r-peach", name:"Peachy Green Glow", type:"juice", day:5,
-      ingredients:[{key:"peaches",name:"Peaches",qty:"6"},{key:"cucumbers",name:"Cucumbers",qty:"4"},{key:"spinach",name:"Spinach",qty:"8 cups"},{key:"lemons",name:"Lemons",qty:"2"}],
-      steps:"Juice greens first."
-    },
-    { id:"r-carrot", name:"Carrot Apple Ginger", type:"juice", day:6,
-      ingredients:[{key:"carrots",name:"Carrots",qty:"28"},{key:"apples",name:"Apples",qty:"4"},{key:"ginger",name:"Ginger",qty:'2"'},{key:"lemons",name:"Lemons",qty:"2"}],
-      steps:"Juice, finish with lemon."
-    },
-    { id:"r-grape", name:"Grape Romaine Cooler", type:"juice", day:7,
-      ingredients:[{key:"grapes",name:"Grapes",qty:"6 cups"},{key:"romaine",name:"Romaine",qty:"6 cups"},{key:"cucumbers",name:"Cucumbers",qty:"4"},{key:"lemons",name:"Lemons",qty:"2"}],
-      steps:"Romaine → cukes → grapes → lemon."
-    },
-    { id:"r-smoothie", name:"Smoothie Breakfast", type:"meal", day:8,
-      ingredients:[{key:"spinach",name:"Spinach",qty:"2 cups"},{key:"almond-milk",name:"Almond milk",qty:"1 cup"},{key:"chia",name:"Chia",qty:"1 tbsp"}],
-      steps:"Blend until smooth."
-    },
-    { id:"r-lentil", name:"Lentil Soup", type:"meal", day:8,
-      ingredients:[{key:"lentils",name:"Lentils (dry)",qty:"1/2 cup"},{key:"carrots",name:"Carrots",qty:"1/2 cup"},{key:"celery",name:"Celery",qty:"1/2 cup"},{key:"parsley",name:"Parsley",qty:"1/4 cup"},{key:"onions",name:"Onion",qty:"1/4"}],
-      steps:"Simmer ~25 min."
-    },
-    { id:"r-broth9", name:"Simple Veg Broth", type:"meal", day:9,
-      ingredients:[{key:"carrots",name:"Carrots",qty:"2"},{key:"celery",name:"Celery",qty:"2 stalks"},{key:"onions",name:"Onion",qty:"1/2"},{key:"parsley",name:"Parsley",qty:"few sprigs"}],
-      steps:"Simmer 30–40 min; season lightly."
-    },
-    { id:"r-sweetpot9", name:"Baked Sweet Potato Bowl", type:"meal", day:9,
-      ingredients:[{key:"sweet-potatoes",name:"Sweet potatoes",qty:"2"},{key:"spinach",name:"Spinach",qty:"2 cups"},{key:"olive-oil",name:"Olive oil",qty:"1 tbsp"}],
-      steps:"Bake potato, wilt spinach, drizzle oil."
-    },
-    { id:"r-oats", name:"Overnight Oats", type:"meal", day:10,
-      ingredients:[{key:"rolled-oats",name:"Rolled oats",qty:"1/2 cup"},{key:"almond-milk",name:"Almond milk",qty:"1 cup"}],
-      steps:"Combine and chill."
-    },
-    { id:"r-quinoa", name:"Quinoa Salad", type:"meal", day:10,
-      ingredients:[{key:"quinoa",name:"Quinoa (dry)",qty:"1/2 cup"},{key:"cucumbers",name:"Cucumber",qty:"1"},{key:"tomatoes",name:"Tomato",qty:"1"},{key:"parsley",name:"Parsley",qty:"1/4 cup"},{key:"olive-oil",name:"Olive oil",qty:"1 tbsp"},{key:"lemons",name:"Lemon",qty:"1"}],
-      steps:"Toss; season."
-    },
-    { id:"r-protein", name:"Protein + Broccoli", type:"meal", day:11,
-      ingredients:[{key:"protein",name:"Salmon/Chicken",qty:"12 oz"},{key:"broccoli",name:"Broccoli",qty:"2 heads"}],
-      steps:"Cook protein; steam broccoli."
-    }
-  ];
-
-  function aggregateGroceries(recipes){
-    const map = {};
-    recipes.forEach(r=>{
-      (r.ingredients||[]).forEach(it=>{
-        const id=(it.key||it.name||"").toLowerCase().replace(/\s+/g,'-');
-        if(!map[id]){
-          map[id]={id,name:it.name,qty:it.qty||"",checked:false,estCost:null,days:r.day?[r.day]:[]};
-        }else{
-          const s=new Set(map[id].days||[]);
-          if(r.day) s.add(r.day);
-          map[id].days=Array.from(s).sort((a,b)=>a-b);
-        }
-      });
-    });
-    return Object.values(map).sort((a,b)=> (a.name||"").localeCompare(b.name||""));
-  }
-
-  /* ---------- small components ---------- */
-  const ProgressBar = ({ value }) =>
-    e("div", { className:"prog" }, e("div", { className:"fill", style:{ width: Math.max(0, Math.min(100, value))+"%" } }));
-
-  const Checklist = ({ items, state, onToggle }) =>
-    e("ul", { style:{ listStyle:"none", padding:0 } },
-      items.map(it =>
-        e("li", { key:it.id, style:{ margin:"8px 0", display:"flex", alignItems:"center" } },
-          e("div", { className:"paw"+(state[it.id]?" on":""), onClick:()=>onToggle(it.id) }, "🐾"),
-          e("span", { style:{ marginLeft:8 } }, it.label)
-        )
-      )
-    );
-
-  const WeightChart = ({ series }) => {
-    const canvasRef = React.useRef(null);
-    const chartRef = React.useRef(null);
-    useEffect(()=>{
-      const ctx = canvasRef.current.getContext("2d");
-      if(chartRef.current){ try{ chartRef.current.destroy(); }catch(e){} }
-      chartRef.current = new Chart(ctx, {
-        type:"line",
-        data:{ labels: series.map((_,i)=>"Day "+(i+1)), datasets:[{ data:series, borderColor:"#ec4899", backgroundColor:"rgba(236,72,153,.15)", tension:.35, spanGaps:true, pointRadius:2 }] },
-        options:{ responsive:true, plugins:{ legend:{ display:false }}, scales:{ y:{ ticks:{ callback:v=>v||"" } } }, animation:{ duration:200 } }
-      });
-      return ()=>{ try{ chartRef.current && chartRef.current.destroy(); }catch(e){} };
-    }, [series]);
-    return e("canvas", { ref:canvasRef, height:120 });
-  };
-
-/* ---------- Smart Coach (define once) ---------- */
-if (!window.COACH_RULES) {
-  window.COACH_RULES = [
-    {
-      id: "headache",
-      test: function (ctx) { return ctx.syms.has("headache"); },
-      tips: [
-        "Sip 8–12 oz water over 15 min.",
-        "Add a pinch of sea salt/electrolyte.",
-        "5–10 min screen break."
-      ]
-    },
-    {
-      id: "dizziness",
-      test: function (ctx) { return ctx.syms.has("dizziness"); },
-      tips: [
-        "Sit or lie until steady.",
-        "Small juice or pinch of salt if fasting.",
-        "Breathe 4 in / 6 out."
-      ]
-    },
-    {
-      id: "nausea",
-      test: function (ctx) { return ctx.syms.has("nausea"); },
-      tips: [
-        "Sip cool water or peppermint/ginger tea.",
-        "Fresh air.",
-        "Move slowly."
-      ]
-    },
-    {
-      id: "fatigue",
-      test: function (ctx) { return ctx.syms.has("fatigue"); },
-      tips: [
-        "Take a 15–20 minute rest.",
-        "Drink water or electrolyte drink.",
-        "Light stretching to boost circulation."
-      ]
-    }
-    // add more rules here...
-  ];
-}
-// local alias to use in your components:
-var COACH_RULES = window.COACH_RULES;
- const COACH_AFFIRM = window.OZ_COACH_AFFIRM;
-    "You’ve got this! 💪",
-    "Proud of your effort today. 🌟",
-    "Oz is wagging his tail for you! 🐶",
-    "One step at a time — you’re doing amazing.",
-    "Keep going, your future self will thank you."
-  ];
-
-  function NotesCoach({ day, idx, setDays }){
-    const [coachText,setCoachText] = React.useState("");
-
-    const SYM_MATCHERS = [
-      {id:"headache",  rx:/\b(headache|migraine|head pain)\b/i},
-      {id:"dizziness", rx:/\b(dizzy|light[-\s]?headed|vertigo)\b/i},
-      {id:"nausea",    rx:/\b(nausea|queasy|sick to (my|the) stomach)\b/i},
-      {id:"fatigue",   rx:/\b(tired|fatigue|exhaust(ed|ion)|wiped|low energy)\b/i},
-      {id:"brain-fog", rx:/\b(brain[-\s]?fog|foggy|can.?t focus)\b/i}
-    ];
-
-    function inferMoodFrom(text){
-      let score = 6;
-      const t = text.toLowerCase();
-      const neg = [/overwhelm|anxious|stressed|down|sad|discourag|frustrat/,
-                   /tired|exhaust|wiped|drained/,
-                   /pain|hurt|ache/].reduce((n,rx)=>n+(rx.test(t)?1:0),0);
-      const pos = [/proud|strong|better|energized|motivated|win|progress|calm/]
-                  .reduce((n,rx)=>n+(rx.test(t)?1:0),0);
-      score += pos - 2*neg;
-      return Math.max(1,Math.min(10,score));
-    }
-
-    function analyzeFromNotes(){
-      const text = (day.note || "").trim();
-      if(!text){ setCoachText("Write a quick note, then tap “Coach from notes”."); return; }
-
-      const found = new Set(SYM_MATCHERS.filter(m=>m.rx.test(text)).map(m=>m.id));
-      const mood = inferMoodFrom(text);
-
-      const ctx = { syms: found, phase: day.phase };
-      const tips = (COACH_RULES||[]).filter(r=>{try{return r.test(ctx);}catch{return false;}})
-                                    .flatMap(r=>r.tips).slice(0,6);
-
-      const moodBoost = (mood<=4)
-        ? ["You’re not alone — let’s make today gentle and doable.",
-           "Pick one tiny win now (8–10 oz water, 3 deep breaths).",
-           COACH_AFFIRM[Math.floor(Math.random()*COACH_AFFIRM.length)]]
-        : (mood<=6)
-          ? ["Nice work staying steady. One small upgrade today.",
-             COACH_AFFIRM[Math.floor(Math.random()*COACH_AFFIRM.length)]]
-          : [COACH_AFFIRM[Math.floor(Math.random()*COACH_AFFIRM.length)]];
-
-      const header = found.size
-        ? `I noticed: ${Array.from(found).join(", ")}.`
-        : "No specific symptoms spotted — here’s a steady plan.";
-
-      const body = tips.length
-        ? "Try these:\n• " + tips.join("\n• ")
-        : "Hydrate now, take 5 slow breaths, a short walk, and check in later.";
-
-      setCoachText(`${header}\n\n${body}\n\n${moodBoost.join(" ")}`);
-    }
-
-    function appendToNotes(){
-      if(!coachText) return;
-      const divider = (day.note && day.note.trim()? "\n\n" : "");
-      const stamp = new Date().toLocaleString();
-      const toAdd = `${divider}Coach (${stamp}):\n${coachText}`;
-      setDays(prev=>{
-        const next = prev.slice();
-        const d2 = {...next[idx]};
-        d2.note = (d2.note||"") + toAdd;
-        next[idx] = d2;
-        return next;
-      });
-      setCoachText("");
-    }
-
-    return e("div",{className:"card",style:{marginTop:16}},
-      e("h2",null,"Daily Notes"),
-      e("div",{style:{display:"flex",gap:8,margin:"6px 0 10px",flexWrap:"wrap"}},
-        e("button",{className:"btn peach",onClick:analyzeFromNotes},"Coach from notes"),
-        e("button",{className:"btn",onClick:appendToNotes,disabled:!coachText},"Add to notes")
-      ),
-      coachText && e("div",{className:"badge",style:{display:"block",whiteSpace:"pre-wrap",marginBottom:8,padding:10}}, coachText),
-      e("textarea",{
-        value: day.note || "",
-        onChange:(ev)=>{
-          const val = ev.target.value;
-          setDays(prev=>{
-            const next = prev.slice();
-            const d3 = {...next[idx]};
-            d3.note = val;
-            next[idx] = d3;
-            return next;
-          });
-        },
-        rows:4,
-        style:{ width:"100%", resize:"vertical", border:"1px solid #f3d0e1", borderRadius:12, padding:"8px", fontSize:16 }
-      })
-    );
-  }
-
-  /* ---------- pages ---------- */
-  const GroceryList = ({ groceries, setGroceries }) => {
-    const totals = groceries.reduce((acc,g)=>{
-      const price = g.estCost ? Number(g.estCost) : 0;
-      if(g.checked) acc.checked += price; else acc.remaining += price;
-      acc.total += price; return acc;
-    }, {checked:0, remaining:0, total:0});
-
-    function toggle(idx){ setGroceries(groceries.map((g,i)=> i===idx? {...g,checked:!g.checked}:g)); }
-    function setPrice(idx,val){ const v = val===""? null: Number(val); setGroceries(groceries.map((g,i)=> i===idx? {...g,estCost:v}:g)); }
-    function daysBadge(days){
-      if(!days||!days.length) return "📦 Pantry";
-      const min = Math.min.apply(null,days), max = Math.max.apply(null,days);
-      return "📅 "+(min===max?("Day "+min):("Day "+min+"–"+max));
-    }
-
-    return e("div", { className:"wrap" },
-      e("h1", null, "Groceries & Prices"),
-      e("div", { style:{ fontSize:12, color:"#64748b", margin:"6px 0 12px" } },
-        "Checked $", totals.checked.toFixed(2),
-        " • Remaining $", totals.remaining.toFixed(2),
-        " • Total $", totals.total.toFixed(2)
-      ),
-      e("ul", { style:{ listStyle:"none", padding:0 }},
-        groceries.map((g,idx)=>
-          e("li", { key:g.id, style:{ display:"flex", alignItems:"center", gap:8, padding:"8px 0", borderBottom:"1px solid #f3d0e1" } },
-            e("button", { className:"paw"+(g.checked?" on":""), onClick:()=>toggle(idx) }, g.checked?"🐾":""),
-            e("div", { style:{ flex:1 } },
-              e("div", null, g.name, " ", e("span", { className:"badge" }, daysBadge(g.days))),
-              e("div", { style:{ fontSize:12, color:"#64748b" } }, g.qty||"")
-            ),
-            e("input", { type:"number", step:"0.01", placeholder:"$", value:(g.estCost==null?"":g.estCost), onChange:(ev)=>setPrice(idx, ev.target.value), style:{ width:90 } })
-          )
-        )
-      )
-    );
-  };
-
-  const Calendar = ({ days, recipes, settings }) => {
-    function dateFor(dayNum){
-      const dstr = settings.phaseTemplates.__startDate || "";
-      if(!dstr) return null;
-      const base = new Date(dstr+"T00:00:00");
-      if(isNaN(base)) return null;
-      const dt = new Date(base.getTime() + (dayNum-1)*86400000);
-      return dt.toLocaleDateString();
-    }
-    return e("div", { className:"wrap" },
-      e("h1", null, "Calendar"),
-      e("ul", { style:{ listStyle:"none", padding:0, marginTop:8 }},
-        days.map(d=>{
-          const dRecipes = recipes.filter(r=> r.day===d.day);
-          const dd = dateFor(d.day);
-          return e("li", { key:d.day, className:"card", style:{ marginBottom:8 }},
-            e("div", { style:{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:8 }},
-              e("div", null,
-                e("div", { style:{ fontWeight:600 } }, "Day ", d.day, " — ", d.phase.toUpperCase()),
-                dd && e("div", { className:"badge", style:{ marginTop:6 } }, dd)
-              ),
-              e("div", { style:{ display:"flex", gap:6, flexWrap:"wrap", minHeight:24 }},
-                dRecipes.length
-                  ? dRecipes.map(r=> e("span", { key:r.id, className:"badge" }, (r.type==="juice"?"🧃 ":"🍽️ "), r.name))
-                  : (d.note
-                      ? e("span",{className:"badge"},"📝 Note")
-                      : e("span", { style:{ fontSize:12, color:"#64748b" } }, "—")
-                    )
-              )
-            )
-          );
-        })
-      )
-    );
-  };
+<div id="errorBanner"></div>
+<div id="ozSplash" class="splash"><img id="ozImg" alt="Oz" src="oz.png"/></div>
+<div id="ozBubble" class="bubble">Hydration is happiness 🐾</div>
+<div id="root"></div>
 
 <script>
-// ---- One-time globals (guarded) ----
-if (!window.OZ_COACH_RULES) {
-  window.OZ_COACH_RULES = [
-    { id:"headache",  test:ctx=>ctx.syms.has("headache"),
-      tips:["Sip 8–12 oz water over 15 min.","Add a pinch of sea salt/electrolyte.","5–10 min screen break."] },
-    { id:"dizziness", test:ctx=>ctx.syms.has("dizziness"),
-      tips:["Sit or lie until steady.","Small juice or pinch of salt if fasting.","Breathe 4 in / 6 out."] },
-    { id:"nausea",    test:ctx=>ctx.syms.has("nausea"),
-      tips:["Sip cool water or peppermint/ginger tea.","Fresh air.","Move slowly."] },
-    { id:"fatigue",   test:ctx=>ctx.syms.has("fatigue"),
-      tips:["Take a 15–20 minute rest.","Drink water or electrolyte drink.","Light stretching."] }
-  ];
+/* splash text + fade */
+(function(){
+  var A=["You’ve got this!","Oz is proud of you 🐶","Small habits, big change","Sip, breathe, reset","Progress, not perfection"];
+  var b=document.getElementById("ozBubble"); if(b) b.textContent=A[Math.floor(Math.random()*A.length)];
+  window.addEventListener("load",function(){
+    setTimeout(function(){
+      var s=document.getElementById("ozSplash"), bb=document.getElementById("ozBubble");
+      if(s) s.classList.add("fadeOut"); if(bb) bb.classList.add("fadeOut");
+      setTimeout(function(){ if(s) s.style.display="none"; if(bb) bb.style.display="none"; }, 620);
+    }, 1100);
+  });
+})();
+
+/* error banner (helps iOS “Script error.”) */
+window.addEventListener('error',function(e){
+  var el=document.getElementById('errorBanner');
+  el.textContent='Error: '+(e.error&&e.error.message?e.error.message:e.message);
+  el.style.display='block';
+});
+window.safeConfetti=function(opts){try{if(window.confetti)window.confetti(opts);}catch(e){}};
+</script>
+
+<script>
+"use strict";
+const e = React.createElement;
+const { useState, useEffect } = React;
+
+/* ---------- helpers ---------- */
+function useLocal(key, initialValue){
+  const [val, setVal] = React.useState(() => {
+    try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : initialValue; }
+    catch { return initialValue; }
+  });
+  React.useEffect(() => { try { localStorage.setItem(key, JSON.stringify(val)); } catch {} }, [key, val]);
+  return [val, setVal];
 }
 
-if (!window.OZ_COACH_AFFIRM) {
-  window.OZ_COACH_AFFIRM = [
-    "You’ve got this! 💪",
-    "Proud of your effort today. 🌟",
-    "Oz is wagging his tail for you! 🐶",
-    "One step at a time — you’re doing amazing.",
-    "Keep going, your future self will thank you."
-  ];
+/* ---------- data ---------- */
+const GOAL_LIBRARY = {
+  water:"💧 Drink 120–150 oz water",
+  tea:"🍵 Tea",
+  coffee:"☕ Coffee",
+  juice:"🧃 Juices",
+  lmnt:"🧂 Electrolytes",
+  exercise:"🏃 Exercise",
+  wholefood:"🥗 Whole food meals",
+  weight:"👣 Weight check-in"
+};
+
+const DEFAULT_PHASE_TEMPLATES = {
+  fast:["water","tea","coffee","lmnt","exercise","weight"],
+  cleanse:["water","tea","coffee","juice","lmnt","exercise","weight"],
+  rebuild:["water","lmnt","exercise","wholefood","weight"]
+};
+
+function defaultDays(){
+  const phases=["fast","fast","fast","cleanse","cleanse","cleanse","cleanse","rebuild","rebuild","rebuild","rebuild"];
+  return phases.map((ph,i)=>({day:i+1,phase:ph,order:null,checks:{},custom:false,note:"",weight:null}));
 }
 
-// ============== Dashboard (drop-in replacement) ==============
-function Dashboard(props){
-  var templates = props.templates;
-  var days = props.days;
-  var setDays = props.setDays;
-  var recipes = props.recipes;
+const PLAN_RECIPES = [
+  { id:"r-melon", name:"Melon Mint Morning", type:"juice", day:4,
+    ingredients:[{key:"melons",name:"Melon",qty:"1"},{key:"mint",name:"Mint",qty:"1/2 cup"},{key:"limes",name:"Lime",qty:"1"}] },
+  { id:"r-peach", name:"Peachy Green Glow", type:"juice", day:5,
+    ingredients:[{key:"peaches",name:"Peaches",qty:"6"},{key:"cucumbers",name:"Cucumbers",qty:"4"},{key:"spinach",name:"Spinach",qty:"8 cups"},{key:"lemons",name:"Lemons",qty:"2"}] },
+  { id:"r-carrot", name:"Carrot Apple Ginger", type:"juice", day:6,
+    ingredients:[{key:"carrots",name:"Carrots",qty:"28"},{key:"apples",name:"Apples",qty:"4"},{key:"ginger",name:"Ginger",qty:'2"'},{key:"lemons",name:"Lemons",qty:"2"}] },
+  { id:"r-grape", name:"Grape Romaine Cooler", type:"juice", day:7,
+    ingredients:[{key:"grapes",name:"Grapes",qty:"6 cups"},{key:"romaine",name:"Romaine",qty:"6 cups"},{key:"cucumbers",name:"Cucumbers",qty:"4"},{key:"lemons",name:"Lemons",qty:"2"}] },
+  { id:"r-smoothie", name:"Smoothie Breakfast", type:"meal", day:8,
+    ingredients:[{key:"spinach",name:"Spinach",qty:"2 cups"},{key:"almond-milk",name:"Almond milk",qty:"1 cup"},{key:"chia",name:"Chia",qty:"1 tbsp"}] },
+  { id:"r-lentil", name:"Lentil Soup", type:"meal", day:8,
+    ingredients:[{key:"lentils",name:"Lentils (dry)",qty:"1/2 cup"},{key:"carrots",name:"Carrots",qty:"1/2 cup"},{key:"celery",name:"Celery",qty:"1/2 cup"},{key:"parsley",name:"Parsley",qty:"1/4 cup"},{key:"onions",name:"Onion",qty:"1/4"}] },
+  /* Day 9 (previously empty) */
+  { id:"r-broth9", name:"Simple Veg Broth", type:"meal", day:9,
+    ingredients:[{key:"carrots",name:"Carrots",qty:"2"},{key:"celery",name:"Celery",qty:"2 stalks"},{key:"onions",name:"Onion",qty:"1/2"},{key:"parsley",name:"Parsley",qty:"few sprigs"}] },
+  { id:"r-sweetpot9", name:"Baked Sweet Potato Bowl", type:"meal", day:9,
+    ingredients:[{key:"sweet-potatoes",name:"Sweet potatoes",qty:"2"},{key:"spinach",name:"Spinach",qty:"2 cups"},{key:"olive-oil",name:"Olive oil",qty:"1 tbsp"}] },
+  { id:"r-oats", name:"Overnight Oats", type:"meal", day:10,
+    ingredients:[{key:"rolled-oats",name:"Rolled oats",qty:"1/2 cup"},{key:"almond-milk",name:"Almond milk",qty:"1 cup"}] },
+  { id:"r-quinoa", name:"Quinoa Salad", type:"meal", day:10,
+    ingredients:[{key:"quinoa",name:"Quinoa (dry)",qty:"1/2 cup"},{key:"cucumbers",name:"Cucumber",qty:"1"},{key:"tomatoes",name:"Tomato",qty:"1"},{key:"parsley",name:"Parsley",qty:"1/4 cup"},{key:"olive-oil",name:"Olive oil",qty:"1 tbsp"},{key:"lemons",name:"Lemon",qty:"1"}] },
+  { id:"r-protein", name:"Protein + Broccoli", type:"meal", day:11,
+    ingredients:[{key:"protein",name:"Salmon/Chicken",qty:"12 oz"},{key:"broccoli",name:"Broccoli",qty:"2 heads"}] }
+];
 
-  var idxState = React.useState(0);
-  var idx = idxState[0], setIdx = idxState[1];
-  var day = days[idx] || days[0];
+function aggregateGroceries(recipes){
+  const map = {};
+  recipes.forEach(r=>{
+    (r.ingredients||[]).forEach(it=>{
+      const id=(it.key||it.name||"").toLowerCase().replace(/\s+/g,'-');
+      if(!map[id]){
+        map[id]={id,name:it.name,qty:it.qty||"",checked:false,estCost:null,days:r.day?[r.day]:[]};
+      }else{
+        const s=new Set(map[id].days||[]); if(r.day) s.add(r.day);
+        map[id].days=Array.from(s).sort((a,b)=>a-b);
+      }
+    });
+  });
+  return Object.values(map).sort((a,b)=> (a.name||"").localeCompare(b.name||""));
+}
 
-  // --- helpers ---
+/* ---------- small components ---------- */
+const ProgressBar = ({ value }) =>
+  e("div", { className:"prog" }, e("div", { className:"fill", style:{ width: Math.max(0, Math.min(100, value))+"%" } }));
+
+const Checklist = ({ items, state, onToggle }) =>
+  e("ul", { style:{ listStyle:"none", padding:0 } },
+    items.map(it =>
+      e("li", { key:it.id, style:{ margin:"8px 0", display:"flex", alignItems:"center" } },
+        e("div", { className:"paw"+(state[it.id]?" on":""), onClick:()=>onToggle(it.id) }, "🐾"),
+        e("span", { style:{ marginLeft:8 } }, it.label)
+      )
+    )
+  );
+
+const WeightChart = ({ series }) => {
+  const canvasRef = React.useRef(null);
+  const chartRef = React.useRef(null);
+  useEffect(()=>{
+    const ctx = canvasRef.current.getContext("2d");
+    if(chartRef.current){ try{ chartRef.current.destroy(); }catch(e){} }
+    chartRef.current = new Chart(ctx, {
+      type:"line",
+      data:{ labels: series.map((_,i)=>"Day "+(i+1)), datasets:[{ data:series, borderColor:"#ec4899", backgroundColor:"rgba(236,72,153,.15)", tension:.35, spanGaps:true, pointRadius:2 }] },
+      options:{ responsive:true, plugins:{ legend:{ display:false }}, scales:{ y:{ ticks:{ callback:v=>v||"" } } }, animation:{ duration:200 } }
+    });
+    return ()=>{ try{ chartRef.current && chartRef.current.destroy(); }catch(e){} };
+  }, [series]);
+  return e("canvas", { ref:canvasRef, height:120 });
+};
+
+/* ---------- Grocery page ---------- */
+const GroceryList = ({ groceries, setGroceries }) => {
+  const totals = groceries.reduce((acc,g)=>{
+    const price = g.estCost ? Number(g.estCost) : 0;
+    if(g.checked) acc.checked += price; else acc.remaining += price;
+    acc.total += price; return acc;
+  }, {checked:0, remaining:0, total:0});
+
+  function toggle(idx){ setGroceries(groceries.map((g,i)=> i===idx? Object.assign({},g,{checked:!g.checked}):g)); }
+  function setPrice(idx,val){ const v = val===""? null: Number(val); setGroceries(groceries.map((g,i)=> i===idx? Object.assign({},g,{estCost:v}):g)); }
+  function daysBadge(days){
+    if(!days||!days.length) return "📦 Pantry";
+    const min = Math.min.apply(null,days), max = Math.max.apply(null,days);
+    return "📅 "+(min===max?("Day "+min):("Day "+min+"–"+max));
+  }
+
+  return e("div", { className:"wrap" },
+    e("h1", null, "Groceries & Prices"),
+    e("div", { style:{ fontSize:12, color:"#64748b", margin:"6px 0 12px" } },
+      "Checked $", totals.checked.toFixed(2),
+      " • Remaining $", totals.remaining.toFixed(2),
+      " • Total $", totals.total.toFixed(2)
+    ),
+    e("ul", { style:{ listStyle:"none", padding:0 }},
+      groceries.map((g,idx)=>
+        e("li", { key:g.id, style:{ display:"flex", alignItems:"center", gap:8, padding:"8px 0", borderBottom:"1px solid #f3d0e1" } },
+          e("button", { className:"paw"+(g.checked?" on":""), onClick:()=>toggle(idx) }, g.checked?"🐾":""),
+          e("div", { style:{ flex:1 } },
+            e("div", null, g.name, " ", e("span", { className:"badge" }, daysBadge(g.days))),
+            e("div", { style:{ fontSize:12, color:"#64748b" } }, g.qty||"")
+          ),
+          e("input", { type:"number", step:"0.01", placeholder:"$", value:(g.estCost==null?"":g.estCost), onChange:(ev)=>setPrice(idx, ev.target.value), style:{ width:90 } })
+        )
+      )
+    )
+  );
+};
+
+/* ---------- Calendar ---------- */
+const Calendar = ({ days, recipes, settings }) => {
+  function dateFor(dayNum){
+    const dstr = settings.phaseTemplates.__startDate || "";
+    if(!dstr) return null;
+    const base = new Date(dstr+"T00:00:00");
+    if(isNaN(base)) return null;
+    const dt = new Date(base.getTime() + (dayNum-1)*86400000);
+    return dt.toLocaleDateString();
+  }
+  return e("div", { className:"wrap" },
+    e("h1", null, "Calendar"),
+    e("ul", { style:{ listStyle:"none", padding:0, marginTop:8 }},
+      days.map(d=>{
+        const dRecipes = recipes.filter(r=> r.day===d.day);
+        const dd = dateFor(d.day);
+        return e("li", { key:d.day, className:"card", style:{ marginBottom:8 }},
+          e("div", { style:{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:8 }},
+            e("div", null,
+              e("div", { style:{ fontWeight:600 } }, "Day ", d.day, " — ", d.phase.toUpperCase()),
+              dd && e("div", { className:"badge", style:{ marginTop:6 } }, dd)
+            ),
+            e("div", { style:{ display:"flex", gap:6, flexWrap:"wrap", minHeight:24 }},
+              dRecipes.length
+                ? dRecipes.map(r=> e("span", { key:r.id, className:"badge" }, (r.type==="juice"?"🧃 ":"🍽️ "), r.name))
+                : (d.note ? e("span",{className:"badge"},"📝 Note") : e("span", { style:{ fontSize:12, color:"#64748b" } }, "—"))
+            )
+          )
+        );
+      })
+    )
+  );
+};
+
+/* ---------- Smart Coach globals (define once!) ---------- */
+window.OZ_COACH_RULES = window.OZ_COACH_RULES || [
+  { id:"headache",  test:function(ctx){ return ctx.syms.has("headache"); },
+    tips:["Sip 8–12 oz water over 15 min.","Add a pinch of sea salt / electrolyte.","5–10 min screen break."] },
+  { id:"dizziness", test:function(ctx){ return ctx.syms.has("dizziness"); },
+    tips:["Sit or lie until steady.","Small juice or pinch of salt if fasting.","Breathe 4 in / 6 out."] },
+  { id:"nausea",    test:function(ctx){ return ctx.syms.has("nausea"); },
+    tips:["Sip cool water or peppermint/ginger tea.","Fresh air.","Move slowly."] },
+  { id:"fatigue",   test:function(ctx){ return ctx.syms.has("fatigue"); },
+    tips:["15–20 min rest.","Hydrate or electrolytes.","Light stretching."] },
+  { id:"brain-fog", test:function(ctx){ return ctx.syms.has("brain-fog"); },
+    tips:["Stand & stretch 2 min.","Glass of water.","5 min sunlight."] }
+];
+window.OZ_COACH_AFFIRM = window.OZ_COACH_AFFIRM || [
+  "You’ve got this! 💪","Proud of your effort today. 🌟","Oz is wagging his tail for you! 🐶","One step at a time — you’re doing amazing.","Keep going, your future self will thank you."
+];
+
+/* ---------- Dashboard ---------- */
+function Dashboard({ templates, days, setDays, recipes }){
+  const [idx, setIdx] = useState(0);
+  const day = days[idx] || days[0];
+
+  /* next ingredients helper */
   function nextTwoDayIngredients(currentDay){
     function tryDays(d1,d2){
-      var want = new Set([d1,d2]);
-      var bag = {};
-      (recipes||[]).forEach(function(r){
+      const want = new Set([d1,d2]); const bag = {};
+      (recipes||[]).forEach(r=>{
         if(!r.day || !want.has(r.day)) return;
-        (r.ingredients||[]).forEach(function(it){
-          var key = String(it.key||it.name||"").toLowerCase();
-          if(!bag[key]) bag[key] = { name: it.name, qtyList: [], days: {} };
+        (r.ingredients||[]).forEach(it=>{
+          const key=(it.key||it.name||"").toLowerCase();
+          if(!bag[key]) bag[key]={ name:it.name, qtyList:[], days:new Set() };
           if(it.qty) bag[key].qtyList.push(it.qty);
-          bag[key].days[r.day] = true;
+          bag[key].days.add(r.day);
         });
       });
-      var out = Object.keys(bag).map(function(k){
-        var entry = bag[k];
-        var ds = Object.keys(entry.days).map(function(n){return parseInt(n,10);}).sort(function(a,b){return a-b;});
-        entry.days = ds;
-        return entry;
-      }).sort(function(a,b){ return String(a.name||"").localeCompare(String(b.name||"")); });
-      return out;
+      Object.keys(bag).forEach(k=> bag[k].days = Array.from(bag[k].days).sort((a,b)=>a-b));
+      return Object.values(bag).sort((a,b)=>(a.name||"").localeCompare(b.name||""));
     }
-
-    var strict = tryDays(currentDay.day, currentDay.day+1);
-    if (strict.length) return { items: strict, label: "Today + Tomorrow — Ingredients" };
-
-    var futureDays = Array.from(new Set((recipes||[])
-                      .filter(function(r){return r.day >= currentDay.day;})
-                      .map(function(r){return r.day;}))).sort(function(a,b){return a-b;});
-    var pool = futureDays.slice(0,2);
-    if(!pool.length) return { items: [], label: "Upcoming Ingredients" };
-
-    var fb = tryDays(pool[0], pool[1]||pool[0]);
-    var lbl = (pool.length===2) ? ("Upcoming Ingredients — Day "+pool[0]+" & "+pool[1])
-                                : ("Upcoming Ingredients — Day "+pool[0]);
-    return { items: fb, label: lbl };
+    const strict = tryDays(currentDay.day, currentDay.day+1);
+    if(strict.length) return { items: strict, label: "Today + Tomorrow — Ingredients" };
+    const futureDays = Array.from(new Set((recipes||[]).filter(r=>r.day>=currentDay.day).map(r=>r.day))).sort((a,b)=>a-b);
+    const pool = futureDays.slice(0,2);
+    if(pool.length===0) return { items:[], label:"Upcoming Ingredients" };
+    const fallback = tryDays(pool[0], pool[1]||pool[0]);
+    const label = pool.length===2 ? `Upcoming Ingredients — Day ${pool[0]} & ${pool[1]}` : `Upcoming Ingredients — Day ${pool[0]}`;
+    return { items: fallback, label };
   }
+  const nextData = nextTwoDayIngredients(day);
+  const nextItems = nextData.items;
+  const nextLabel = nextData.label;
 
-  var nextInfo = nextTwoDayIngredients(day);
-  var nextItems = nextInfo.items;
-  var nextLabel = nextInfo.label;
+  /* checklist */
+  const templateIds = templates[day.phase] || [];
+  const activeIds = (day.order && day.order.length ? day.order : templateIds);
+  const items = activeIds.map(id => ({ id, label: GOAL_LIBRARY[id] || id }));
+  const checks = day.checks || {};
+  const doneCount = items.reduce((a,it)=>a+(checks[it.id]?1:0),0);
+  const totalCount = Math.max(1, items.length);
+  const progress = (doneCount/totalCount)*100;
+  const weightSeries = days.map(d => d.weight==null ? null : d.weight);
 
-  var templateIds = templates[day.phase] || [];
-  var activeIds = (day.order && day.order.length ? day.order : templateIds);
-  var items = activeIds.map(function(id){ return { id:id, label: (GOAL_LIBRARY[id]||id) }; });
-  var checks = day.checks || {};
-  var doneCount = items.reduce(function(a,it){ return a + (checks[it.id]?1:0); }, 0);
-  var totalCount = Math.max(1, items.length);
-  var progress = (doneCount/totalCount)*100;
-  var weightSeries = days.map(function(d){ return (d.weight==null?null:d.weight); });
+  useEffect(()=>{ if(Math.round(progress)===100){ window.safeConfetti({ particleCount: 80, spread:70, origin:{y:.6} }); } },[progress]);
 
-  // celebrate on 100%
-  React.useEffect(function(){
-    if(Math.round(progress)===100){
-      if (window.safeConfetti) { window.safeConfetti({particleCount:80,spread:70,origin:{y:.6}}); }
-      else if (window.confetti) { window.confetti({particleCount:80,spread:70,origin:{y:.6}}); }
-      console.log("🎉 100% complete today!");
-    }
-  }, [progress]);
-
-  // interactions
-  function changeDay(dir){
-    setIdx(function(cur){ var n=cur+dir; if(n<0) n=days.length-1; if(n>=days.length) n=0; return n; });
-  }
   function toggleCheck(id){
-    setDays(function(prev){
-      var next = prev.slice();
-      var d = Object.assign({}, next[idx]);
-      var c = Object.assign({}, d.checks||{});
-      c[id] = !c[id];
-      d.checks = c;
-      next[idx] = d;
-      return next;
+    setDays(prev=>{
+      const next = prev.slice(); const d = Object.assign({}, next[idx]);
+      const c = Object.assign({}, d.checks||{}); c[id]=!c[id]; d.checks=c; next[idx]=d; return next;
     });
   }
   function setPhase(p){
-    setDays(function(prev){
-      var next = prev.slice();
-      var d = Object.assign({}, next[idx]);
-      d.phase = p;
-      next[idx] = d;
-      return next;
+    setDays(prev=>{
+      const next=prev.slice(); const d=Object.assign({},next[idx]); d.phase=p; next[idx]=d; return next;
     });
   }
+  function changeDay(dir){ setIdx(cur=>{ let n=cur+dir; if(n<0) n=days.length-1; if(n>=days.length) n=0; return n; }); }
 
-  // editor state
-  var editingState = React.useState(false);
-  var editing = editingState[0], setEditing = editingState[1];
-  var dragIndexState = React.useState(null);
-  var dragIndex = dragIndexState[0], setDragIndex = dragIndexState[1];
-  var localIdsState = React.useState(activeIds);
-  var localIds = localIdsState[0], setLocalIds = localIdsState[1];
-
-  React.useEffect(function(){ setLocalIds(activeIds); }, [idx, day.phase, day.order]);
-
-  function applyCustom(){
-    setDays(function(prev){
-      var next = prev.slice();
-      var d = Object.assign({}, next[idx]);
-      d.order = localIds.slice();
-      d.custom = true;
-      next[idx] = d;
-      return next;
-    });
-    setEditing(false);
-  }
-  function resetToTemplate(){
-    setDays(function(prev){
-      var next = prev.slice();
-      var d = Object.assign({}, next[idx]);
-      d.order = null; d.custom = false;
-      var allowed = {};
-      (templates[d.phase]||[]).forEach(function(g){ allowed[g]=true; });
-      var nc = {};
-      Object.keys(d.checks||{}).forEach(function(k){ if(allowed[k]) nc[k]=d.checks[k]; });
-      d.checks = nc;
-      next[idx] = d;
-      return next;
-    });
-    setEditing(false);
-  }
-  function removeGoal(id){ setLocalIds(function(prev){ return prev.filter(function(x){return x!==id;}); }); }
-  function addGoal(){
-    var pool = Object.keys(GOAL_LIBRARY).filter(function(id){ return localIds.indexOf(id)===-1; });
-    if(!pool.length){ alert("All goals already included"); return; }
-    var id = prompt("Add goal by ID:\n"+pool.join(", "));
-    if(!id || pool.indexOf(id)===-1) return;
-    setLocalIds(function(prev){ return prev.concat([id]); });
-  }
-  function handleDragStart(i,ev){ setDragIndex(i); try{ ev.dataTransfer.setData("text/plain", String(i)); }catch(e){} }
-  function handleDrop(i,ev){
-    ev.preventDefault();
-    if(dragIndex===null || dragIndex===i) return;
-    setLocalIds(function(prev){
-      var arr = prev.slice();
-      var mv = arr.splice(dragIndex,1)[0];
-      arr.splice(i,0,mv);
-      return arr;
-    });
-    setDragIndex(null);
-  }
-
-  // ----- Smart Coach (from notes) -----
-  var coachTextState = React.useState("");
-  var coachText = coachTextState[0], setCoachText = coachTextState[1];
-
-  var SYM_MATCHERS = [
-    {id:"headache",     rx:/\b(headache|migraine|head pain)\b/i},
-    {id:"dizziness",    rx:/\b(dizzy|light[-\s]?headed|vertigo)\b/i},
-    {id:"nausea",       rx:/\b(nausea|queasy|sick to (my|the) stomach)\b/i},
-    {id:"fatigue",      rx:/\b(tired|fatigue|exhaust(ed|ion)|wiped|low energy)\b/i},
-    {id:"brain-fog",    rx:/\b(brain[-\s]?fog|foggy|can.?t focus)\b/i},
-    {id:"constipation", rx:/\b(constipat(ed|ion)|no (bm|bowel)|hard stool)\b/i},
-    {id:"cramps",       rx:/\b(cramps?|charley horse|muscle spasm)\b/i},
-    {id:"cold",         rx:/\b(chills?|feeling cold|freezing)\b/i},
-    {id:"insomnia",     rx:/\b(can.?t sleep|insomnia|up all night|poor sleep)\b/i}
+  /* Smart Coach (driven by notes) */
+  const [coachText, setCoachText] = useState("");
+  const SYM_MATCHERS = [
+    {id:"headache",rx:/\b(headache|migraine|head pain)\b/i},
+    {id:"dizziness",rx:/\b(dizzy|light[-\s]?headed|vertigo)\b/i},
+    {id:"nausea",rx:/\b(nausea|queasy|sick to (my|the) stomach)\b/i},
+    {id:"fatigue",rx:/\b(tired|fatigue|exhaust(ed)?|wiped|low energy)\b/i},
+    {id:"brain-fog",rx:/\b(brain[-\s]?fog|foggy|can.?t focus)\b/i}
   ];
-
   function inferMoodFrom(text){
-    var score = 6, lowers = String(text||"").toLowerCase();
-    var negRx = [/overwhelm(ed)?|anxious|stressed|down|sad|discouraged|frustrat(ed)?/,
-                 /tired|exhaust(ed)?|wiped|drained/,
-                 /cried|crying|tear(s|y)/,
-                 /pain|hurt(s|ing)?|ache/];
-    var posRx = [/proud|strong|good|better|energized|motivated|win|progress|calm/];
-    var negHits = negRx.reduce(function(n,rx){ return n + (rx.test(lowers)?1:0); }, 0);
-    var posHits = posRx.reduce(function(n,rx){ return n + (rx.test(lowers)?1:0); }, 0);
-    score += (posHits*1) - (negHits*2);
-    return Math.max(1, Math.min(10, score));
+    let score=6, t=(text||"").toLowerCase();
+    let neg=[/overwhelm|anxious|stressed|down|sad|discourag|frustrat/,/tired|exhaust|wiped|drained/,/pain|hurt|ache/].reduce((n,rx)=>n+(rx.test(t)?1:0),0);
+    let pos=[/proud|strong|better|energiz|motivated|win|progress|calm/].reduce((n,rx)=>n+(rx.test(t)?1:0),0);
+    score += pos - 2*neg; return Math.max(1,Math.min(10,score));
   }
-
   function analyzeFromNotes(){
-    var text = String(day.note||"").trim();
+    const text=(day.note||"").trim();
     if(!text){ setCoachText("Write a quick note, then tap “Coach from notes”."); return; }
-    var found = new Set(SYM_MATCHERS.filter(function(m){ return m.rx.test(text); }).map(function(m){ return m.id; }));
-    var mood = inferMoodFrom(text);
-    var ctx = { syms: found, phase: day.phase };
-    var hits = (window.OZ_COACH_RULES||[]).filter(function(r){ try{return r.test(ctx);}catch(e){return false;} });
-    var tips = [];
-    hits.forEach(function(h){ tips = tips.concat(h.tips||[]); });
-    tips = tips.slice(0,6);
-
-    var affirm = window.OZ_COACH_AFFIRM||["You’ve got this!"];
-    var moodBoost = (mood<=4)
-      ? ["You’re not alone — let’s make today gentle and doable.",
-         "Pick one tiny win now (8–10 oz water, 3 deep breaths).",
-         affirm[Math.floor(Math.random()*affirm.length)]]
-      : (mood<=6)
-        ? ["Nice work staying steady. One small upgrade today.",
-           affirm[Math.floor(Math.random()*affirm.length)]]
-        : [affirm[Math.floor(Math.random()*affirm.length)]];
-
-    var header = found.size ? ("I noticed: "+Array.from(found).join(", ")+".")
-                            : "No specific symptoms spotted — here’s a steady plan.";
-    var body = tips.length ? ("Try these:\n• "+tips.join("\n• "))
-                           : "Hydrate now, take 5 slow breaths, a short walk, and check in later.";
+    const found = new Set(SYM_MATCHERS.filter(m=>m.rx.test(text)).map(m=>m.id));
+    const mood = inferMoodFrom(text);
+    const ctx = { syms: found, phase: day.phase };
+    const tips = (window.OZ_COACH_RULES||[]).filter(r=>{try{return r.test(ctx);}catch(e){return false;}}).flatMap(r=>r.tips).slice(0,6);
+    const A = window.OZ_COACH_AFFIRM||["You’ve got this!"];
+    const moodBoost = (mood<=4)
+      ? ["You’re not alone — make today gentle.", "Pick one tiny win now (8–10 oz water).", A[Math.floor(Math.random()*A.length)]]
+      : (mood<=6) ? ["Nice work staying steady. One small upgrade today.", A[Math.floor(Math.random()*A.length)]]
+                  : [A[Math.floor(Math.random()*A.length)]];
+    const header = found.size ? ("I noticed: "+Array.from(found).join(", ")+".") : "No specific symptoms spotted — here’s a steady plan.";
+    const body = tips.length ? ("Try these:\n• "+tips.join("\n• ")) : "Hydrate now, 5 slow breaths, short walk, check in later.";
     setCoachText(header+"\n\n"+body+"\n\n"+moodBoost.join(" "));
   }
-
   function appendCoachToNotes(){
     if(!coachText) return;
-    var divider = (day.note && String(day.note).trim()? "\n\n" : "");
-    var stamp = new Date().toLocaleString();
-    var toAdd = divider+"Coach ("+stamp+"):\n"+coachText;
-    setDays(function(prev){
-      var next = prev.slice();
-      var d2 = Object.assign({}, next[idx]);
-      d2.note = String(d2.note||"") + toAdd;
-      next[idx] = d2;
-      return next;
+    const divider = (day.note && day.note.trim()? "\n\n" : "");
+    const stamp = new Date().toLocaleString();
+    const toAdd = divider+"Coach ("+stamp+"):\n"+coachText;
+    setDays(prev=>{
+      const next=prev.slice(); const d2=Object.assign({},next[idx]);
+      d2.note=(d2.note||"")+toAdd; next[idx]=d2; return next;
     });
     setCoachText("");
   }
 
-  // ---- RENDER ----
-  return e(React.Fragment, null,
-
-    // Mast
-    e("div",{className:"mast card dash-header"},
-      e("div",{className:"dash-header-left"},
-        e("img",{src:"oz.png",alt:"Oz",className:"oz-icon"}),
-        e("div",null,
-          e("h2",{className:"dash-title"},"Oz Cleanse Companion"),
-          e("div",{className:"dash-subtitle"}, String(day.phase||"").toUpperCase())
+  return e(React.Fragment,null,
+    e("div",{className:"mast card"},
+      e("div",{className:"mastRow"},
+        e("div",{className:"mastLeft"},
+          e("img",{src:"oz.png",alt:"Oz"}),
+          e("div",{className:"mastTitle"},
+            e("b",null,"Oz Cleanse Companion"),
+            e("small",null,day.phase.toUpperCase())
+          )
+        ),
+        e("div",{className:"day-nav"},
+          e("button",{className:"day-btn",onClick:()=>changeDay(-1)},"◀"),
+          e("div",{className:"day-label"},"Day "+day.day),
+          e("button",{className:"day-btn",onClick:()=>changeDay(1)},"▶")
         )
       ),
-      e("div",{className:"day-nav"},
-        e("button",{className:"day-btn",onClick:function(){changeDay(-1);}},"◀"),
-        e("div",{className:"day-label"},"Day "+day.day),
-        e("button",{className:"day-btn",onClick:function(){changeDay(1);}},"▶")
+      e("div",{className:"mastRow",style:{marginTop:8}},
+        e("div",null,
+          e("select",{value:day.phase,onChange:(ev)=>setPhase(ev.target.value),className:"btn"},
+            e("option",{value:"fast"},"Fast"),
+            e("option",{value:"cleanse"},"Cleanse"),
+            e("option",{value:"rebuild"},"Rebuild")
+          )
+        )
       )
     ),
 
-    // Progress
     e(ProgressBar,{value:progress}),
+    e(Checklist,{items, state:checks, onToggle:toggleCheck}),
 
-    // Checklist
-    e(Checklist,{items:items, state:checks, onToggle:toggleCheck}),
-
-    // Daily Notes + Smart Coach
     e("div",{className:"card",style:{marginTop:16}},
       e("h2",null,"Daily Notes"),
       e("div",{style:{display:"flex",gap:8,margin:"6px 0 10px",flexWrap:"wrap"}},
         e("button",{className:"btn peach",onClick:analyzeFromNotes},"Coach from notes"),
         e("button",{className:"btn",onClick:appendCoachToNotes,disabled:!coachText},"Add to notes")
       ),
-      coachText ? e("div",{className:"badge",style:{display:"block",whiteSpace:"pre-wrap",marginBottom:8,padding:10}}, coachText) : null,
+      coachText && e("div",{className:"badge",style:{display:"block",whiteSpace:"pre-wrap",marginBottom:8,padding:10}},coachText),
       e("textarea",{
-        value: day.note||"",
-        onChange:function(ev){
-          var val = ev.target.value;
-          setDays(function(prev){
-            var next = prev.slice();
-            var d3 = Object.assign({}, next[idx]);
-            d3.note = val;
-            next[idx] = d3;
-            return next;
+        value: day.note || "",
+        onChange:(ev)=>{
+          const val=ev.target.value;
+          setDays(prev=>{
+            const next=prev.slice(); const d3=Object.assign({},next[idx]); d3.note=val; next[idx]=d3; return next;
           });
         },
         rows:4,
@@ -790,32 +444,23 @@ function Dashboard(props){
       })
     ),
 
-    // Next-ingredients card
     e("div",{className:"card",style:{marginTop:16}},
-      e("h2", null, nextLabel),
-      (nextItems.length===0)
+      e("h2",null,nextLabel),
+      nextItems.length===0
         ? e("p",{style:{color:"#64748b"}},"No recipes scheduled soon.")
         : e("ul",{style:{listStyle:"none",padding:0,marginTop:8}},
-            nextItems.map(function(item){
-              return e("li",{
-                  key:item.name,
-                  style:{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:"1px solid #f3d0e1"}
-                },
-                e("span", null,
+            nextItems.map(item =>
+              e("li",{key:item.name,style:{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:"1px solid #f3d0e1"}},
+                e("span",null,
                   item.name," ",
-                  e("span",{className:"badge"},
-                    (item.days.length===1)
-                      ? ("Day "+item.days[0])
-                      : ("Day "+item.days[0]+"–"+item.days[item.days.length-1])
-                  )
+                  e("span",{className:"badge"}, (item.days.length===1?("Day "+item.days[0]):("Day "+item.days[0]+"–"+item.days[item.days.length-1])))
                 ),
-                e("span",{style:{color:"#64748b",fontSize:12}}, (item.qtyList||[]).join(" + ") || "")
-              );
-            })
+                e("span",{style:{color:"#64748b",fontSize:12}}, item.qtyList.join(" + ") || "")
+              )
+            )
           )
     ),
 
-    // Weight card
     e("div",{className:"card",style:{marginTop:16}},
       e("h2",null,"Weight"),
       e("div",{style:{display:"flex",alignItems:"center",gap:8,margin:"8px 0"}},
@@ -823,18 +468,15 @@ function Dashboard(props){
         e("input",{
           type:"number", step:"0.1",
           value:(day.weight==null?"":day.weight),
-          onChange:function(ev){
-            var v = ev.target.value;
-            setDays(function(prev){
-              var next = prev.slice();
-              var d = Object.assign({}, next[idx]);
-              d.weight = (v===""?null:Number(v));
-              if(v!=="" && ((d.checks && ("weight" in d.checks)) || activeIds.indexOf("weight")!==-1)){
-                var c = Object.assign({}, d.checks||{});
-                c.weight = true; d.checks = c;
+          onChange:(ev)=>{
+            const v=ev.target.value;
+            setDays(prev=>{
+              const next=prev.slice(); const d=Object.assign({},next[idx]);
+              d.weight=(v===""?null:Number(v));
+              if (v!=="" && ((d.checks && "weight" in d.checks) || activeIds.indexOf("weight")!==-1)) {
+                const c=Object.assign({},d.checks||{}); c.weight=true; d.checks=c;
               }
-              next[idx] = d;
-              return next;
+              next[idx]=d; return next;
             });
           },
           style:{width:120}
@@ -842,156 +484,127 @@ function Dashboard(props){
         e("span",{className:"badge"},"Day "+day.day)
       ),
       e("div",{style:{marginTop:8}}, e(WeightChart,{series:weightSeries}))
-    ),
+    )
+  );
+}
 
-    // Editor
-    editing ? e("div",{className:"card",style:{marginTop:16,borderColor:"#f9c2a7"}},
-      e("h2",null,"Customize Day "+day.day),
-      e("p",{style:{color:"#64748b",margin:"6px 0 12px"}},"Drag to reorder; add/remove goals just for this day."),
-      e("ul",{style:{listStyle:"none",padding:0}},
-        localIds.map(function(id,i){
-          return e("li",{
-              key:id,draggable:true,
-              onDragStart:function(ev){handleDragStart(i,ev);},
-              onDragOver:function(ev){ev.preventDefault();},
-              onDrop:function(ev){handleDrop(i,ev);},
+/* ---------- App ---------- */
+const App = () => {
+  const [settings, setSettings] = useLocal("oz.settings", { phaseTemplates: DEFAULT_PHASE_TEMPLATES });
+  useEffect(()=>{
+    const pt=settings&&settings.phaseTemplates;
+    const valid=pt&&["fast","cleanse","rebuild"].every(k=> Array.isArray(pt[k]) && pt[k].every(id=>!!GOAL_LIBRARY[id]));
+    if(!valid) setSettings({ phaseTemplates: DEFAULT_PHASE_TEMPLATES });
+  },[]);
+
+  const [days, setDays] = useLocal("oz.days", defaultDays());
+  const [recipes, setRecipes] = useLocal("oz.recipes", PLAN_RECIPES);
+  const [groceries, setGroceries] = useLocal("oz.groceries", aggregateGroceries(PLAN_RECIPES));
+  const [tab, setTab] = useState("dash");
+
+  function importFullPlan(){
+    const newDays = defaultDays(); setDays(newDays);
+    setRecipes(PLAN_RECIPES);
+    setGroceries(aggregateGroceries(PLAN_RECIPES));
+    alert("Plan imported ✔");
+  }
+
+  const Settings = ({ templates, onChange, onImportPlan }) => {
+    const [local, setLocal] = useState(templates);
+    const [drag, setDrag] = useState({ phase:null, index:null });
+    useEffect(()=>{ setLocal(templates); }, [templates]);
+
+    function handleDragStart(phase, index, ev){ setDrag({phase,index}); try{ ev.dataTransfer.setData("text/plain", String(index)); }catch(e){} }
+    function handleDrop(phase, index, ev){
+      ev.preventDefault(); if(drag.phase!==phase || drag.index===null) return;
+      const arr = (local[phase]||[]).slice(); const moved = arr.splice(drag.index,1)[0]; arr.splice(index,0,moved);
+      const next = Object.assign({}, local); next[phase]=arr; setLocal(next); onChange(next); setDrag({phase:null,index:null});
+    }
+    function removeItem(phase, id){
+      const arr = (local[phase]||[]).filter(x=>x!==id);
+      const next = Object.assign({}, local); next[phase]=arr; setLocal(next); onChange(next);
+    }
+    function addItem(phase){
+      const pool = Object.keys(GOAL_LIBRARY).filter(id=> (local[phase]||[]).indexOf(id)===-1);
+      if(pool.length===0){ alert("All goals already included"); return; }
+      const id = prompt("Add goal by ID:\n"+pool.join(", ")); if(!id || pool.indexOf(id)===-1) return;
+      const next = Object.assign({}, local); next[phase]=(local[phase]||[]).concat([id]); setLocal(next); onChange(next);
+    }
+    function renderPhase(phase, label){
+      const ids = local[phase]||[];
+      return e("div",{className:"card",style:{marginBottom:16}},
+        e("h2",null,label),
+        e("ul",{style:{listStyle:"none",padding:0,marginTop:8}},
+          ids.map((id,idx)=> e("li",{
+              key:id, draggable:true,
+              onDragStart:(ev)=>handleDragStart(phase,idx,ev),
+              onDragOver:(ev)=>ev.preventDefault(),
+              onDrop:(ev)=>handleDrop(phase,idx,ev),
               style:{display:"flex",alignItems:"center",padding:8,marginBottom:6,border:"1px solid #f3d0e1",borderRadius:12,background:"#fff"}
             },
             e("span",{style:{width:18,marginRight:8,opacity:.6}},"⋮⋮"),
-            e("span",{style:{flex:1}}, GOAL_LIBRARY[id]||id),
-            e("button",{className:"btn",onClick:function(){removeGoal(id);}},"Remove")
-          );
-        })
-      ),
-      e("div",null,
-        e("button",{className:"btn peach",onClick:addGoal},"Add Goal"),
-        e("button",{className:"btn",style:{marginLeft:8},onClick:function(){setEditing(false);}},"Cancel"),
-        e("button",{className:"btn",style:{marginLeft:8},onClick:applyCustom},"Save")
-      )
-    ) : null
-  );
-}
-</script>
-
-  /* ---------- App ---------- */
-  const App = () => {
-    const [settings, setSettings] = useLocal("oz.settings", { phaseTemplates: DEFAULT_PHASE_TEMPLATES });
-    useEffect(()=>{
-      const pt=settings&&settings.phaseTemplates;
-      const valid=pt&&["fast","cleanse","rebuild"].every(k=> Array.isArray(pt[k]) && pt[k].every(id=>!!GOAL_LIBRARY[id]));
-      if(!valid) setSettings({ phaseTemplates: DEFAULT_PHASE_TEMPLATES });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    },[]);
-    const [days, setDays] = useLocal("oz.days", defaultDays());
-    const [recipes, setRecipes] = useLocal("oz.recipes", PLAN_RECIPES);
-    const [groceries, setGroceries] = useLocal("oz.groceries", aggregateGroceries(PLAN_RECIPES));
-    const [tab, setTab] = useState("dash");
-
-    function importFullPlan(){
-      const newDays = defaultDays(); setDays(newDays);
-      setRecipes(PLAN_RECIPES);
-      setGroceries(aggregateGroceries(PLAN_RECIPES));
-      alert("Plan imported ✔");
+            e("span",{style:{flex:1}},GOAL_LIBRARY[id]||id),
+            e("button",{className:"btn",onClick:()=>removeItem(phase,id)},"Remove")
+          ))
+        ),
+        e("div",null, e("button",{className:"btn peach",onClick:()=>addItem(phase)},"Add Goal"))
+      );
     }
 
-    // Settings page component (unchanged except import button)
-    const Settings = ({ templates, onChange, onImportPlan }) => {
-      const [local, setLocal] = useState(templates);
-      const [drag, setDrag] = useState({ phase:null, index:null });
-      useEffect(()=>{ setLocal(templates); }, [templates]);
-
-      function handleDragStart(phase, index, ev){ setDrag({phase,index}); try{ ev.dataTransfer.setData("text/plain", String(index)); }catch(e){} }
-      function handleDrop(phase, index, ev){
-        ev.preventDefault(); if(drag.phase!==phase || drag.index===null) return;
-        const arr = (local[phase]||[]).slice(); const moved = arr.splice(drag.index,1)[0]; arr.splice(index,0,moved);
-        const next = Object.assign({}, local); next[phase]=arr; setLocal(next); onChange(next); setDrag({phase:null,index:null});
-      }
-      function removeItem(phase, id){
-        const arr = (local[phase]||[]).filter(x=>x!==id);
-        const next = Object.assign({}, local); next[phase]=arr; setLocal(next); onChange(next);
-      }
-      function addItem(phase){
-        const pool = Object.keys(GOAL_LIBRARY).filter(id=> (local[phase]||[]).indexOf(id)===-1);
-        if(pool.length===0){ alert("All goals already included"); return; }
-        const id = prompt("Add goal by ID:\n"+pool.join(", ")); if(!id || pool.indexOf(id)===-1) return;
-        const next = Object.assign({}, local); next[phase]=(local[phase]||[]).concat([id]); setLocal(next); onChange(next);
-      }
-      function renderPhase(phase, label){
-        const ids = local[phase]||[];
-        return e("div",{className:"card",style:{marginBottom:16}},
-          e("h2",null,label),
-          e("ul",{style:{listStyle:"none",padding:0,marginTop:8}},
-            ids.map((id,idx)=> e("li",{
-                key:id, draggable:true,
-                onDragStart:(ev)=>handleDragStart(phase,idx,ev),
-                onDragOver:(ev)=>ev.preventDefault(),
-                onDrop:(ev)=>handleDrop(phase,idx,ev),
-                style:{display:"flex",alignItems:"center",padding:8,marginBottom:6,border:"1px solid #f3d0e1",borderRadius:12,background:"#fff"}
-              },
-              e("span",{style:{width:18,marginRight:8,opacity:.6}},"⋮⋮"),
-              e("span",{style:{flex:1}},GOAL_LIBRARY[id]||id),
-              e("button",{className:"btn",onClick:()=>removeItem(phase,id)},"Remove")
-            ))
-          ),
-          e("div",null, e("button",{className:"btn peach",onClick:()=>addItem(phase)},"Add Goal"))
-        );
-      }
-
-      return e("div",{className:"wrap"},
-        e("h1",null,"Settings"),
-        e("p",{style:{margin:"6px 0 12px",color:"#64748b"}}, "Drag to reorder the default goals for each phase."),
-        renderPhase("fast","Fast — Phase Template"),
-        renderPhase("cleanse","Cleanse — Phase Template"),
-        renderPhase("rebuild","Rebuild — Phase Template"),
-        e("div",{className:"card",style:{marginTop:8}},
-          e("h2",null,"Import 11-Day Plan"),
-          e("p",{style:{color:"#64748b",margin:"6px 0 12px"}},"Loads all juices/meals and builds a tagged grocery list."),
-          e("button",{className:"btn peach",onClick:onImportPlan},"Import Plan")
-        )
-      );
-    };
-
-    return e("div", {},
-      tab==="dash" && e(Dashboard, { templates: settings.phaseTemplates, days, setDays, recipes }),
-      tab==="groceries" && e(GroceryList, { groceries, setGroceries }),
-      tab==="calendar"  && e(Calendar, { days, recipes, settings }),
-      tab==="photos"    && e((function(){
-        const Photos = () => {
-          const [photos, setPhotos] = useState([]);
-          const AFFIRM = ["Looking strong ✨","Your glow is showing ✨","Small habits, big change 💪","Oz is proud of you 🐶","Consistency looks good on you 🌟"];
-          function handleUpload(ev){
-            const files = Array.from(ev.target.files||[]);
-            const urls = files.map(f=> URL.createObjectURL(f));
-            setPhotos(photos.concat(urls));
-            setTimeout(()=>{ alert(AFFIRM[Math.floor(Math.random()*AFFIRM.length)]); }, 50);
-          }
-          return e("div", { className:"wrap" },
-            e("h1", null, "Progress Photos"),
-            e("input", { type:"file", multiple:true, accept:"image/*", onChange:handleUpload }),
-            e("div", { style:{ display:"flex", gap:8, flexWrap:"wrap", marginTop:12 } },
-              photos.map((url,i)=> e("img",{ key:i, src:url, style:{ width:100, height:100, objectFit:"cover", borderRadius:8 }}))
-            )
-          );
-        };
-        return Photos;
-      })()),
-      tab==="settings"  && e(Settings, {
-        templates: settings.phaseTemplates,
-        onChange: (next)=> setSettings({ phaseTemplates: next }),
-        onImportPlan: importFullPlan
-      }),
-
-      e("div", { className:"tabs" },
-        e("button",{className:"btn"+(tab==="dash"?" active":""),onClick:()=>setTab("dash")},"Dashboard"),
-        e("button",{className:"btn"+(tab==="groceries"?" active":""),onClick:()=>setTab("groceries")},"Groceries"),
-        e("button",{className:"btn"+(tab==="calendar"?" active":""),onClick:()=>setTab("calendar")},"Calendar"),
-        e("button",{className:"btn"+(tab==="photos"?" active":""),onClick:()=>setTab("photos")},"Photos"),
-        e("button",{className:"btn"+(tab==="settings"?" active":""),onClick:()=>setTab("settings")},"Settings")
+    return e("div",{className:"wrap"},
+      e("h1",null,"Settings"),
+      renderPhase("fast","Fast — Phase Template"),
+      renderPhase("cleanse","Cleanse — Phase Template"),
+      renderPhase("rebuild","Rebuild — Phase Template"),
+      e("div",{className:"card",style:{marginTop:8}},
+        e("h2",null,"Import 11-Day Plan"),
+        e("p",{style:{color:"#64748b",margin:"6px 0 12px"}},"Loads all juices/meals and builds a tagged grocery list."),
+        e("button",{className:"btn peach",onClick:onImportPlan},"Import Plan")
       )
     );
   };
 
-  ReactDOM.createRoot(document.getElementById("root")).render(e(App));
-  </script>
+  return e("div", {},
+    tab==="dash" && e(Dashboard, { templates: settings.phaseTemplates, days, setDays, recipes }),
+    tab==="groceries" && e(GroceryList, { groceries, setGroceries }),
+    tab==="calendar"  && e(Calendar, { days, recipes, settings }),
+    tab==="photos"    && (function(){
+      const Photos = () => {
+        const [photos, setPhotos] = useState([]);
+        const A = ["Looking strong ✨","Your glow is showing ✨","Small habits, big change 💪","Oz is proud of you 🐶","Consistency looks good on you 🌟"];
+        function handleUpload(ev){
+          const files = Array.from(ev.target.files||[]);
+          const urls = files.map(f=> URL.createObjectURL(f));
+          setPhotos(photos.concat(urls));
+          setTimeout(()=>{ alert(A[Math.floor(Math.random()*A.length)]); }, 50);
+        }
+        return e("div",{className:"wrap"},
+          e("h1",null,"Progress Photos"),
+          e("input",{type:"file",multiple:true,accept:"image/*",onChange:handleUpload}),
+          e("div",{style:{display:"flex",gap:8,flexWrap:"wrap",marginTop:12}},
+            photos.map((url,i)=> e("img",{key:i,src:url,style:{width:100,height:100,objectFit:"cover",borderRadius:8}}))
+          )
+        );
+      };
+      return e(Photos);
+    })(),
+    tab==="settings"  && e(Settings, {
+      templates: settings.phaseTemplates,
+      onChange: (next)=> setSettings({ phaseTemplates: next }),
+      onImportPlan: importFullPlan
+    }),
+
+    e("div", { className:"tabs" },
+      e("button",{className:"btn"+(tab==="dash"?" active":""),onClick:()=>setTab("dash")},"Dashboard"),
+      e("button",{className:"btn"+(tab==="groceries"?" active":""),onClick:()=>setTab("groceries")},"Groceries"),
+      e("button",{className:"btn"+(tab==="calendar"?" active":""),onClick:()=>setTab("calendar")},"Calendar"),
+      e("button",{className:"btn"+(tab==="photos"?" active":""),onClick:()=>setTab("photos")},"Photos"),
+      e("button",{className:"btn"+(tab==="settings"?" active":""),onClick:()=>setTab("settings")},"Settings")
+    )
+  );
+};
+
+ReactDOM.createRoot(document.getElementById("root")).render(e(App));
+</script>
 </body>
 </html>
