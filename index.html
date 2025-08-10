@@ -153,7 +153,7 @@
   }
 
   /* ---------- data ---------- */
-  const GOAL_LIBRARY = {
+ window.GOAL_LIBRARY = GOAL_LIBRARY;
     water:"💧 Drink 120–150 oz water",
     tea:"🍵 Tea",
     coffee:"☕ Coffee",
@@ -488,6 +488,8 @@ if (!window.OZ_COACH_RULES) {
     ]}
   ];
 }
+<script>
+// globals you want once
 if (!window.OZ_COACH_AFFIRM) {
   window.OZ_COACH_AFFIRM = [
     "You’ve got this! 💪",
@@ -497,9 +499,7 @@ if (!window.OZ_COACH_AFFIRM) {
     "Keep going, your future self will thank you."
   ];
 }
-
 /* ===================== Dashboard ===================== */
-<script>
 function Dashboard(props){
   // props
   var templates = props.templates;
