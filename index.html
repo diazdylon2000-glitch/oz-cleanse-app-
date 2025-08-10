@@ -712,11 +712,10 @@ const COACH_AFFIRM = [
   "Keep going, your future self will thank you."
 ];
 
-// Daily Notes + Smart Coach (reads the text she writes)
+// --- Daily Notes + Smart Coach ---
 (() => {
   const [coachText,setCoachText] = React.useState("");
 
-  // map free-text -> symptom ids that COACH_RULES understands
   const SYM_MATCHERS = [
     {id:"headache",      rx:/\b(headache|migraine|head pain)\b/i},
     {id:"dizziness",     rx:/\b(dizzy|light[-\s]?headed|vertigo)\b/i},
@@ -729,24 +728,18 @@ const COACH_AFFIRM = [
     {id:"insomnia",      rx:/\b(can.?t sleep|insomnia|up all night|poor sleep)\b/i}
   ];
 
-  // quick sentiment-ish mood guess from text (1–10)
   function inferMoodFrom(text){
-    let score = 6; // neutral
+    let score = 6; 
     const lowers = text.toLowerCase();
-
-    // negatives
     const negHits = [
       /overwhelm(ed)?|anxious|stressed|down|sad|discouraged|frustrat(ed)?/,
       /tired|exhaust(ed)?|wiped|drained/,
       /cried|crying|tear(s|y)/,
       /pain|hurt(s|ing)?|ache/,
     ].reduce((n,rx)=> n + (rx.test(lowers)?1:0), 0);
-
-    // positives
     const posHits = [
       /proud|strong|good|better|energized|motivated|win|progress|calm/,
     ].reduce((n,rx)=> n + (rx.test(lowers)?1:0), 0);
-
     score += (posHits*1) - (negHits*2);
     return Math.max(1, Math.min(10, score));
   }
@@ -755,30 +748,25 @@ const COACH_AFFIRM = [
     const text = (day.note || "").trim();
     if(!text){ setCoachText("Write a quick note, then tap “Coach from notes”."); return; }
 
-    // detect symptoms from text
     const found = new Set(
       SYM_MATCHERS.filter(m => m.rx.test(text)).map(m => m.id)
     );
-
-    // infer mood
     const mood = inferMoodFrom(text);
-
-    // run rules
     const ctx = { syms: found, phase: day.phase };
-    const hits = (COACH_RULES||[]).filter(r => {
+
+    const hits = COACH_RULES.filter(r => {
       try { return r.test(ctx); } catch { return false; }
     });
-
     const tips = hits.flatMap(h => h.tips).slice(0,6);
 
     const moodBoost = (mood<=4)
       ? ["You’re not alone — let’s make today gentle and doable.",
          "Pick one tiny win now (8–10 oz water, 3 deep breaths).",
-         (COACH_AFFIRM||["You’ve got this."])[Math.floor(Math.random()* (COACH_AFFIRM||["You’ve got this."]).length)]]
+         COACH_AFFIRM[Math.floor(Math.random()*COACH_AFFIRM.length)]]
       : (mood<=6)
         ? ["Nice work staying steady. One small upgrade today.",
-           (COACH_AFFIRM||["Keep going."])[Math.floor(Math.random()* (COACH_AFFIRM||["Keep going."]).length)]]
-        : [(COACH_AFFIRM||["Great momentum!"])[Math.floor(Math.random()* (COACH_AFFIRM||["Great momentum!"]).length)]];
+           COACH_AFFIRM[Math.floor(Math.random()*COACH_AFFIRM.length)]]
+        : [COACH_AFFIRM[Math.floor(Math.random()*COACH_AFFIRM.length)]];
 
     const header = found.size
       ? `I noticed: ${Array.from(found).join(", ")}.`
@@ -808,16 +796,13 @@ const COACH_AFFIRM = [
 
   return e("div",{className:"card",style:{marginTop:16}},
     e("h2",null,"Daily Notes"),
-    // actions
     e("div",{style:{display:"flex",gap:8,margin:"6px 0 10px",flexWrap:"wrap"}},
       e("button",{className:"btn peach",onClick:analyzeFromNotes},"Coach from notes"),
       e("button",{className:"btn",onClick:appendToNotes,disabled:!coachText},"Add to notes")
     ),
-    // preview
     coachText && e("div",{className:"badge",style:{display:"block",whiteSpace:"pre-wrap",marginBottom:8,padding:10}},
       coachText
     ),
-    // the textarea she writes into
     e("textarea",{
       value: day.note || "",
       onChange:(ev)=>{
@@ -838,7 +823,7 @@ const COACH_AFFIRM = [
       }
     })
   );
-})(),
+})()
 
 
 // Next-ingredients card
