@@ -368,32 +368,31 @@ body{ padding-top:env(safe-area-inset-top); padding-bottom:env(safe-area-inset-b
 return e("div", { className:"wrap" },
   e("h1", null, "Calendar"),
   e("ul", { style:{ listStyle:"none", padding:0, marginTop:8 } },
-    days.map(d => {
-      const dRecipes = recipes.filter(r => r.day === d.day);
-      const dd = dateFor(d.day);
-      return e("li", { key:d.day, className:"card", style:{ marginBottom:8 } },
-        e("div", { style:{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:8 } },
-          e("div", null,
-            e("div", { style:{ fontWeight:600 } }, "Day ", d.day, " — ", d.phase.toUpperCase()),
-            dd && e("div", { className:"badge", style:{ marginTop:6 } }, dd)
-          ),
-          e("div", { style:{ display:"flex", gap:6, flexWrap:"wrap", minHeight:24 } },
-            dRecipes.length
-              ? dRecipes.map(r =>
-                  e("span", { key:r.id, className:"badge" },
-                    (r.type==="juice" ? "🧃 " : "🍽️ "), r.name
-                  )
-                )
-              : (d.note
-                  ? e("span", { className:"badge", style:{ marginLeft:6 } }, "📝 Note")
-                  : e("span", { style:{ fontSize:12, color:"#64748b" } }, "—")
-                )
-          )
-        )
-      );
-    })
-  )
-);
+ days.map(d=>{
+  const dRecipes = recipes.filter(r=> r.day===d.day);
+  const dd = dateFor(d.day);
+  return e("li", { key:d.day, className:"card", style:{ marginBottom:8 }},
+    e("div", { style:{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:8 }},
+      e("div", null,
+        e("div", { style:{ fontWeight:600 } }, "Day ", d.day, " — ", d.phase.toUpperCase()),
+        dd && e("div", { className:"badge", style:{ marginTop:6 } }, dd)
+      ),
+      e("div", { style:{ display:"flex", gap:6, flexWrap:"wrap", minHeight:24 }},
+        dRecipes.length
+          ? dRecipes.map(r =>
+              e("span", { key:r.id, className:"badge" },
+                (r.type==="juice"?"🧃 ":"🍽️ "), r.name
+              )
+            )
+          : (d.note
+              ? e("span",{className:"badge", style:{marginLeft:6}},"📝 Note")
+              : e("span", { style:{ fontSize:12, color:"#64748b" } }, "—")
+            )
+      )
+    )
+  );
+})
+
 
 
   const Photos = () => {
@@ -496,6 +495,7 @@ return e("div", { className:"wrap" },
 
 // Dashboard
 const Dashboard = ({ templates, days, setDays, recipes }) => {
+  const { items: nextItems, label: nextLabel } = nextTwoDayIngredients(day);
   const [idx, setIdx] = React.useState(0);
   const day = days[idx] || days[0];
   // helper: build next-ingredients (today+tomorrow, else next recipe days)
@@ -534,9 +534,6 @@ const Dashboard = ({ templates, days, setDays, recipes }) => {
       : `Upcoming Ingredients — Day ${pool[0]}`;
     return { items: fallback, label };
   }
-
-  // build next-items + label for the card
-  const { items: nextItems, label: nextLabel } = nextTwoDayIngredients(day);
 
   // template + checklist
   const templateIds = templates[day.phase] || [];
