@@ -271,7 +271,6 @@
   };
 
   /* ---------- Smart Coach ---------- */
-const COACH_RULES = window.OZ_COACH_RULES;
     { id:"headache",  test:ctx=>ctx.syms.has("headache"),
       tips:["Sip 8–12 oz water over 15 min.","Add a pinch of sea salt/electrolyte.","5–10 min screen break."] },
     { id:"dizziness", test:ctx=>ctx.syms.has("dizziness"),
@@ -506,14 +505,6 @@ const COACH_RULES = window.OZ_COACH_RULES;
       "Get 5 minutes of sunlight if possible."
     ]
   }
-];
-
-const COACH_AFFIRM = window.OZ_COACH_AFFIRM;
-  "You’ve got this! 💪",
-  "Proud of your effort today. 🌟",
-  "Oz is wagging his tail for you! 🐶",
-  "One step at a time — you’re doing amazing.",
-  "Keep going — future you is grateful."
 ];
 <script>
 // Smart Coach data (guarded for iOS Safari double-exec)
