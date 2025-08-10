@@ -726,7 +726,7 @@ e("div",{className:"card",style:{marginTop:16}},
       }},"🧠 Smart Coach"),
       e("div",{style:{color:"#475569"}}, "Understands your note and suggests relief + motivation")
     ),
-e("button",{className:"btn primary",onClick:analyzeFromNotes
+e("button",{className:"btn primary",onClick:coach,style:{whiteSpace:"nowrap"}}, "Coach")
   ),
 
   // coach output lives visually here ONLY (not copied to note automatically)
@@ -799,7 +799,7 @@ e("button",{className:"btn primary",onClick:analyzeFromNotes
 };
 
 /* ---------------- Settings (phase templates + goals modal) ---------------- */
-const Settings = ({ templates, onChange, onImportPlan, goals, setGoals }) => {
+const Settings = ({ templates, onChange, onImportPlan, onImportFromChatGPT, goals, setGoals }) => {
   const [local, setLocal] = useState(templates);
   const [showModal, setShowModal] = useState(false);
   const [modalPhase, setModalPhase] = useState("fast");
@@ -851,7 +851,7 @@ const Settings = ({ templates, onChange, onImportPlan, goals, setGoals }) => {
       e("p",{style:{color:"#64748b",margin:"6px 0 12px"}},"Reloads all juices/meals and rebuilds the grocery list."),
       e("button",{className:"btn",onClick:onImportPlan},"Import Plan")
     ),
-  e("button",{className:"btn peach",style:{marginLeft:8},onClick:importFromChatGPTPrompt},
+e("button",{className:"btn peach",style:{marginLeft:8},onClick:onImportFromChatGPT},
   "Import plan from ChatGPT text"
 ),
     // Modal
@@ -927,11 +927,12 @@ function importFromChatGPTPrompt(){
     tab==="calendar"  && e(Calendar, { days, recipes, settings }),
     tab==="photos"    && e(Photos, { days, setDays }),
     tab==="settings"  && e(Settings, {
-      templates: settings.phaseTemplates,
-      onChange: (next)=> setSettings({ phaseTemplates: next }),
-      onImportPlan: importFullPlan,
-      goals, setGoals
-    }),
+  templates: settings.phaseTemplates,
+  onChange: (next)=> setSettings({ phaseTemplates: next }),
+  onImportPlan: importFullPlan,
+  onImportFromChatGPT: importFromChatGPTPrompt,
+  goals, setGoals
+}),
 
     e("div", { className:"tabs" },
       e("button",{className:"btn"+(tab==="dash"?" active":""),onClick:()=>setTab("dash")},"Dashboard"),
