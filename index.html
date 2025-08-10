@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-<title>Oz Cleanse Companion — V14+</title>
+<title>Oz Companio</title>
 <meta name="theme-color" content="#f9c2a7"/>
 
 <!-- React + Chart.js + Confetti (with fallbacks for iOS) -->
@@ -49,6 +49,21 @@ body{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bot
 .paw.on{background:linear-gradient(90deg,#f9d49a,#ffd2c8);transform:scale(1.02)}
 .prog{height:10px;border-radius:9999px;background:#fde7e0;overflow:hidden}
 .fill{height:100%;background:linear-gradient(90deg,#ffa56e,#ec4899);width:0;transition:width .35s ease}
+
+/* Coach UI */
+.coach-actions{display:flex;gap:8px;margin:6px 0 10px;flex-wrap:wrap}
+.coach-preview{
+  display:block;
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:12px 14px;
+  background:#fff;
+  white-space:pre-wrap;
+  word-break:break-word;
+  line-height:1.35;
+  box-shadow:var(--shadow);
+  color:var(--ink);
+}
 
 /* Mast + arrows */
 .mast{position:relative;border:1px solid var(--line);border-radius:16px;padding:12px;background:linear-gradient(90deg,#fff7f1,#ffe9e0)}
@@ -400,7 +415,7 @@ function Dashboard({ templates, days, setDays, recipes }){
         e("div",{className:"mastLeft"},
           e("img",{src:"oz.png",alt:"Oz"}),
           e("div",{className:"mastTitle"},
-            e("b",null,"Oz Cleanse Companion"),
+            e("b",null,"Oz Cleanse"),
             e("small",null,day.phase.toUpperCase())
           )
         ),
@@ -424,25 +439,43 @@ function Dashboard({ templates, days, setDays, recipes }){
     e(ProgressBar,{value:progress}),
     e(Checklist,{items, state:checks, onToggle:toggleCheck}),
 
-    e("div",{className:"card",style:{marginTop:16}},
-      e("h2",null,"Daily Notes"),
-      e("div",{style:{display:"flex",gap:8,margin:"6px 0 10px",flexWrap:"wrap"}},
-        e("button",{className:"btn peach",onClick:analyzeFromNotes},"Coach from notes"),
-        e("button",{className:"btn",onClick:appendCoachToNotes,disabled:!coachText},"Add to notes")
-      ),
-      coachText && e("div",{className:"badge",style:{display:"block",whiteSpace:"pre-wrap",marginBottom:8,padding:10}},coachText),
-      e("textarea",{
-        value: day.note || "",
-        onChange:(ev)=>{
-          const val=ev.target.value;
-          setDays(prev=>{
-            const next=prev.slice(); const d3=Object.assign({},next[idx]); d3.note=val; next[idx]=d3; return next;
-          });
-        },
-        rows:4,
-        style:{width:"100%",resize:"vertical",border:"1px solid #f3d0e1",borderRadius:12,padding:"8px",fontSize:16}
-      })
-    ),
+e("div",{className:"card",style:{marginTop:16}},
+  e("h2",null,"Daily Notes"),
+
+  // actions
+  e("div",{className:"coach-actions"},
+    e("button",{className:"btn peach",onClick:analyzeFromNotes},"Coach from notes"),
+    e("button",{className:"btn",onClick:appendCoachToNotes,disabled:!coachText},"Add to notes")
+  ),
+
+  // coach preview
+  coachText && e("div",{className:"coach-preview"}, coachText),
+
+  // the textarea
+  e("textarea",{
+    value: day.note || "",
+    onChange:(ev)=>{
+      const val = ev.target.value;
+      setDays(prev=>{
+        const next = prev.slice();
+        const d = {...next[idx]};
+        d.note = val;
+        next[idx] = d;
+        return next;
+      });
+    },
+    rows:4,
+    spellCheck:false,
+    autoCorrect:"off",
+    autoCapitalize:"sentences",
+    style:{
+      width:"100%",resize:"vertical",
+      border:"1px solid #f3d0e1",borderRadius:12,padding:"8px",
+      fontSize:16 // prevents iOS zoom-on-focus
+    }
+  })
+),
+
 
     e("div",{className:"card",style:{marginTop:16}},
       e("h2",null,nextLabel),
