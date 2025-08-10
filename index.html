@@ -365,29 +365,36 @@ body{ padding-top:env(safe-area-inset-top); padding-bottom:env(safe-area-inset-b
       const dt = new Date(base.getTime() + (dayNum-1)*86400000);
       return dt.toLocaleDateString();
     }
-    return e("div", { className:"wrap" },
-      e("h1", null, "Calendar"),
-      e("ul", { style:{ listStyle:"none", padding:0, marginTop:8 }},
-        days.map(d=>{
-          const dRecipes = recipes.filter(r=> r.day===d.day);
-          const dd = dateFor(d.day);
-          return e("li", { key:d.day, className:"card", style:{ marginBottom:8 }},
-            e("div", { style:{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:8 }},
-              e("div", null,
-                e("div", { style:{ fontWeight:600 } }, "Day ", d.day, " — ", d.phase.toUpperCase()),
-                dd && e("div", { className:"badge", style:{ marginTop:6 } }, dd)
-              ),
-              e("div", { style:{ display:"flex", gap:6, flexWrap:"wrap", minHeight:24 }},
-                dRecipes.length ? dRecipes.map(r=> e("span", { key:r.id, className:"badge" }, (r.type==="juice"?"🧃 ":"🍽️ "), r.name)) :
-                (d.note ? e("span",{className:"badge",style:{marginLeft:6}},"📝 Note") : null)
-                e("span", { style:{ fontSize:12, color:"#64748b" } }, "—")
-              )
-            )
-          );
-        })
-      )
-    );
-  };
+return e("div", { className:"wrap" },
+  e("h1", null, "Calendar"),
+  e("ul", { style:{ listStyle:"none", padding:0, marginTop:8 } },
+    days.map(d => {
+      const dRecipes = recipes.filter(r => r.day === d.day);
+      const dd = dateFor(d.day);
+      return e("li", { key:d.day, className:"card", style:{ marginBottom:8 } },
+        e("div", { style:{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:8 } },
+          e("div", null,
+            e("div", { style:{ fontWeight:600 } }, "Day ", d.day, " — ", d.phase.toUpperCase()),
+            dd && e("div", { className:"badge", style:{ marginTop:6 } }, dd)
+          ),
+          e("div", { style:{ display:"flex", gap:6, flexWrap:"wrap", minHeight:24 } },
+            dRecipes.length
+              ? dRecipes.map(r =>
+                  e("span", { key:r.id, className:"badge" },
+                    (r.type==="juice" ? "🧃 " : "🍽️ "), r.name
+                  )
+                )
+              : (d.note
+                  ? e("span", { className:"badge", style:{ marginLeft:6 } }, "📝 Note")
+                  : e("span", { style:{ fontSize:12, color:"#64748b" } }, "—")
+                )
+          )
+        )
+      );
+    })
+  )
+);
+
 
   const Photos = () => {
     const [photos, setPhotos] = useState([]);
@@ -491,8 +498,6 @@ body{ padding-top:env(safe-area-inset-top); padding-bottom:env(safe-area-inset-b
 const Dashboard = ({ templates, days, setDays, recipes }) => {
   const [idx, setIdx] = React.useState(0);
   const day = days[idx] || days[0];
-// build the "next two days" list + label
-const { items: nextItems, label: nextLabel } = nextTwoDayIngredients(day);
   // helper: build next-ingredients (today+tomorrow, else next recipe days)
   function nextTwoDayIngredients(currentDay){
     const tryDays = (d1, d2) => {
@@ -648,7 +653,7 @@ e("div",{className:"mast card dash-header"},
 
     // checklist
     e(Checklist,{items, state:checks, onToggle:toggleCheck}),
-           // Daily Notes
+// Daily Notes
 e("div",{className:"card",style:{marginTop:16}},
   e("h2",null,"Daily Notes"),
   e("textarea",{
@@ -664,11 +669,14 @@ e("div",{className:"card",style:{marginTop:16}},
       });
     },
     rows:3,
-   style:{
-  width:"100%", resize:"vertical",
-  border:"1px solid #f3d0e1", borderRadius:12, padding:"8px",
-  fontSize:16   // 👈 iOS no-zoom typing
-}
+    style:{
+      width:"100%", resize:"vertical",
+      border:"1px solid #f3d0e1", borderRadius:12, padding:"8px",
+      fontSize:16
+    }
+  })
+),
+
 
     // Next-ingredients card
     e("div",{className:"card",style:{marginTop:16}},
