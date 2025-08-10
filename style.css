@@ -218,3 +218,41 @@ input[type="number"] {
 .item label {
   font-size: 17px;
 }
+/* Tight pill just for the Smart Coach action */
+.coachPill {
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:8px 12px;
+  border-radius:9999px;
+  border:1px solid var(--line);
+  background:#fff;
+  font-weight:800;
+  font-size:14px;       /* slightly smaller so it fits */
+  line-height:1;
+  white-space:nowrap;   /* keep it on one line */
+  max-width: 55vw;      /* prevent running into the edge on small phones */
+  overflow:hidden;      /* crop cleanly */
+  text-overflow:ellipsis;
+}
+
+.coachHead {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:10px 12px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:linear-gradient(90deg,#ffe4ef,#e9d5ff);
+}
+
+.coachHint {
+  color:#475569;
+  font-size:12px;
+  line-height:1.2;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  max-width:42vw; /* share space with pill on small screens */
+}
