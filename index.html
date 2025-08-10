@@ -239,19 +239,22 @@ function aggregateGroceries(recipes){
 const ProgressBar = ({ value }) =>
   e("div", { className:"prog" }, e("div", { className:"fill", style:{ width: Math.max(0, Math.min(100, value))+"%" } }));
 
-const Checklist = ({ items, state, onToggle }) =>
-  e("ul", { className:"list" },
-    items.map(it =>
-      e("li", { key:it.id, className:"item" },
-        e("button", {
-          className:"paw"+(state[it.id]?" on":""),
-          onClick:()=>onToggle(it.id),
-          "aria-pressed": !!state[it.id]
-        }, e("span", null, "🐾")),
-        e("label", null, it.label)
-      )
-    )
-  );
+const Checklist = ({ items, state, onToggle }) => (
+  <ul className="list">
+    {items.map(it => (
+      <li key={it.id} className="item">
+        <button
+          className={"paw" + (state[it.id] ? " on" : "")}
+          onClick={() => onToggle(it.id)}
+          aria-pressed={!!state[it.id]}
+        >
+          <span>🐾</span>
+        </button>
+        <label>{it.label}</label>
+      </li>
+    ))}
+  </ul>
+);
 
 const WeightChart = ({ series }) => {
   const canvasRef = useRef(null);
