@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <title>Oz Companion — Goals + Budget</title>
+  <title>Oz Companion — Plan Import</title>
   <meta name="theme-color" content="#f9c2a7"/>
 
   <!-- React + Chart.js + Confetti (fallbacks) -->
@@ -49,7 +49,6 @@
     .mastLeft{display:flex;align-items:center;gap:10px}
     .mastLeft img{height:40px;width:40px;border-radius:9999px;object-fit:cover;border:2px solid #fff}
     .mastTitle b{font-size:18px;line-height:1}
-    .mastTitle small{color:#64748b}
     .day-nav{display:flex;align-items:center;gap:8px}
     .day-btn{border:1px solid var(--line);background:#fff;border-radius:12px;padding:6px 10px;cursor:pointer}
     .day-label{font-weight:600;border:1px solid #e7ccd7;background:#fff;border-radius:9999px;padding:4px 10px}
@@ -73,14 +72,15 @@
     .noteArea{width:100%;resize:vertical;border:1px solid var(--line);border-radius:12px;padding:10px;font-size:16px}
     .coachOut{white-space:pre-wrap;border:1px solid var(--line);border-radius:12px;padding:12px;background:linear-gradient(90deg,#fff1ea,#ffe4ef)}
 
-    /* Modal (goal picker + new goal) */
+    /* Modal (goal picker, new goal, importer) */
     .modal{position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:flex-end;justify-content:center;padding:12px;z-index:99}
-    .sheet{background:#fff;border-radius:16px 16px 12px 12px;box-shadow:0 24px 60px rgba(0,0,0,.25);width:100%;max-width:640px;padding:14px}
+    .sheet{background:#fff;border-radius:16px 16px 12px 12px;box-shadow:0 24px 60px rgba(0,0,0,.25);width:100%;max-width:740px;padding:14px}
     .sheet h3{margin:0 0 8px 0}
     .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
     .goalChk{border:1px solid var(--line);border-radius:12px;padding:8px;display:flex;align-items:center;gap:8px}
     .goalChk input{transform:scale(1.1)}
     .sheetActions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+    .importText{width:100%;min-height:220px;border:1px solid var(--line);border-radius:12px;padding:10px;font-size:14px;white-space:pre-wrap}
 
     /* Grocery budget banner */
     .budget{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:12px}
@@ -161,7 +161,7 @@ function defaultDays(){
   return phases.map((ph,i)=>({day:i+1,phase:ph,order:null,checks:{},custom:false,note:"",weight:null,photos:[]}));
 }
 
-/* ----- Sample plan (with 4-juice days) ----- */
+/* ----- Sample plan (kept so first run has content) ----- */
 const PLAN_RECIPES = [
   { id:"r-melon",  name:"Melon Mint Morning", type:"juice", day:4, servings:4,
     ingredients:[{key:"melons",name:"Melon",qty:"1"},{key:"mint",name:"Mint",qty:"1/2 cup"},{key:"limes",name:"Lime",qty:"1"}]
@@ -483,7 +483,7 @@ const Dashboard = ({ GOALS, templates, days, setDays, plan }) => {
   }
   function changeDay(dir){ setIdx(cur => { let n = cur + dir; if (n < 0) n = days.length - 1; if (n >= days.length) n = 0; return n; }); }
 
-  // Coach (UI only; doesn't auto-write to notes)
+  // Coach (UI only)
   const [coachText, setCoachText] = useState("");
   const SYM_MATCHERS = [
     {id:"headache",rx:/\b(headache|migraine|head pain)\b/i},
@@ -596,19 +596,22 @@ const Dashboard = ({ GOALS, templates, days, setDays, plan }) => {
       e("h2", null, nextLabel),
       nextItems.length === 0
         ? e("p",{style:{color:"#64748b"}},"No recipes scheduled soon.")
-        : e("ul",{style:{listStyle:"none",padding:0,marginTop:8}},
-            nextItems.map(item =>
-              e("li",{key:item.name,style:{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:"1px solid #f3d0e1"}},
-                e("span", null,
-                  item.name, " ",
-                  e("span",{className:"badge"},
-                    item.days.length === 1 ? ("Day " + item.days[0]) : ("Day " + item.days[0] + "–" + item.days[item.days.length - 1])
-                  )
-                ),
-                e("span",{style:{color:"#64748b",fontSize:12}}, item.qtyList.join(" + ") || "")
+        : e("ul",{style:{listStyle:"none",padding:0,marginTop:8}}.
+            concat()
+        ),
+      e("ul",{style:{listStyle:"none",padding:0,marginTop:8}},
+        nextItems.map(item =>
+          e("li",{key:item.name,style:{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:"1px solid #f3d0e1"}},
+            e("span", null,
+              item.name, " ",
+              e("span",{className:"badge"},
+                item.days.length === 1 ? ("Day " + item.days[0]) : ("Day " + item.days[0] + "–" + item.days[item.days.length - 1])
               )
-            )
+            ),
+            e("span",{style:{color:"#64748b",fontSize:12}}, item.qtyList.join(" + ") || "")
           )
+        )
+      )
     ),
 
     // weight card
@@ -640,8 +643,8 @@ const Dashboard = ({ GOALS, templates, days, setDays, plan }) => {
   );
 };
 
-/* ---------- Settings with Goal Picker + New Goal ---------- */
-const Settings = ({ GOALS, addCustomGoal, templates, onChange, onImportPlan, plan }) => {
+/* ---------- Settings with Goal Picker + New Goal + Plan Importer ---------- */
+const Settings = ({ GOALS, addCustomGoal, templates, onChange, onImportPlan, plan, setPlan, setGroceries, resetDays }) => {
   const [local,setLocal]=useState(templates);
 
   // Picker
@@ -653,6 +656,11 @@ const Settings = ({ GOALS, addCustomGoal, templates, onChange, onImportPlan, pla
   const [showNew,setShowNew]=useState(false);
   const [newId,setNewId]=useState("");
   const [newLabel,setNewLabel]=useState("");
+
+  // Importer
+  const [showImport,setShowImport]=useState(false);
+  const [importText,setImportText]=useState("");
+  const [importInfo,setImportInfo]=useState("");
 
   useEffect(()=>{ setLocal(templates); },[templates]);
 
@@ -679,12 +687,98 @@ const Settings = ({ GOALS, addCustomGoal, templates, onChange, onImportPlan, pla
   function createGoal(){
     const res = addCustomGoal(newId, newLabel);
     if(!res.ok){ alert(res.msg||"Could not add goal"); return; }
-    // Add new goal to current phase for convenience
     const gid = res.id;
     const next={...local}; next[pickerPhase]=(next[pickerPhase]||[]).concat([gid]);
     setLocal(next); onChange(next);
     setShowNew(false); setNewId(""); setNewLabel(""); setShowPicker(false);
     alert("Goal created and added ✔");
+  }
+
+  /* --------- Plan Importer (paste any ChatGPT text) --------- */
+  function parsePlanFromText(txt){
+    // Normalize whitespace
+    const lines = txt.replace(/\r/g,'').split('\n').map(s=>s.trim()).filter(Boolean);
+
+    // Detect days: "Day 1", "Day 01 – ..."
+    const dayBlocks = [];
+    let curDay = null;
+    lines.forEach(line=>{
+      const dm = line.match(/^day\s*(\d+)\b/i);
+      if(dm){
+        const day = parseInt(dm[1],10);
+        curDay = { day, items: [] };
+        dayBlocks.push(curDay);
+        return;
+      }
+      if(!curDay) return;
+
+      // Recipe headers like:
+      // "Juice 1 – Melon Mint Morning" or "Melon Mint Morning (juice)" or "Dinner: Lentil Soup"
+      let type="meal";
+      if(/\bjuice\b/i.test(line)) type="juice";
+      if(/\bmeal\b/i.test(line)) type="meal";
+      if(/\bbreakfast|lunch|dinner|smoothie|broth|soup|salad/i.test(line) && !/\bjuice\b/i.test(line)) type="meal";
+
+      const nameHeader = line.replace(/^(juice\s*\d*[:\-–]\s*)/i,'').replace(/^\w+:\s*/,'').replace(/\((juice|meal)\)/i,'').trim();
+      if(nameHeader && /[a-z]/i.test(nameHeader) && nameHeader.length<=80 && /[A-Za-z]/.test(nameHeader)){
+        curDay.items.push({ name:nameHeader, type, ingredients:[], servings: (type==="juice"?4:1) });
+      } else {
+        // ingredient bullet like "- 2 cucumbers" / "• 6 cups spinach"
+        const im = line.match(/^[•\-–]\s*(.+)$/);
+        if(im && curDay && curDay.items.length){
+          const raw = im[1].trim();
+          // try parse "qty unit name"
+          const m = raw.match(/^(\d+(?:\.\d+)?)\s*([a-zA-Z"’”]+)?\s*(.*)$/);
+          let qty = raw;
+          let name = raw;
+          if(m){
+            const n = m[1];
+            const unit = (m[2]||"").trim();
+            const rest = (m[3]||"").trim();
+            qty = unit ? `${n} ${unit}` : n;
+            name = rest || unit || raw;
+          }
+          // key-ish id
+          const key = name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^\-|\-$)/g,'');
+          curDay.items[curDay.items.length-1].ingredients.push({key,name,qty});
+        }
+      }
+    });
+
+    // Build recipe array
+    const recipes = [];
+    dayBlocks.forEach(b=>{
+      b.items.forEach((it,idx)=>{
+        recipes.push({
+          id: `r-${b.day}-${idx}-${(it.name||'').toLowerCase().replace(/[^a-z0-9]+/g,'-')}`.slice(0,40),
+          name: it.name || `Recipe ${idx+1}`,
+          type: it.type || "meal",
+          day: b.day,
+          servings: it.servings || (it.type==="juice"?4:1),
+          ingredients: it.ingredients || []
+        });
+      });
+    });
+
+    return recipes;
+  }
+
+  function handleImportNow(){
+    const text = (importText||"").trim();
+    if(!text){ alert("Paste your plan text first."); return; }
+    const parsed = parsePlanFromText(text);
+    if(!parsed.length){ alert("I couldn’t find any days/recipes in that text. Try including headings like 'Day 4' and bullet ingredients."); return; }
+
+    // Reset days (phases template preserved)
+    resetDays();
+    // Save plan + groceries
+    setPlan(parsed);
+    setGroceries(aggregateGroceries(parsed));
+
+    // info
+    const daysCovered = Array.from(new Set(parsed.map(r=>r.day))).sort((a,b)=>a-b);
+    setImportInfo(`Imported ${parsed.length} recipes across days ${daysCovered[0]}–${daysCovered[daysCovered.length-1]}.`);
+    alert("Plan imported from text ✔");
   }
 
   function renderPhase(phase, label){
@@ -716,8 +810,16 @@ const Settings = ({ GOALS, addCustomGoal, templates, onChange, onImportPlan, pla
 
     e("div",{className:"card",style:{marginTop:8}},
       e("h2",null,"Import 11-Day Plan"),
-      e("p",{style:{color:"#64748b",margin:"6px 0 12px"}},"Loads all juices/meals and rebuilds the grocery list."),
-      e("button",{className:"btn peach",onClick:onImportPlan},"Import Plan")
+      e("p",{style:{color:"#64748b",margin:"6px 0 12px"}},"Load the default plan we ship with the app."),
+      e("button",{className:"btn peach",onClick:onImportPlan},"Import Default Plan")
+    ),
+
+    e("div",{className:"card",style:{marginTop:8}},
+      e("h2",null,"Paste Plan Text (from ChatGPT)"),
+      e("p",{style:{color:"#64748b",margin:"6px 0 12px"}},
+        "Paste any ChatGPT plan that includes Day headings, recipe names, and bullet ingredients."
+      ),
+      e("button",{className:"btn primary",onClick:()=>setShowImport(true)},"Paste plan text")
     ),
 
     /* Picker Modal */
@@ -756,6 +858,33 @@ const Settings = ({ GOALS, addCustomGoal, templates, onChange, onImportPlan, pla
           e("button",{className:"btn primary",onClick:createGoal},"Create & Add")
         )
       )
+    ),
+
+    /* Importer Modal */
+    showImport && e("div",{className:"modal",onClick:(ev)=>{ if(ev.target.classList.contains("modal")) setShowImport(false); }},
+      e("div",{className:"sheet"},
+        e("h3",null,"Paste Plan Text"),
+        e("textarea",{className:"importText",value:importText,placeholder:
+`Example:
+
+Day 4
+Juice 1 – Melon Mint Morning
+• 1 melon
+• 1/2 cup mint
+• 1 lime
+
+Day 5
+Peachy Green Glow (juice)
+• 6 peaches
+• 4 cucumbers
+• 8 cups spinach
+• 2 lemons`, onChange:(ev)=>setImportText(ev.target.value)}),
+        importInfo && e("div",{className:"badge",style:{marginTop:8}},importInfo),
+        e("div",{className:"sheetActions"},
+          e("button",{className:"btn",onClick:()=>setShowImport(false)},"Close"),
+          e("button",{className:"btn primary",onClick:handleImportNow},"Import Now")
+        )
+      )
     )
   );
 };
@@ -777,11 +906,14 @@ const App = () => {
   },[]);
 
   function onImportPlan(){
-    // In a future improvement we can paste JSON from ChatGPT; for now load defaults
     const newDays = defaultDays(); setDays(newDays);
     setPlan(PLAN_RECIPES);
     setGroceries(aggregateGroceries(PLAN_RECIPES));
-    alert("Plan imported ✔");
+    alert("Default plan imported ✔");
+  }
+
+  function resetDays(){
+    setDays(defaultDays());
   }
 
   return e("div", {},
@@ -793,7 +925,8 @@ const App = () => {
       GOALS, addCustomGoal,
       templates: settings.phaseTemplates,
       onChange: (next)=> setSettings({ phaseTemplates: next }),
-      onImportPlan, plan
+      onImportPlan,
+      plan, setPlan, setGroceries, resetDays
     }),
 
     e("div", { className:"tabs" },
