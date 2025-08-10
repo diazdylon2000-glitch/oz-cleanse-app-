@@ -710,8 +710,9 @@ const Dashboard = ({ templates, days, setDays, recipes, goals }) => {
       e(Checklist,{items, state:checks, onToggle:toggleCheck})
     ),
 
-    // Notes + Coach
+// === Daily Notes + Smart Coach (replace this whole block) ===
 e("div",{className:"card",style:{marginTop:16}},
+  // Header row with badge + subtitle + Coach button
   e("div",{
     style:{
       display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,
@@ -719,35 +720,54 @@ e("div",{className:"card",style:{marginTop:16}},
       background:"linear-gradient(90deg,#ffe4ef,#e9d5ff)"
     }
   },
-    e("div",{style:{display:"flex",alignItems:"center",gap:12}},
-      e("div",{style:{
-        borderRadius:14,border:"1px solid #f3d0e1",background:"#fff",padding:"10px 14px",
-        fontWeight:800,fontSize:18
-      }},"🧠 Smart Coach"),
-      e("div",{style:{color:"#475569"}}, "Understands your note and suggests relief + motivation")
+    e("div",{style:{display:"flex",alignItems:"center",gap:12,minWidth:0}},
+      e("div",{
+        style:{
+          borderRadius:14,border:"1px solid #f3d0e1",background:"#fff",
+          padding:"10px 14px",fontWeight:800,fontSize:18,whiteSpace:"nowrap"
+        }
+      },"🧠 Smart Coach"),
+      e("div",{style:{color:"#475569",minWidth:0,overflow:"hidden",textOverflow:"ellipsis"}},
+        "Understands your note and suggests relief + motivation"
+      )
     ),
-e("button",{className:"btn primary",onClick:coach,style:{whiteSpace:"nowrap"}}, "Coach")
+    e("div",null,
+      e("button",
+        { className:"btn primary", onClick:coach, style:{whiteSpace:"nowrap"} },
+        "Coach"
+      )
+    )
   ),
 
-  // coach output lives visually here ONLY (not copied to note automatically)
-  coachText && e("div",{
-    className:"coachOut",
-    style:{marginTop:10,background:"#fff",border:"1px solid #f3d0e1",borderRadius:12}
-  }, coachText),
+  // Coach output (UI only)
+  coachText && e("div",
+    {
+      className:"coachOut",
+      style:{marginTop:10,background:"#fff",border:"1px solid #f3d0e1",borderRadius:12}
+    },
+    coachText
+  ),
 
-  // your note field stays separate
+  // Your note (doesn't auto-append coach text)
   e("textarea",{
     value: day.note || "",
     onChange:(ev)=>{
       const val = ev.target.value;
       setDays(prev=>{
         const next = prev.slice();
-        const d = {...next[idx]}; d.note = val; next[idx] = d; return next;
+        const d = {...next[idx]};
+        d.note = val;
+        next[idx] = d;
+        return next;
       });
     },
-    rows:4, className:"noteArea", style:{marginTop:10}
+    rows:4,
+    className:"noteArea",
+    style:{marginTop:10}
   })
-)
+),
+// === End Daily Notes + Smart Coach ===
+
 
     // Next ingredients
     e("div",{className:"card",style:{marginTop:16}},
