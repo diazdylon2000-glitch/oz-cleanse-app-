@@ -270,18 +270,50 @@
     return e("canvas", { ref:canvasRef, height:120 });
   };
 
-  /* ---------- Smart Coach ---------- */
-    { id:"headache",  test:ctx=>ctx.syms.has("headache"),
-      tips:["Sip 8–12 oz water over 15 min.","Add a pinch of sea salt/electrolyte.","5–10 min screen break."] },
-    { id:"dizziness", test:ctx=>ctx.syms.has("dizziness"),
-      tips:["Sit or lie until steady.","Small juice or pinch of salt if fasting.","Breathe 4 in / 6 out."] },
-    { id:"nausea",    test:ctx=>ctx.syms.has("nausea"),
-      tips:["Sip cool water or peppermint/ginger tea.","Fresh air.","Move slowly."] },
-    { id:"fatigue",   test:ctx=>ctx.syms.has("fatigue"),
-      tips:["15–20 min rest.","Water/electrolyte.","Light stretch."] },
-    { id:"brain-fog", test:ctx=>ctx.syms.has("brain-fog"),
-      tips:["2 min stretch/shoulder rolls.","Glass of water.","5 min sunlight."] }
+/* ---------- Smart Coach (define once) ---------- */
+if (!window.COACH_RULES) {
+  window.COACH_RULES = [
+    {
+      id: "headache",
+      test: function (ctx) { return ctx.syms.has("headache"); },
+      tips: [
+        "Sip 8–12 oz water over 15 min.",
+        "Add a pinch of sea salt/electrolyte.",
+        "5–10 min screen break."
+      ]
+    },
+    {
+      id: "dizziness",
+      test: function (ctx) { return ctx.syms.has("dizziness"); },
+      tips: [
+        "Sit or lie until steady.",
+        "Small juice or pinch of salt if fasting.",
+        "Breathe 4 in / 6 out."
+      ]
+    },
+    {
+      id: "nausea",
+      test: function (ctx) { return ctx.syms.has("nausea"); },
+      tips: [
+        "Sip cool water or peppermint/ginger tea.",
+        "Fresh air.",
+        "Move slowly."
+      ]
+    },
+    {
+      id: "fatigue",
+      test: function (ctx) { return ctx.syms.has("fatigue"); },
+      tips: [
+        "Take a 15–20 minute rest.",
+        "Drink water or electrolyte drink.",
+        "Light stretching to boost circulation."
+      ]
+    }
+    // add more rules here...
   ];
+}
+// local alias to use in your components:
+var COACH_RULES = window.COACH_RULES;
  const COACH_AFFIRM = window.OZ_COACH_AFFIRM;
     "You’ve got this! 💪",
     "Proud of your effort today. 🌟",
