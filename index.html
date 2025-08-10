@@ -1,181 +1,427 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <title>Oz Companion</title>
-  <meta name="theme-color" content="#f9c2a7"/>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>Oz Companion</title>
+<meta name="theme-color" content="#f9c2a7"/>
 
-  <!-- React + Chart.js + Confetti (with fallbacks) -->
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin
-          onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js'"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin
-          onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js'"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js" crossorigin
-          onerror="this.onerror=null;this.src='https://unpkg.com/chart.js@4.4.3/dist/chart.umd.js'"></script>
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" crossorigin
-          onerror="this.onerror=null;this.src='https://unpkg.com/canvas-confetti@1.6.0/dist/confetti.browser.min.js'"></script>
+<!-- React + Chart.js + Confetti (with fallbacks) -->
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin
+        onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js'"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin
+        onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js'"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js" crossorigin
+        onerror="this.onerror=null;this.src='https://unpkg.com/chart.js@4.4.3/dist/chart.umd.js'"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" crossorigin
+        onerror="this.onerror=null;this.src='https://unpkg.com/canvas-confetti@1.6.0/dist/confetti.browser.min.js'"></script>
 
-  <style>
-    :root{
-      --peach:#ffb08f; --peach-100:#fff1ea; --peach-200:#ffd8c8;
-      --ink:#0f172a; --sub:#64748b; --line:#f3d0e1; --chip:#ffe4ef;
-      --card:#ffffff; --bg:#fff7f1;
-    }
-    *{box-sizing:border-box}
-    html,body{margin:0;background:var(--bg);color:var(--ink);
-      font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
-    h1,h2{margin:0 0 10px}
-    small{color:var(--sub)}
-    body{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
+<style>
+:root{
+  --peach:#ffb08f; --bg:#fff7f1; --card:#ffffff;
+  --ink:#0f172a; --sub:#64748b; --line:#f3d0e1; --chip:#ffe4ef;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+h1,h2{margin:0 0 10px} small{color:var(--sub)}
+body{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
+.wrap{max-width:940px;margin:16px auto 96px;padding:0 16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px}
+.badge{display:inline-block;padding:2px 10px;border:1px solid #e7ccd7;background:#fff;border-radius:9999px;font-size:12px}
 
-    /* Wrap & cards */
-    .wrap{max-width:940px;margin:16px auto 96px;padding:0 16px}
-    .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px}
-    .badge{display:inline-block;padding:2px 10px;border:1px solid #e7ccd7;background:#fff;border-radius:9999px;font-size:12px}
+/* Masthead */
+.mast{background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px}
+.mastRow{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.mastLeft{display:flex;align-items:center;gap:10px}
+.mastLeft img{height:40px;width:40px;border-radius:9999px;object-fit:cover;border:2px solid #fff;box-shadow:0 1px 0 rgba(0,0,0,.05)}
+.mastTitle b{font-size:20px;line-height:1}
+.mastTitle small{color:var(--sub)}
+.day-nav{display:flex;align-items:center;gap:8px}
+.day-btn{appearance:none;border:2px solid var(--line);background:#fff;border-radius:12px;padding:8px 10px;cursor:pointer}
+.day-label{font-weight:700;border:2px solid var(--line);background:#fff;border-radius:9999px;padding:6px 12px}
+.phaseSel{appearance:none;border:2px solid var(--line);background:#fff;border-radius:12px;padding:8px 10px}
 
-    /* Masthead (peachy, clean) */
-    .mast{background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px}
-    .mastRow{display:flex;align-items:center;justify-content:space-between;gap:12px}
-    .mastLeft{display:flex;align-items:center;gap:10px}
-    .mastLeft img{height:40px;width:40px;border-radius:9999px;object-fit:cover;border:2px solid #fff;box-shadow:0 1px 0 rgba(0,0,0,.05)}
-    .mastTitle b{font-size:20px;line-height:1}
-    .mastTitle small{color:var(--sub)}
-    .day-nav{display:flex;align-items:center;gap:8px}
-    .day-btn{appearance:none;border:2px solid var(--line);background:#fff;border-radius:12px;padding:8px 10px;cursor:pointer}
-    .day-label{font-weight:700;border:2px solid var(--line);background:#fff;border-radius:9999px;padding:6px 12px}
+/* Progress */
+.prog{height:10px;border-radius:9999px;background:#fde7e0;overflow:hidden;margin-top:12px}
+.fill{height:100%;background:linear-gradient(90deg,#ffa56e,#ec4899);width:0;transition:width .35s cubic-bezier(.22,.61,.36,1)}
 
-    /* Phase pill */
-    .phaseSel{appearance:none;border:2px solid var(--line);background:#fff;border-radius:12px;padding:8px 10px}
+/* Paw checklist */
+.list{list-style:none;margin:0;padding:0}
+.item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.item:last-child{border-bottom:0}
+.paw{display:inline-flex;align-items:center;justify-content:center;height:36px;width:36px;border-radius:9999px;
+  border:1.5px solid #f0cbb0;background:#fff;box-shadow:0 1px 0 rgba(0,0,0,.03);
+  transition:transform .12s ease, background .2s ease, border-color .2s ease}
+.paw>span{font-size:18px;line-height:1}
+.paw.on{background:linear-gradient(180deg,#ffd8be,#ffe8da);border-color:#f6c8a3;transform:translateY(1px)}
+.item label{font-size:17px}
 
-    /* Progress bar */
-    .prog{height:10px;border-radius:9999px;background:#fde7e0;overflow:hidden;margin-top:12px}
-    .fill{height:100%;background:linear-gradient(90deg,#ffa56e,#ec4899);width:0;transition:width .35s cubic-bezier(.22,.61,.36,1)}
+/* Coach */
+.coachShell{border:1px solid var(--line);border-radius:16px;padding:12px;background:
+  linear-gradient(180deg,#fff,#fff),
+  radial-gradient(120% 60% at 0% 0%, #ffeaf4 0%, transparent 60%),
+  radial-gradient(120% 60% at 100% 0%, #f7e6ff 0%, transparent 60%);
+  background-blend-mode:normal,screen,screen}
+.coachHeader{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.coachBadge{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:#fff;border-radius:9999px;padding:8px 12px}
+.coachBtns{display:flex;gap:8px;margin:8px 0 10px}
+.btn{appearance:none;border:2px solid var(--line);background:#fff;border-radius:12px;padding:10px 12px;cursor:pointer}
+.btn.primary{background:#0f172a;color:#fff;border-color:#0f172a}
+.coachOut{white-space:pre-wrap;border:1px dashed var(--line);border-radius:16px;padding:12px;background:#fff}
 
-    /* Paw checklist */
-    .list{list-style:none;margin:0;padding:0}
-    .item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
-    .item:last-child{border-bottom:0}
-    .paw{display:inline-flex;align-items:center;justify-content:center;height:36px;width:36px;border-radius:9999px;
-      border:1.5px solid #f0cbb0;background:#fff;box-shadow:0 1px 0 rgba(0,0,0,.03);
-      transition:transform .12s ease, background .2s ease, border-color .2s ease}
-    .paw>span{font-size:18px;line-height:1}
-    .paw.on{background:linear-gradient(180deg,#ffd8be,#ffe8da);border-color:#f6c8a3;transform:translateY(1px)}
-    .item label{font-size:17px}
+/* Next ingredients */
+.ingRow{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line)}
+.ingRow:last-child{border-bottom:0}
 
-    /* Coach (pretty pink section) */
-    .coachShell{border:1px solid var(--line);border-radius:16px;padding:12px;background:
-      linear-gradient(180deg,#fff,#fff),
-      radial-gradient(120% 60% at 0% 0%, #ffeaf4 0%, transparent 60%),
-      radial-gradient(120% 60% at 100% 0%, #f7e6ff 0%, transparent 60%);
-      background-blend-mode:normal,screen,screen}
-    .coachHeader{display:flex;align-items:center;gap:10px;margin-bottom:8px}
-    .coachBadge{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:#fff;border-radius:9999px;padding:8px 12px}
-    .coachBtns{display:flex;gap:8px;margin:8px 0 10px}
-    .btn{appearance:none;border:2px solid var(--line);background:#fff;border-radius:12px;padding:10px 12px;cursor:pointer}
-    .btn.primary{background:#0f172a;color:#fff;border-color:#0f172a}
-    .coachOut{white-space:pre-wrap;border:1px dashed var(--line);border-radius:16px;padding:12px;background:#fff}
+/* Chart card */
+.chartBox{height:220px}
 
-    /* Tabs */
-    .tabs{position:fixed;left:0;right:0;bottom:0;display:flex;gap:8px;padding:10px;background:#fff;border-top:1px solid var(--line)}
-    .tabs .btn{flex:1;border-radius:12px}
-    .tabs .btn.active{background:#111827;color:#fff;border-color:#111827}
-  </style>
+/* Tabs */
+.tabs{position:fixed;left:0;right:0;bottom:0;display:flex;gap:8px;padding:10px;background:#fff;border-top:1px solid var(--line)}
+.tabs .btn{flex:1;border-radius:12px}
+.tabs .btn.active{background:#111827;color:#fff;border-color:#111827}
+</style>
 </head>
 <body>
-  <div id="root"></div>
+<div id="root"></div>
 
-  <script>
-  "use strict";
-  const e = React.createElement;
-  const {useState, useEffect, useRef} = React;
+<script>
+"use strict";
+const e = React.createElement;
+const {useState, useEffect, useRef} = React;
 
-  /* ------------ helpers + local storage ------------ */
-  function useLocal(key, initialValue){
-    const [val, setVal] = useState(() => {
-      try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : initialValue; }
-      catch { return initialValue; }
+/* ---------- helpers ---------- */
+function useLocal(key, initialValue){
+  const [val, setVal] = useState(() => {
+    try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : initialValue; }
+    catch { return initialValue; }
+  });
+  useEffect(() => { try { localStorage.setItem(key, JSON.stringify(val)); } catch {} }, [key, val]);
+  return [val, setVal];
+}
+window.safeConfetti = (opts)=>{ try{ if(window.confetti) window.confetti(opts); }catch(e){} };
+
+/* ---------- data ---------- */
+const GOAL_LIBRARY = {
+  water:"💧 Drink 120–150 oz water",
+  lmnt:"🧂 Electrolytes",
+  exercise:"🏃 Exercise",
+  wholefood:"🥗 Whole food meals",
+  weight:"👣 Weight check-in"
+};
+
+const DEFAULT_PHASE_TEMPLATES = {
+  fast:["water","lmnt","exercise","weight"],
+  cleanse:["water","lmnt","exercise","weight"],
+  rebuild:["water","lmnt","exercise","wholefood","weight"]
+};
+
+function defaultDays(){
+  const phases=["fast","fast","fast","cleanse","cleanse","cleanse","cleanse","rebuild","rebuild","rebuild","rebuild"];
+  return phases.map((ph,i)=>({day:i+1,phase:ph,order:null,checks:{},custom:false,note:"",weight:null,photos:[]}));
+}
+
+/* ----- Recipes (juices have servings:4) ----- */
+const PLAN_RECIPES = [
+  { id:"r-melon",  name:"Melon Mint Morning", type:"juice", day:4, servings:4,
+    ingredients:[{key:"melons",name:"Melon",qty:"1"},{key:"mint",name:"Mint",qty:"1/2 cup"},{key:"limes",name:"Lime",qty:"1"}]
+  },
+  { id:"r-peach",  name:"Peachy Green Glow",  type:"juice", day:5, servings:4,
+    ingredients:[{key:"peaches",name:"Peaches",qty:"6"},{key:"cucumbers",name:"Cucumbers",qty:"4"},{key:"spinach",name:"Spinach",qty:"8 cups"},{key:"lemons",name:"Lemons",qty:"2"}]
+  },
+  { id:"r-carrot", name:"Carrot Apple Ginger", type:"juice", day:6, servings:4,
+    ingredients:[{key:"carrots",name:"Carrots",qty:"28"},{key:"apples",name:"Apples",qty:"4"},{key:"ginger",name:"Ginger",qty:'2"'},{key:"lemons",name:"Lemons",qty:"2"}]
+  },
+  { id:"r-grape",  name:"Grape Romaine Cooler", type:"juice", day:7, servings:4,
+    ingredients:[{key:"grapes",name:"Grapes",qty:"6 cups"},{key:"romaine",name:"Romaine",qty:"6 cups"},{key:"cucumbers",name:"Cucumbers",qty:"4"},{key:"lemons",name:"Lemons",qty:"2"}]
+  },
+  { id:"r-smoothie", name:"Smoothie Breakfast", type:"meal", day:8,
+    ingredients:[{key:"spinach",name:"Spinach",qty:"2 cups"},{key:"almond-milk",name:"Almond milk",qty:"1 cup"},{key:"chia",name:"Chia",qty:"1 tbsp"}]
+  },
+  { id:"r-lentil", name:"Lentil Soup", type:"meal", day:8,
+    ingredients:[{key:"lentils",name:"Lentils (dry)",qty:"1/2 cup"},{key:"carrots",name:"Carrots",qty:"1/2 cup"},{key:"celery",name:"Celery",qty:"1/2 cup"},{key:"parsley",name:"Parsley",qty:"1/4 cup"},{key:"onions",name:"Onion",qty:"1/4"}]
+  },
+  { id:"r-broth9", name:"Simple Veg Broth", type:"meal", day:9,
+    ingredients:[{key:"carrots",name:"Carrots",qty:"2"},{key:"celery",name:"Celery",qty:"2 stalks"},{key:"onions",name:"Onion",qty:"1/2"},{key:"parsley",name:"Parsley",qty:"few sprigs"}]
+  },
+  { id:"r-sweetpot9", name:"Baked Sweet Potato Bowl", type:"meal", day:9,
+    ingredients:[{key:"sweet-potatoes",name:"Sweet potatoes",qty:"2"},{key:"spinach",name:"Spinach",qty:"2 cups"},{key:"olive-oil",name:"Olive oil",qty:"1 tbsp"}]
+  },
+  { id:"r-oats", name:"Overnight Oats", type:"meal", day:10,
+    ingredients:[{key:"rolled-oats",name:"Rolled oats",qty:"1/2 cup"},{key:"almond-milk",name:"Almond milk",qty:"1 cup"}]
+  },
+  { id:"r-quinoa", name:"Quinoa Salad", type:"meal", day:10,
+    ingredients:[{key:"quinoa",name:"Quinoa (dry)",qty:"1/2 cup"},{key:"cucumbers",name:"Cucumber",qty:"1"},{key:"tomatoes",name:"Tomato",qty:"1"},{key:"parsley",name:"Parsley",qty:"1/4 cup"},{key:"olive-oil",name:"Olive oil",qty:"1 tbsp"},{key:"lemons",name:"Lemon",qty:"1"}]
+  },
+  { id:"r-protein", name:"Protein + Broccoli", type:"meal", day:11,
+    ingredients:[{key:"protein",name:"Salmon/Chicken",qty:"12 oz"},{key:"broccoli",name:"Broccoli",qty:"2 heads"}]
+  }
+];
+
+/* ---- Groceries aggregator with servings scaling ---- */
+function aggregateGroceries(recipes){
+  const factor = (r)=> (r.type==="juice" ? (r.servings || 1) : 1);
+  const parseQty = (s)=>{ if(!s) return {n:1,u:""}; const m=String(s).match(/^(\d+(\.\d+)?)\s*(.*)$/); return m?{n:parseFloat(m[1]),u:(m[3]||"").trim()}:{n:1,u:String(s)}; };
+  const fmt = (n,u)=> (u ? (Number.isInteger(n)? n : (+n).toFixed(2))+" "+u : String(n));
+  const map = {};
+  (recipes||[]).forEach(r=>{
+    const mult = factor(r);
+    (r.ingredients||[]).forEach(it=>{
+      const id=(it.key||it.name||"").toLowerCase().replace(/\s+/g,'-');
+      const q=parseQty(it.qty||"1");
+      if(!map[id]){
+        map[id]={id,name:it.name,qtyNum:q.n*mult,qtyUnit:q.u,days:r.day?[r.day]:[],checked:false,estCost:null};
+      }else{
+        map[id].qtyNum += q.n*mult;
+        const s=new Set(map[id].days); if(r.day) s.add(r.day); map[id].days=Array.from(s).sort((a,b)=>a-b);
+      }
     });
-    useEffect(() => { try { localStorage.setItem(key, JSON.stringify(val)); } catch {} }, [key, val]);
-    return [val, setVal];
-  }
-  window.safeConfetti = (opts)=>{ try{ if(window.confetti) window.confetti(opts); }catch(e){} };
+  });
+  return Object.values(map).map(g=>({
+    id:g.id,name:g.name,qty:(g.qtyUnit?fmt(g.qtyNum,g.qtyUnit):String(g.qtyNum)),
+    checked:g.checked,estCost:g.estCost,days:g.days
+  })).sort((a,b)=> (a.name||"").localeCompare(b.name||""));
+}
 
-  /* ------------------- data ------------------- */
-  const GOAL_LIBRARY = {
-    water:"💧 Drink 120–150 oz water",
-    lmnt:"🧂 Electrolytes",
-    exercise:"🏃 Exercise",
-    wholefood:"🥗 Whole food meals",
-    weight:"👣 Weight check-in"
-  };
+/* ---------- UI atoms ---------- */
+const ProgressBar = ({ value }) =>
+  e("div", { className:"prog" }, e("div", { className:"fill", style:{ width: Math.max(0, Math.min(100, value))+"%" } }));
 
-  const DEFAULT_PHASE_TEMPLATES = {
-    fast:["water","lmnt","exercise","weight"],
-    cleanse:["water","lmnt","exercise","weight"],
-    rebuild:["water","lmnt","exercise","wholefood","weight"]
-  };
-
-  function defaultDays(){
-    const phases=["fast","fast","fast","cleanse","cleanse","cleanse","cleanse","rebuild","rebuild","rebuild","rebuild"];
-    return phases.map((ph,i)=>({day:i+1,phase:ph,order:null,checks:{},custom:false,note:"",weight:null,photos:[]}));
-  }
-
-  /* ------------ small UI pieces ------------ */
-  const ProgressBar = ({ value }) =>
-    e("div", { className:"prog" }, e("div", { className:"fill", style:{ width: Math.max(0, Math.min(100, value))+"%" } }));
-
-  const Checklist = ({ items, state, onToggle }) =>
-    e("ul", { className:"list" },
-      items.map(it =>
-        e("li", { key:it.id, className:"item" },
-          e("button", { className:"paw"+(state[it.id]?" on":""), onClick:()=>onToggle(it.id), "aria-pressed":!!state[it.id] },
-            e("span", null, "🐾")
-          ),
-          e("label", null, it.label)
-        )
+const Checklist = ({ items, state, onToggle }) =>
+  e("ul", { className:"list" },
+    items.map(it =>
+      e("li", { key:it.id, className:"item" },
+        e("button", { className:"paw"+(state[it.id]?" on":""), onClick:()=>onToggle(it.id), "aria-pressed":!!state[it.id] }, e("span",null,"🐾")),
+        e("label", null, it.label)
       )
-    );
+    )
+  );
 
-  const WeightChart = ({ series }) => {
-    const canvasRef = useRef(null);
-    const chartRef = useRef(null);
-    useEffect(()=>{
-      const ctx = canvasRef.current.getContext("2d");
-      if(chartRef.current){ try{ chartRef.current.destroy(); }catch(e){} }
-      chartRef.current = new Chart(ctx, {
-        type:"line",
-        data:{
-          labels: series.map((_,i)=>"Day "+(i+1)),
-          datasets:[{ data:series, borderColor:"#ec4899",
-            backgroundColor:"rgba(236,72,153,.10)", tension:.35, spanGaps:true, pointRadius:3 }]
+const WeightChart = ({ series }) => {
+  const canvasRef = useRef(null);
+  const chartRef = useRef(null);
+  useEffect(()=>{
+    const ctx = canvasRef.current.getContext("2d");
+    if(chartRef.current){ try{ chartRef.current.destroy(); }catch(e){} }
+    chartRef.current = new Chart(ctx, {
+      type:"line",
+      data:{
+        labels: series.map((_,i)=>"Day "+(i+1)),
+        datasets:[{ data:series, borderColor:"#ec4899", backgroundColor:"rgba(236,72,153,.10)", tension:.35, spanGaps:true, pointRadius:3 }]
+      },
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{ display:false } },
+        layout:{ padding:{ bottom:8 } },
+        scales:{
+          x:{ grid:{ display:false }, ticks:{ autoSkip:true, maxRotation:0, minRotation:0 } },
+          y:{ grid:{ color:"rgba(0,0,0,.06)" }, ticks:{ callback:v=>v||"" } }
         },
-        options:{
-          responsive:true,
-          maintainAspectRatio:false,
-          plugins:{ legend:{ display:false } },
-          layout:{ padding:{ bottom:8 } },
-          scales:{
-            x:{ grid:{ display:false }, ticks:{ autoSkip:true, maxRotation:0, minRotation:0 } },
-            y:{ grid:{ color:"rgba(0,0,0,.06)" }, ticks:{ callback:v=>v||"" } }
-          },
-          animation:{ duration:220 }
-        }
-      });
-      return ()=>{ try{ chartRef.current && chartRef.current.destroy(); }catch(e){} };
-    }, [series]);
-    return e("div",{style:{height:220}}, e("canvas",{ref:canvasRef}));
-  };
+        animation:{ duration:220 }
+      }
+    });
+    return ()=>{ try{ chartRef.current && chartRef.current.destroy(); }catch(e){} };
+  }, [series]);
+  return e("div",{className:"chartBox"}, e("canvas",{ref:canvasRef}));
+};
 
-  /* ------------------- Smart Coach ------------------- */
+/* ---------- Pages ---------- */
+const GroceryList = ({ groceries, setGroceries }) => {
+  const totals = groceries.reduce((acc,g)=>{ const p=g.estCost?Number(g.estCost):0; if(g.checked) acc.checked+=p; else acc.remaining+=p; acc.total+=p; return acc; }, {checked:0,remaining:0,total:0});
+  function toggle(i){ setGroceries(groceries.map((g,idx)=> idx===i? {...g,checked:!g.checked}:g)); }
+  function setPrice(i,val){ const v=val===""?null:Number(val); setGroceries(groceries.map((g,idx)=> idx===i? {...g,estCost:v}:g)); }
+  function daysBadge(days){ if(!days||!days.length) return "📦 Pantry"; const a=Math.min(...days), b=Math.max(...days); return "📅 "+(a===b?("Day "+a):("Day "+a+"–"+b)); }
+  return e("div",{className:"wrap"},
+    e("h1",null,"Groceries & Prices"),
+    e("div",{style:{fontSize:12,color:"#64748b",margin:"6px 0 12px"}}, "Checked $",totals.checked.toFixed(2)," • Remaining $",totals.remaining.toFixed(2)," • Total $",totals.total.toFixed(2)),
+    e("ul",{style:{listStyle:"none",padding:0}},
+      groceries.map((g,i)=> e("li",{key:g.id, className:"ingRow", style:{alignItems:"center"}},
+        e("button",{className:"paw"+(g.checked?" on":""),onClick:()=>toggle(i)}, e("span",null,g.checked?"🐾":"")),
+        e("div",{style:{flex:1}},
+          e("div",null,g.name," ", e("span",{className:"badge"},daysBadge(g.days))),
+          e("div",{style:{fontSize:12,color:"#64748b"}}, g.qty||"")
+        ),
+        e("input",{type:"number", step:"0.01", placeholder:"$", value:(g.estCost==null?"":g.estCost), onChange:(ev)=>setPrice(i,ev.target.value), style:{width:90}})
+      ))
+    )
+  );
+};
+
+const Calendar = ({ days, recipes, settings }) => {
+  function dateFor(dayNum){
+    const dstr = settings.phaseTemplates.__startDate || "";
+    if(!dstr) return null; const base=new Date(dstr+"T00:00:00"); if(isNaN(base)) return null;
+    const dt=new Date(base.getTime()+(dayNum-1)*86400000); return dt.toLocaleDateString();
+  }
+  return e("div",{className:"wrap"},
+    e("h1",null,"Calendar"),
+    e("ul",{style:{listStyle:"none",padding:0,marginTop:8}},
+      days.map(d=>{
+        const dRecipes = recipes.filter(r=> r.day===d.day);
+        const dd = dateFor(d.day);
+        const hasPhotos = (d.photos && d.photos.length>0);
+        const hasNote = (d.note && d.note.trim().length>0);
+        return e("li",{key:d.day,className:"card",style:{marginBottom:8}},
+          e("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8}},
+            e("div",null,
+              e("div",{style:{fontWeight:600}},"Day ",d.day," — ",d.phase.toUpperCase()),
+              dd && e("div",{className:"badge",style:{marginTop:6}},dd)
+            ),
+            e("div",{style:{display:"flex",gap:6,flexWrap:"wrap",minHeight:24}},
+              dRecipes.length
+                ? dRecipes.map(r=> e("span",{key:r.id,className:"badge"}, (r.type==="juice"?"🧃 ":"🍽️ "), r.name, (r.type==="juice"&&r.servings?` ×${r.servings}`:"")))
+                : e("span",{style:{fontSize:12,color:"#64748b"}},"—"),
+              hasNote && e("span",{className:"badge"},"📝 Note"),
+              hasPhotos && e("span",{className:"badge"},"📸 Photos")
+            )
+          )
+        );
+      })
+    )
+  );
+};
+
+const Photos = ({ days, setDays }) => {
+  const [idx, setIdx] = useState(0);
+  const day = days[idx] || days[0];
+  function handleUpload(ev){
+    const files = Array.from(ev.target.files||[]);
+    if(!files.length) return;
+    Promise.all(files.map(f=> new Promise(res=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.readAsDataURL(f);})))
+      .then(urls=>{
+        setDays(prev=>{ const next=prev.slice(); const d={...next[idx]}; d.photos=(d.photos||[]).concat(urls); next[idx]=d; return next; });
+        const A=["Looking strong ✨","Your glow is showing ✨","Small habits, big change 💪","Oz is proud of you 🐶","Consistency looks good on you 🌟","Love that momentum","Future-you says thanks","You’re doing the thing 🙌"];
+        setTimeout(()=> alert(A[Math.floor(Math.random()*A.length)]), 50);
+      });
+  }
+  return e("div",{className:"wrap"},
+    e("h1",null,"Progress Photos"),
+    e("div",{style:{margin:"6px 0 12px"}}, e("select",{value:idx,onChange:(ev)=>setIdx(Number(ev.target.value)),className:"phaseSel"},
+      days.map((d,i)=> e("option",{key:i,value:i},"Day ",d.day," — ",d.phase.toUpperCase()))
+    )),
+    e("input",{type:"file",multiple:true,accept:"image/*",onChange:handleUpload}),
+    e("div",{style:{display:"flex",gap:8,flexWrap:"wrap",marginTop:12}},
+      (day.photos||[]).map((url,i)=> e("img",{key:i,src:url,style:{width:100,height:100,objectFit:"cover",borderRadius:8}}))
+    )
+  );
+};
+
+const Settings = ({ templates, onChange, onImportPlan }) => {
+  const [local, setLocal] = useState(templates);
+  const [drag, setDrag] = useState({ phase:null, index:null });
+  useEffect(()=>{ setLocal(templates); }, [templates]);
+  function handleDragStart(phase, index, ev){ setDrag({phase,index}); try{ ev.dataTransfer.setData("text/plain", String(index)); }catch(e){} }
+  function handleDrop(phase, index, ev){
+    ev.preventDefault(); if(drag.phase!==phase || drag.index===null) return;
+    const arr=(local[phase]||[]).slice(); const moved=arr.splice(drag.index,1)[0]; arr.splice(index,0,moved);
+    const next=Object.assign({},local); next[phase]=arr; setLocal(next); onChange(next); setDrag({phase:null,index:null});
+  }
+  function removeItem(phase,id){ const arr=(local[phase]||[]).filter(x=>x!==id); const next=Object.assign({},local); next[phase]=arr; setLocal(next); onChange(next); }
+  function addItem(phase){
+    const pool=Object.keys(GOAL_LIBRARY).filter(id=> (local[phase]||[]).indexOf(id)===-1);
+    if(pool.length===0){ alert("All goals already included"); return; }
+    const id=prompt("Add goal by ID:\n"+pool.join(", ")); if(!id || pool.indexOf(id)===-1) return;
+    const next=Object.assign({},local); next[phase]=(local[phase]||[]).concat([id]); setLocal(next); onChange(next);
+  }
+  function renderPhase(phase,label){
+    const ids=local[phase]||[];
+    return e("div",{className:"card",style:{marginBottom:16}},
+      e("h2",null,label),
+      e("ul",{style:{listStyle:"none",padding:0,marginTop:8}},
+        ids.map((id,idx)=> e("li",{key:id,draggable:true,
+            onDragStart:(ev)=>handleDragStart(phase,idx,ev),
+            onDragOver:(ev)=>ev.preventDefault(),
+            onDrop:(ev)=>handleDrop(phase,idx,ev),
+            style:{display:"flex",alignItems:"center",padding:8,marginBottom:6,border:"1px solid #f3d0e1",borderRadius:12,background:"#fff"}},
+          e("span",{style:{width:18,marginRight:8,opacity:.6}},"⋮⋮"),
+          e("span",{style:{flex:1}},GOAL_LIBRARY[id]||id),
+          e("button",{className:"btn",onClick:()=>removeItem(phase,id)},"Remove")
+        ))
+      ),
+      e("div",null,e("button",{className:"btn",onClick:()=>addItem(phase)},"Add Goal"))
+    );
+  }
+  return e("div",{className:"wrap"},
+    e("h1",null,"Settings"),
+    e("div",{className:"card",style:{marginBottom:16}},
+      e("h2",null,"Cleanse Start"),
+      e("label",{style:{fontSize:12,color:"#64748b"}},"Start date"),
+      e("input",{type:"date",value:(local.__startDate||""),onChange:(ev)=>{const next=Object.assign({},local,{__startDate:ev.target.value||""}); setLocal(next); onChange(next);} ,style:{marginTop:6,padding:"8px",border:"1px solid #f3d0e1",borderRadius:"12px"}})
+    ),
+    e("p",{style:{margin:"6px 0 12px",color:"#64748b"}},"Reorder the default goals for each phase. These act as templates; individual days can still customize later."),
+    renderPhase("fast","Fast — Phase Template"),
+    renderPhase("cleanse","Cleanse — Phase Template"),
+    renderPhase("rebuild","Rebuild — Phase Template"),
+    e("div",{className:"card",style:{marginTop:8}},
+      e("h2",null,"Import 11-Day Plan"),
+      e("p",{style:{color:"#64748b",margin:"6px 0 12px"}},"Loads all juices/meals and builds a tagged grocery list (juices × servings)."),
+      e("button",{className:"btn",onClick:onImportPlan},"Import Plan")
+    )
+  );
+};
+
+/* ---------- Dashboard ---------- */
+const Dashboard = ({ templates, days, setDays, recipes }) => {
+  const [idx, setIdx] = useState(0);
+  const day = days[idx] || days[0];
+
+  // next-ingredients (today+tomorrow else next two recipe days)
+  function nextTwoDayIngredients(currentDay){
+    const tryDays = (d1, d2) => {
+      const want = new Set([d1, d2]);
+      const bag = {};
+      (recipes || []).forEach(r => {
+        if (!r.day || !want.has(r.day)) return;
+        (r.ingredients || []).forEach(it => {
+          const key = (it.key || it.name || "").toLowerCase();
+          if (!bag[key]) bag[key] = { name: it.name, qtyList: [], days: new Set() };
+          const mult = (r.type==="juice" && r.servings) ? ` ×${r.servings}` : "";
+          bag[key].qtyList.push((it.qty||"1")+mult);
+          bag[key].days.add(r.day);
+        });
+      });
+      Object.keys(bag).forEach(k => bag[k].days = Array.from(bag[k].days).sort((a,b)=>a-b));
+      return Object.values(bag).sort((a,b)=>(a.name||"").localeCompare(b.name||""));
+    };
+    const strict = tryDays(currentDay.day, currentDay.day + 1);
+    if (strict.length) return { items: strict, label: "Today + Tomorrow — Ingredients" };
+
+    const futureDays = Array.from(new Set((recipes||[]).filter(r => r.day >= currentDay.day).map(r => r.day))).sort((a,b)=>a-b);
+    const pool = futureDays.slice(0,2);
+    if (pool.length === 0) return { items: [], label: "Upcoming Ingredients" };
+    const fallback = tryDays(pool[0], pool[1] || pool[0]);
+    const label = pool.length === 2 ? `Upcoming Ingredients — Day ${pool[0]} & ${pool[1]}` : `Upcoming Ingredients — Day ${pool[0]}`;
+    return { items: fallback, label };
+  }
+  const { items: nextItems, label: nextLabel } = nextTwoDayIngredients(day);
+
+  // checklist
+  const templateIds = templates[day.phase] || [];
+  const activeIds = (day.order && day.order.length ? day.order : templateIds);
+  const items = activeIds.map(id => ({ id, label: GOAL_LIBRARY[id] || id }));
+  const checks = day.checks || {};
+  const doneCount = items.reduce((a, it) => a + (checks[it.id] ? 1 : 0), 0);
+  const totalCount = Math.max(1, items.length);
+  const progress = (doneCount / totalCount) * 100;
+  const weightSeries = days.map(d => (d.weight == null ? null : d.weight));
+  useEffect(()=>{ if (Math.round(progress) === 100) window.safeConfetti({ particleCount: 90, spread: 70, origin: { y: .6 } }); }, [progress]);
+
+  function toggleCheck(id){
+    setDays(prev => { const next=prev.slice(); const d={...next[idx]}; const c={...(d.checks||{})}; c[id]=!c[id]; d.checks=c; next[idx]=d; return next; });
+  }
+  function setPhase(p){
+    setDays(prev => { const next=prev.slice(); const d={...next[idx]}; d.phase=p; next[idx]=d; return next; });
+  }
+  function changeDay(dir){ setIdx(cur => { let n=cur+dir; if(n<0)n=days.length-1; if(n>=days.length)n=0; return n; }); }
+
+  // Coach (UI-only)
   const COACH_AFFIRM = [
     "You’ve got this! 💪","Proud of your effort today. 🌟","Oz is wagging his tail for you! 🐶",
     "One step at a time — you’re doing amazing.","Keep going, your future self will thank you.",
     "Tiny wins add up.","Consistency beats intensity.","You’re building something real.",
-    "Strong body, kind mind.","Hydration helps everything.","Breathe, sip, reset.",
-    "Today counts.","I see your effort.","Momentum looks good on you.","Grace + grit."
+    "Strong body, kind mind.","Hydration helps everything.","Breathe, sip, reset.","Momentum looks good on you."
   ];
-
   const COACH_RULES = [
     { id:"dizziness", tips:["Sit or lie until steady.","Small juice or a pinch of salt/electrolyte if fasting.","Breathe in 4 / out 6."] },
     { id:"headache",  tips:["Sip 8–12 oz water over 15 min.","Add a pinch of sea salt/electrolyte.","Dim screens 10 minutes."] },
@@ -190,187 +436,146 @@
     {id:"fatigue",rx:/\b(tired|fatigue|exhaust(ed|ion)|wiped|low energy)\b/i},
     {id:"brain-fog",rx:/\b(brain[-\s]?fog|foggy|can.?t focus)\b/i}
   ];
+  const [coachText,setCoachText] = useState("");
   function inferMoodFrom(text){
-    let score = 6;
-    const t = (text||"").toLowerCase();
-    const neg = [/overwhelm|anxious|stressed|down|sad|discouraged|frustrat/,/tired|exhaust|wiped|drained/,/pain|hurt|ache/]
-                .reduce((n,rx)=> n+(rx.test(t)?1:0),0);
-    const pos = [/proud|strong|good|better|energized|motivated|win|progress|calm|happy|light/]
-                .reduce((n,rx)=> n+(rx.test(t)?1:0),0);
-    score += pos - 2*neg;
-    return Math.max(1, Math.min(10, score));
+    let score=6; const t=(text||"").toLowerCase();
+    const neg=[/overwhelm|anxious|stressed|down|sad|discouraged|frustrat/,/tired|exhaust|wiped|drained/,/pain|hurt|ache/].reduce((n,rx)=>n+(rx.test(t)?1:0),0);
+    const pos=[/proud|strong|good|better|energized|motivated|win|progress|calm|happy|light/].reduce((n,rx)=>n+(rx.test(t)?1:0),0);
+    score+=pos-2*neg; return Math.max(1,Math.min(10,score));
+  }
+  function analyzeFromNotes(){
+    const text=(day.note||"").trim(); if(!text){ setCoachText("Write a quick note, then tap Coach."); return; }
+    const found=new Set(SYM_MATCHERS.filter(m=>m.rx.test(text)).map(m=>m.id));
+    const mood=inferMoodFrom(text);
+    const hits=COACH_RULES.filter(r=>found.has(r.id));
+    const tips=hits.flatMap(h=>h.tips).slice(0,8);
+    const moodBoost=(mood<=3)?["You’re not alone — make it gentle today.","Pick one tiny win now (8–10 oz water, 3 slow breaths).", COACH_AFFIRM[Math.floor(Math.random()*COACH_AFFIRM.length)]] :
+                     (mood<=6)?["Nice work staying steady. One small upgrade today.", COACH_AFFIRM[Math.floor(Math.random()*COACH_AFFIRM.length)]] :
+                     [COACH_AFFIRM[Math.floor(Math.random()*COACH_AFFIRM.length)], "Ride the wave, stay kind to yourself."];
+    const header=found.size?`I noticed: ${Array.from(found).join(", ")}.`:"No specific symptoms spotted — here’s a steady plan.";
+    const body=tips.length?("Try these:\n• "+tips.join("\n• ")):"Hydrate now, 5 slow breaths, short walk, then reassess.";
+    setCoachText(`${header}\n\n${body}\n\n${moodBoost.join(" ")}`);
   }
 
-  /* ------------------- Dashboard ------------------- */
-  const Dashboard = ({ templates, days, setDays }) => {
-    const [idx, setIdx] = useState(0);
-    const day = days[idx] || days[0];
-
-    // checklist
-    const templateIds = templates[day.phase] || [];
-    const activeIds = (day.order && day.order.length ? day.order : templateIds);
-    const items = activeIds.map(id => ({ id, label: GOAL_LIBRARY[id] || id }));
-    const checks = day.checks || {};
-    const doneCount = items.reduce((a, it) => a + (checks[it.id] ? 1 : 0), 0);
-    const totalCount = Math.max(1, items.length);
-    const progress = (doneCount / totalCount) * 100;
-    const weightSeries = days.map(d => (d.weight == null ? null : d.weight));
-
-    useEffect(()=>{ if (Math.round(progress) === 100) window.safeConfetti({ particleCount: 90, spread: 70, origin: { y: .6 } }); }, [progress]);
-
-    function toggleCheck(id){
-      setDays(prev => {
-        const next = prev.slice();
-        const d = { ...next[idx] };
-        const c = { ...(d.checks || {}) };
-        c[id] = !c[id];
-        d.checks = c;
-        next[idx] = d;
-        return next;
-      });
-    }
-    function setPhase(p){
-      setDays(prev => { const next = prev.slice(); const d = { ...next[idx] }; d.phase = p; next[idx] = d; return next; });
-    }
-    function changeDay(dir){ setIdx(cur => { let n = cur + dir; if (n < 0) n = days.length - 1; if (n >= days.length) n = 0; return n; }); }
-
-    // Smart Coach (UI-only output; never writes into notes)
-    const [coachText, setCoachText] = useState("");
-    function analyzeFromNotes(){
-      const text = (day.note || "").trim();
-      if(!text){ setCoachText("Write a quick note, then tap Coach."); return; }
-      const found = new Set(SYM_MATCHERS.filter(m=>m.rx.test(text)).map(m=>m.id));
-      const mood = inferMoodFrom(text);
-      const hits = COACH_RULES.filter(r=> found.has(r.id));
-      const tips = hits.flatMap(h=>h.tips).slice(0,8);
-      const moodBoost = (mood<=3)
-        ? ["You’re not alone — make it gentle today.","Pick one tiny win now (8–10 oz water, 3 slow breaths).", COACH_AFFIRM[Math.floor(Math.random()*COACH_AFFIRM.length)]]
-        : (mood<=6)
-          ? ["Nice work staying steady. One small upgrade today.", COACH_AFFIRM[Math.floor(Math.random()*COACH_AFFIRM.length)]]
-          : [COACH_AFFIRM[Math.floor(Math.random()*COACH_AFFIRM.length)], "Ride the wave, stay kind to yourself."];
-
-      const header = found.size ? `I noticed: ${Array.from(found).join(", ")}.` : "No specific symptoms spotted — here’s a steady plan.";
-      const body = tips.length ? ("Try these:\n• " + tips.join("\n• ")) : "Hydrate now, 5 slow breaths, short walk, then reassess.";
-      setCoachText(`${header}\n\n${body}\n\n${moodBoost.join(" ")}`);
-    }
-
-    return e(React.Fragment, null,
-      // masthead
-      e("div",{className:"mast card"},
-        e("div",{className:"mastRow"},
-          e("div",{className:"mastLeft"},
-            e("img",{src:"oz.png",alt:"Oz"}),
-            e("div",{className:"mastTitle"},
-              e("b",null,"Oz Companion"),
-              e("small",null, day.phase.toUpperCase())
-            )
-          ),
-          e("div",{className:"day-nav"},
-            e("button",{className:"day-btn",onClick:()=>changeDay(-1),"aria-label":"Previous day"},"◀"),
-            e("span",{className:"day-label"},"Day "+day.day),
-            e("button",{className:"day-btn",onClick:()=>changeDay(1),"aria-label":"Next day"},"▶")
+  return e(React.Fragment, null,
+    e("div",{className:"mast card"},
+      e("div",{className:"mastRow"},
+        e("div",{className:"mastLeft"},
+          e("img",{src:"oz.png",alt:"Oz"}),
+          e("div",{className:"mastTitle"},
+            e("b",null,"Oz Companion"),
+            e("small",null, day.phase.toUpperCase())
           )
         ),
-        e("div",{className:"mastRow",style:{marginTop:8}},
-          e("select",{value:day.phase,onChange:(ev)=>setPhase(ev.target.value),className:"phaseSel","aria-label":"Phase"},
-            e("option",{value:"fast"},"Fast"),
-            e("option",{value:"cleanse"},"Cleanse"),
-            e("option",{value:"rebuild"},"Rebuild")
-          )
+        e("div",{className:"day-nav"},
+          e("button",{className:"day-btn",onClick:()=>changeDay(-1),"aria-label":"Previous day"},"◀"),
+          e("span",{className:"day-label"},"Day "+day.day),
+          e("button",{className:"day-btn",onClick:()=>changeDay(1),"aria-label":"Next day"},"▶")
         )
       ),
+      e("div",{className:"mastRow",style:{marginTop:8}},
+        e("select",{value:day.phase,onChange:(ev)=>setPhase(ev.target.value),className:"phaseSel","aria-label":"Phase"},
+          e("option",{value:"fast"},"Fast"),
+          e("option",{value:"cleanse"},"Cleanse"),
+          e("option",{value:"rebuild"},"Rebuild")
+        )
+      )
+    ),
 
-      // progress
-      e(ProgressBar,{value:progress}),
+    e(ProgressBar,{value:progress}),
+    e(Checklist,{items, state:checks, onToggle:toggleCheck}),
 
-      // checklist (paw)
-      e(Checklist,{items, state:checks, onToggle:toggleCheck}),
-
-      // notes + coach (coach output stays in UI only)
-      e("div",{className:"card",style:{marginTop:16}},
-        e("h2",null,"Daily Notes"),
-        e("div",{className:"coachShell",style:{marginTop:6}},
-          e("div",{className:"coachHeader"},
-            e("div",{className:"coachBadge"},"🧠 Smart Coach"),
-            e("small",null,"Understands your note and suggests relief + motivation")
-          ),
-          e("div",{className:"coachBtns"},
-            e("button",{className:"btn primary",onClick:analyzeFromNotes},"Coach")
-          ),
-          coachText && e("div",{className:"coachOut"}, coachText)
+    e("div",{className:"card",style:{marginTop:16}},
+      e("h2",null,"Daily Notes"),
+      e("div",{className:"coachShell",style:{marginTop:6}},
+        e("div",{className:"coachHeader"},
+          e("div",{className:"coachBadge"},"🧠 Smart Coach"),
+          e("small",null,"Understands your note and suggests relief + motivation")
         ),
-        e("textarea",{
-          value: day.note || "",
-          onChange:(ev)=>{
-            const val = ev.target.value;
-            setDays(prev=>{
-              const next = prev.slice();
-              const d = {...next[idx]};
-              d.note = val;
-              next[idx] = d;
-              return next;
-            });
-          },
-          rows:4,
-          style:{width:"100%",resize:"vertical",border:"1px solid var(--line)",borderRadius:12,padding:"10px",fontSize:16,marginTop:10}
-        })
+        e("div",{className:"coachBtns"},
+          e("button",{className:"btn primary",onClick:analyzeFromNotes},"Coach")
+        ),
+        coachText && e("div",{className:"coachOut"}, coachText)
       ),
+      e("textarea",{
+        value: day.note || "",
+        onChange:(ev)=>{ const val=ev.target.value; setDays(prev=>{ const next=prev.slice(); const d={...next[idx]}; d.note=val; next[idx]=d; return next; }); },
+        rows:4, style:{width:"100%",resize:"vertical",border:"1px solid var(--line)",borderRadius:12,padding:"10px",fontSize:16,marginTop:10}
+      })
+    ),
 
-      // weight
-      e("div",{className:"card",style:{marginTop:16}},
-        e("h2",null,"Weight"),
-        e("div",{style:{display:"flex",alignItems:"center",gap:8,margin:"8px 0"}},
-          e("label",null,"Today’s weight"),
-          e("input",{
-            type:"number", step:"0.1",
-            value:(day.weight==null?"":day.weight),
-            onChange:(ev)=>{
-              const v = ev.target.value;
-              setDays(prev=>{
-                const next = prev.slice();
-                const d = { ...next[idx] };
-                d.weight = (v==="" ? null : Number(v));
-                if (v !== "" && ((d.checks && "weight" in d.checks) || activeIds.indexOf("weight") !== -1)) {
-                  const c = { ...(d.checks || {}) }; c.weight = true; d.checks = c;
-                }
-                next[idx] = d; return next;
-              });
-            },
-            style:{width:120}
-          }),
-          e("span",{className:"badge"},"Day "+day.day)
-        ),
-        e(WeightChart,{series:weightSeries})
-      )
-    );
-  };
+    e("div",{className:"card",style:{marginTop:16}},
+      e("h2",null,nextLabel),
+      nextItems.length===0
+        ? e("p",{style:{color:"#64748b"}},"No recipes scheduled soon.")
+        : e("ul",{style:{listStyle:"none",padding:0,marginTop:8}},
+            nextItems.map(item =>
+              e("li",{key:item.name,className:"ingRow"},
+                e("span",null,item.name," ",
+                  e("span",{className:"badge"},
+                    item.days.length===1?("Day "+item.days[0]):("Day "+item.days[0]+"–"+item.days[item.days.length-1])
+                  )
+                ),
+                e("span",{style:{color:"#64748b",fontSize:12}}, item.qtyList.join(" + ") || "")
+              )
+            )
+          )
+    ),
 
-  /* ------------------- App ------------------- */
-  const App = () => {
-    const [settings, setSettings] = useLocal("oz.settings", { phaseTemplates: DEFAULT_PHASE_TEMPLATES });
-    useEffect(()=>{  // guard bad local storage
-      const pt=settings&&settings.phaseTemplates;
-      const valid=pt&&["fast","cleanse","rebuild"].every(k=> Array.isArray(pt[k]) && pt[k].every(id=>!!GOAL_LIBRARY[id]));
-      if(!valid) setSettings({ phaseTemplates: DEFAULT_PHASE_TEMPLATES });
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    },[]);
-    const [days, setDays] = useLocal("oz.days", defaultDays());
-    const [tab, setTab] = useState("dash");
+    e("div",{className:"card",style:{marginTop:16}},
+      e("h2",null,"Weight"),
+      e("div",{style:{display:"flex",alignItems:"center",gap:8,margin:"8px 0"}},
+        e("label",null,"Today’s weight"),
+        e("input",{type:"number",step:"0.1",value:(day.weight==null?"":day.weight),
+          onChange:(ev)=>{ const v=ev.target.value; setDays(prev=>{ const next=prev.slice(); const d={...next[idx]}; d.weight=(v===""?null:Number(v));
+            if(v!=="" && ((d.checks&&"weight" in d.checks) || activeIds.indexOf("weight")!==-1)){ const c={...(d.checks||{})}; c.weight=true; d.checks=c; }
+            next[idx]=d; return next; }); },
+          style:{width:120}}),
+        e("span",{className:"badge"},"Day "+day.day)
+      ),
+      e(WeightChart,{series:weightSeries})
+    )
+  );
+};
 
-    return e("div",{},
-      tab==="dash" && e(Dashboard,{templates:settings.phaseTemplates, days, setDays}),
+/* ---------- App ---------- */
+const App = () => {
+  const [settings, setSettings] = useLocal("oz.settings", { phaseTemplates: DEFAULT_PHASE_TEMPLATES });
+  useEffect(()=>{ const pt=settings&&settings.phaseTemplates;
+    const valid=pt&&["fast","cleanse","rebuild"].every(k=> Array.isArray(pt[k]) && pt[k].every(id=>!!GOAL_LIBRARY[id]));
+    if(!valid) setSettings({ phaseTemplates: DEFAULT_PHASE_TEMPLATES });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[]);
+  const [days, setDays] = useLocal("oz.days", defaultDays());
+  const [recipes, setRecipes] = useLocal("oz.recipes", PLAN_RECIPES);
+  const [groceries, setGroceries] = useLocal("oz.groceries", aggregateGroceries(PLAN_RECIPES));
+  const [tab, setTab] = useState("dash");
 
-      e("div",{className:"tabs"},
-        e("button",{className:"btn"+(tab==="dash"?" active":""),onClick:()=>setTab("dash")},"Dashboard"),
-        e("button",{className:"btn",onClick:()=>alert('Groceries moved out for brevity')},"Groceries"),
-        e("button",{className:"btn",onClick:()=>alert('Calendar moved out for brevity')},"Calendar"),
-        e("button",{className:"btn",onClick:()=>alert('Photos moved out for brevity')},"Photos"),
-        e("button",{className:"btn",onClick:()=>alert('Settings moved out for brevity')},"Settings")
-      )
-    );
-  };
+  function importFullPlan(){
+    const newDays = defaultDays(); setDays(newDays);
+    setRecipes(PLAN_RECIPES);
+    setGroceries(aggregateGroceries(PLAN_RECIPES));
+    alert("Plan imported ✔");
+  }
 
-  ReactDOM.createRoot(document.getElementById("root")).render(e(App));
-  </script>
+  return e("div",{},
+    tab==="dash"      && e(Dashboard,{templates:settings.phaseTemplates, days, setDays, recipes}),
+    tab==="groceries" && e(GroceryList,{groceries,setGroceries}),
+    tab==="calendar"  && e(Calendar,{days,recipes,settings}),
+    tab==="photos"    && e(Photos,{days,setDays}),
+    tab==="settings"  && e(Settings,{templates:settings.phaseTemplates,onChange:(next)=>setSettings({ phaseTemplates: next }), onImportPlan:importFullPlan}),
+
+    e("div",{className:"tabs"},
+      e("button",{className:"btn"+(tab==="dash"?" active":""),onClick:()=>setTab("dash")},"Dashboard"),
+      e("button",{className:"btn"+(tab==="groceries"?" active":""),onClick:()=>setTab("groceries")},"Groceries"),
+      e("button",{className:"btn"+(tab==="calendar"?" active":""),onClick:()=>setTab("calendar")},"Calendar"),
+      e("button",{className:"btn"+(tab==="photos"?" active":""),onClick:()=>setTab("photos")},"Photos"),
+      e("button",{className:"btn"+(tab==="settings"?" active":""),onClick:()=>setTab("settings")},"Settings")
+    )
+  );
+};
+
+ReactDOM.createRoot(document.getElementById("root")).render(e(App));
+</script>
 </body>
 </html>
