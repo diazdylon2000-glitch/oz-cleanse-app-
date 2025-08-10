@@ -654,6 +654,63 @@ e(ProgressBar,{value:progress}),
 
 // checklist
 e(Checklist,{items, state:checks, onToggle:toggleCheck}),
+// --- Smart Coach knowledge base ---
+const COACH_RULES = [
+  {
+    id: "headache",
+    test: ctx => ctx.syms.has("headache"),
+    tips: [
+      "Sip 8–12 oz water slowly over the next 15 minutes.",
+      "Add a pinch of sea salt or an LMNT-style electrolyte.",
+      "Take a 5–10 min break from screens, dim the lights."
+    ]
+  },
+  {
+    id: "dizziness",
+    test: ctx => ctx.syms.has("dizziness"),
+    tips: [
+      "Sit or lie down until steady.",
+      "Have a small serving of juice or a pinch of salt if on a fast.",
+      "Deep breaths — in for 4, out for 6."
+    ]
+  },
+  {
+    id: "nausea",
+    test: ctx => ctx.syms.has("nausea"),
+    tips: [
+      "Sip cool water or herbal tea (peppermint, ginger).",
+      "Step outside for fresh air.",
+      "Move slowly and avoid sudden posture changes."
+    ]
+  },
+  {
+    id: "fatigue",
+    test: ctx => ctx.syms.has("fatigue"),
+    tips: [
+      "Take a 15–20 minute rest.",
+      "Drink water or electrolyte drink.",
+      "Do light stretching to boost circulation."
+    ]
+  },
+  {
+    id: "brain-fog",
+    test: ctx => ctx.syms.has("brain-fog"),
+    tips: [
+      "Stand, stretch, and roll shoulders for 2 minutes.",
+      "Have a glass of water.",
+      "Get 5 minutes of sunlight if possible."
+    ]
+  }
+];
+
+// --- Encouragement pool ---
+const COACH_AFFIRM = [
+  "You’ve got this! 💪",
+  "Proud of your effort today. 🌟",
+  "Oz is wagging his tail for you! 🐶",
+  "One step at a time — you’re doing amazing.",
+  "Keep going, your future self will thank you."
+];
 
 // Daily Notes + Smart Coach (reads the text she writes)
 (() => {
