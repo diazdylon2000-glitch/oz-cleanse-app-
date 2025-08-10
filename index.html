@@ -458,145 +458,108 @@
     );
   };
 
-/* ========= Smart Coach knowledge (top-level) ========= */
-const COACH_RULES = window.OZ_COACH_RULES;
-  {
-    id: "headache",
-    test: ctx => ctx.syms.has("headache"),
-    tips: [
-      "Sip 8–12 oz water slowly over the next 15 minutes.",
-      "Add a pinch of sea salt or an electrolyte.",
-      "Take a 5–10 min break from screens; dim the lights."
-    ]
-  },
-  {
-    id: "dizziness",
-    test: ctx => ctx.syms.has("dizziness"),
-    tips: [
-      "Sit or lie down until steady.",
-      "If fasting, have a small juice or pinch of salt.",
-      "Breathe: in 4s, out 6s for 1 minute."
-    ]
-  },
-  {
-    id: "nausea",
-    test: ctx => ctx.syms.has("nausea"),
-    tips: [
-      "Sip cool water or peppermint/ginger tea.",
-      "Step outside for fresh air.",
-      "Move slowly; avoid sudden posture changes."
-    ]
-  },
-  {
-    id: "fatigue",
-    test: ctx => ctx.syms.has("fatigue"),
-    tips: [
-      "Take a 15–20 minute rest.",
-      "Hydrate or add electrolytes.",
-      "Try light stretching to boost circulation."
-    ]
-  },
-  {
-    id: "brain-fog",
-    test: ctx => ctx.syms.has("brain-fog"),
-    tips: [
-      "Stand, stretch, and roll shoulders for 2 minutes.",
-      "Have a glass of water.",
-      "Get 5 minutes of sunlight if possible."
-    ]
-  }
-];
-<script>
-// Smart Coach data (guarded for iOS Safari double-exec)
-window.OZ_COACH_RULES = window.OZ_COACH_RULES || [
-  { id:"headache",  test: ctx => ctx.syms.has("headache"),
-    tips:[
-      "Sip 8–12 oz water slowly over the next 15 minutes.",
-      "Add a pinch of sea salt or an electrolyte.",
-      "Take a 5–10 min break from screens; dim the lights."
+// --- Smart Coach globals (guarded so they can't be redeclared) ---
+if (!window.OZ_COACH_RULES) {
+  window.OZ_COACH_RULES = [
+    { id:"headache",  test:ctx=>ctx.syms.has("headache"),  tips:[
+      "Sip 8–12 oz water slowly over 15 minutes.",
+      "Add a pinch of sea salt or electrolyte.",
+      "Take a 5–10 min screen break; dim the lights."
     ]},
-  { id:"dizziness", test: ctx => ctx.syms.has("dizziness"),
-    tips:[
+    { id:"dizziness", test:ctx=>ctx.syms.has("dizziness"), tips:[
       "Sit or lie down until steady.",
-      "If fasting, have a small juice or pinch of salt.",
-      "Breathe: in 4s, out 6s for 1 minute."
+      "Small juice or a pinch of salt if fasting.",
+      "Breathe in 4, out 6."
     ]},
-  { id:"nausea",    test: ctx => ctx.syms.has("nausea"),
-    tips:[
-      "Sip cool water or peppermint/ginger tea.",
+    { id:"nausea",    test:ctx=>ctx.syms.has("nausea"),    tips:[
+      "Sip cool water or ginger/peppermint tea.",
       "Step outside for fresh air.",
       "Move slowly; avoid sudden posture changes."
     ]},
-  { id:"fatigue",   test: ctx => ctx.syms.has("fatigue"),
-    tips:[
+    { id:"fatigue",   test:ctx=>ctx.syms.has("fatigue"),   tips:[
       "Take a 15–20 minute rest.",
-      "Hydrate or add electrolytes.",
-      "Try light stretching to boost circulation."
+      "Hydrate or have electrolytes.",
+      "Light stretching to boost circulation."
     ]},
-  { id:"brain-fog", test: ctx => ctx.syms.has("brain-fog"),
-    tips:[
-      "Stand, stretch, and roll shoulders for 2 minutes.",
-      "Have a glass of water.",
+    { id:"brain-fog", test:ctx=>ctx.syms.has("brain-fog"), tips:[
+      "Stand, stretch, shoulder rolls 2 minutes.",
+      "Drink a glass of water.",
       "Get 5 minutes of sunlight if possible."
     ]}
-];
-
-window.OZ_COACH_AFFIRM = window.OZ_COACH_AFFIRM || [
-  "You’ve got this! 💪",
-  "Proud of your effort today. 🌟",
-  "Oz is wagging his tail for you! 🐶",
-  "One step at a time — you’re doing amazing.",
-  "Keep going — future you is grateful."
-];
-</script>
+  ];
+}
+if (!window.OZ_COACH_AFFIRM) {
+  window.OZ_COACH_AFFIRM = [
+    "You’ve got this! 💪",
+    "Proud of your effort today. 🌟",
+    "Oz is wagging his tail for you! 🐶",
+    "One step at a time — you’re doing amazing.",
+    "Keep going, your future self will thank you."
+  ];
+}
 
 /* ===================== Dashboard ===================== */
 function Dashboard({ templates, days, setDays, recipes }) {
   const [idx, setIdx] = React.useState(0);
   const day = days[idx] || days[0];
 
-  // --- helper: next two days ingredients (or next recipe days) ---
+// Dashboard
+const Dashboard = ({ templates, days, setDays, recipes }) => {
+  const [idx, setIdx] = React.useState(0);
+  const day = days[idx] || days[0];
+
+  // Coach globals (no re-declare)
+  const COACH_RULES  = window.OZ_COACH_RULES  || [];
+  const COACH_AFFIRM = window.OZ_COACH_AFFIRM || [];
+
+  // Build next-ingredients safely (no colon-destructuring)
   function nextTwoDayIngredients(currentDay){
-    const tryDays = (d1, d2) => {
-      const want = new Set([d1, d2]);
-      const bag = {};
-      (recipes || []).forEach(r => {
+    function tryDays(d1, d2){
+      var want = new Set([d1, d2]);
+      var bag = {};
+      (recipes || []).forEach(function(r){
         if (!r.day || !want.has(r.day)) return;
-        (r.ingredients || []).forEach(it => {
-          const key = (it.key || it.name || "").toLowerCase();
+        (r.ingredients || []).forEach(function(it){
+          var key = (it.key || it.name || "").toLowerCase();
           if (!bag[key]) bag[key] = { name: it.name, qtyList: [], days: new Set() };
           if (it.qty) bag[key].qtyList.push(it.qty);
           bag[key].days.add(r.day);
         });
       });
-      Object.keys(bag).forEach(k => bag[k].days = Array.from(bag[k].days).sort((a,b)=>a-b));
-      return Object.values(bag).sort((a,b)=>(a.name||"").localeCompare(b.name||""));
-    };
+      Object.keys(bag).forEach(function(k){
+        bag[k].days = Array.from(bag[k].days).sort(function(a,b){ return a-b; });
+      });
+      return Object.values(bag).sort(function(a,b){
+        return (a.name||"").localeCompare(b.name||"");
+      });
+    }
 
-    const strict = tryDays(currentDay.day, currentDay.day + 1);
+    var strict = tryDays(currentDay.day, currentDay.day + 1);
     if (strict.length) return { items: strict, label: "Today + Tomorrow — Ingredients" };
 
-    const futureDays = Array.from(new Set(
-      (recipes||[]).filter(r => r.day >= currentDay.day).map(r => r.day)
-    )).sort((a,b)=>a-b);
+    var futureDays = Array.from(new Set(
+      (recipes||[]).filter(function(r){ return r.day >= currentDay.day; }).map(function(r){ return r.day; })
+    )).sort(function(a,b){ return a-b; });
 
-    const pool = futureDays.slice(0,2);
+    var pool = futureDays.slice(0,2);
     if (pool.length === 0) return { items: [], label: "Upcoming Ingredients" };
 
-    const fallback = tryDays(pool[0], pool[1] || pool[0]);
-    const label = pool.length === 2
-      ? `Upcoming Ingredients — Day ${pool[0]} & ${pool[1]}`
-      : `Upcoming Ingredients — Day ${pool[0]}`;
-    return { items: fallback, label };
+    var fallback = tryDays(pool[0], pool[1] || pool[0]);
+    var label = (pool.length === 2)
+      ? ("Upcoming Ingredients — Day " + pool[0] + " & " + pool[1])
+      : ("Upcoming Ingredients — Day " + pool[0]);
+    return { items: fallback, label: label };
   }
+  var nextObj   = nextTwoDayIngredients(day);
+  var nextItems = nextObj && nextObj.items ? nextObj.items : [];
+  var nextLabel = nextObj && nextObj.label ? nextObj.label : "Upcoming Ingredients";
 
-  const { items: nextItems, label: nextLabel } = nextTwoDayIngredients(day);
-
-  // --- checklist / progress ---
+  // template + checklist
   const templateIds = templates[day.phase] || [];
   const activeIds = (day.order && day.order.length ? day.order : templateIds);
   const items = activeIds.map(id => ({ id, label: GOAL_LIBRARY[id] || id }));
   const checks = day.checks || {};
+
   const doneCount = items.reduce((a, it) => a + (checks[it.id] ? 1 : 0), 0);
   const totalCount = Math.max(1, items.length);
   const progress = (doneCount / totalCount) * 100;
@@ -605,99 +568,12 @@ function Dashboard({ templates, days, setDays, recipes }) {
   // celebrate on 100% (mobile-safe confetti)
   React.useEffect(() => {
     if (Math.round(progress) === 100) {
-      if (window.safeConfetti) {
-        window.safeConfetti({ particleCount: 80, spread: 70, origin: { y: .6 } });
-      } else if (window.confetti) {
-        window.confetti({ particleCount: 80, spread: 70, origin: { y: .6 } });
-      }
-      console.log(["Paw-some job! 🐾","You nailed it today! 💪","Oz is proud of you! 🐶","100% — You’re unstoppable! 🌟","Way to crush it! 🎉"][Math.floor(Math.random()*5)]);
+      if (window.safeConfetti) window.safeConfetti({ particleCount: 80, spread: 70, origin: { y: .6 } });
+      else if (window.confetti) window.confetti({ particleCount: 80, spread: 70, origin: { y: .6 } });
     }
   }, [progress]);
 
-  // --- Daily Notes Smart Coach state + logic ---
-  const [coachText, setCoachText] = React.useState("");
-
-  const SYM_MATCHERS = [
-    {id:"headache",      rx:/\b(headache|migraine|head pain)\b/i},
-    {id:"dizziness",     rx:/\b(dizzy|light[-\s]?headed|vertigo)\b/i},
-    {id:"nausea",        rx:/\b(nausea|queasy|sick to (my|the) stomach)\b/i},
-    {id:"fatigue",       rx:/\b(tired|fatigue|exhaust(ed|ion)|wiped|low energy)\b/i},
-    {id:"constipation",  rx:/\b(constipat(ed|ion)|no (bm|bowel)|hard stool)\b/i},
-    {id:"cramps",        rx:/\b(cramps?|charley horse|muscle spasm)\b/i},
-    {id:"cold",          rx:/\b(chills?|feeling cold|freezing)\b/i},
-    {id:"brain-fog",     rx:/\b(brain[-\s]?fog|foggy|can.?t focus)\b/i},
-    {id:"insomnia",      rx:/\b(can.?t sleep|insomnia|up all night|poor sleep)\b/i}
-  ];
-
-  function inferMoodFrom(text){
-    let score = 6;
-    const t = text.toLowerCase();
-    const negHits = [
-      /overwhelm(ed)?|anxious|stressed|down|sad|discouraged|frustrat(ed)?/,
-      /tired|exhaust(ed)?|wiped|drained/,
-      /cried|crying|tear(s|y)/,
-      /pain|hurt(s|ing)?|ache/
-    ].reduce((n,rx)=> n + (rx.test(t)?1:0), 0);
-    const posHits = [
-      /proud|strong|good|better|energized|motivated|win|progress|calm/
-    ].reduce((n,rx)=> n + (rx.test(t)?1:0), 0);
-    score += (posHits*1) - (negHits*2);
-    return Math.max(1, Math.min(10, score));
-  }
-
-  function analyzeFromNotes(){
-    const text = (day.note || "").trim();
-    if(!text){ setCoachText("Write a quick note, then tap “Coach from notes”."); return; }
-
-    const found = new Set(SYM_MATCHERS.filter(m => m.rx.test(text)).map(m => m.id));
-    const mood = inferMoodFrom(text);
-
-    const ctx = { syms: found, phase: day.phase };
-    const hits = (COACH_RULES||[]).filter(r => {
-      try { return r.test(ctx); } catch { return false; }
-    });
-    const tips = hits.flatMap(h => h.tips).slice(0,6);
-
-    const moodBoost = (mood<=4)
-      ? [
-          "You’re not alone — let’s make today gentle and doable.",
-          "Pick one tiny win now (8–10 oz water, 3 deep breaths).",
-          COACH_AFFIRM[Math.floor(Math.random()*COACH_AFFIRM.length)]
-        ]
-      : (mood<=6)
-        ? [
-            "Nice work staying steady. One small upgrade today.",
-            COACH_AFFIRM[Math.floor(Math.random()*COACH_AFFIRM.length)]
-          ]
-        : [COACH_AFFIRM[Math.floor(Math.random()*COACH_AFFIRM.length)]];
-
-    const header = found.size
-      ? `I noticed: ${Array.from(found).join(", ")}.`
-      : "No specific symptoms spotted — here’s a steady plan.";
-
-    const body = tips.length
-      ? ("Try these:\n• " + tips.join("\n• "))
-      : "Hydrate now, take 5 slow breaths, a short walk, and check in later.";
-
-    setCoachText(`${header}\n\n${body}\n\n${moodBoost.join(" ")}`);
-  }
-
-  function appendToNotes(){
-    if(!coachText) return;
-    const divider = (day.note && day.note.trim()? "\n\n" : "");
-    const stamp = new Date().toLocaleString();
-    const toAdd = `${divider}Coach (${stamp}):\n${coachText}`;
-    setDays(prev=>{
-      const next = prev.slice();
-      const d2 = {...next[idx]};
-      d2.note = (d2.note||"") + toAdd;
-      next[idx] = d2;
-      return next;
-    });
-    setCoachText("");
-  }
-
-  // --- interactions for checklist / phase / reorder bits ---
+  // interactions
   function toggleCheck(id){
     setDays(prev => {
       const next = prev.slice();
@@ -709,7 +585,6 @@ function Dashboard({ templates, days, setDays, recipes }) {
       return next;
     });
   }
-
   function setPhase(p){
     setDays(prev => {
       const next = prev.slice();
@@ -719,12 +594,10 @@ function Dashboard({ templates, days, setDays, recipes }) {
       return next;
     });
   }
-
   const [editing, setEditing] = React.useState(false);
   const [dragIndex, setDragIndex] = React.useState(null);
   const [localIds, setLocalIds] = React.useState(activeIds);
   React.useEffect(() => { setLocalIds(activeIds); }, [idx, day.phase, day.order]);
-
   function applyCustom(){
     setDays(prev => {
       const next = prev.slice();
@@ -736,7 +609,6 @@ function Dashboard({ templates, days, setDays, recipes }) {
     });
     setEditing(false);
   }
-
   function resetToTemplate(){
     setDays(prev => {
       const next = prev.slice();
@@ -751,7 +623,6 @@ function Dashboard({ templates, days, setDays, recipes }) {
     });
     setEditing(false);
   }
-
   function removeGoal(id){ setLocalIds(prev => prev.filter(x => x !== id)); }
   function addGoal(){
     const pool = Object.keys(GOAL_LIBRARY).filter(id => localIds.indexOf(id) === -1);
@@ -769,6 +640,32 @@ function Dashboard({ templates, days, setDays, recipes }) {
   }
   function changeDay(dir){ setIdx(cur => { let n = cur + dir; if (n < 0) n = days.length - 1; if (n >= days.length) n = 0; return n; }); }
 
+  // --- Smart Coach (inside notes card) helpers ---
+  const SYM_MATCHERS = [
+    {id:"headache",      rx:/\b(headache|migraine|head pain)\b/i},
+    {id:"dizziness",     rx:/\b(dizzy|light[-\s]?headed|vertigo)\b/i},
+    {id:"nausea",        rx:/\b(nausea|queasy|sick to (my|the) stomach)\b/i},
+    {id:"fatigue",       rx:/\b(tired|fatigue|exhaust(ed|ion)|wiped|low energy)\b/i},
+    {id:"constipation",  rx:/\b(constipat(ed|ion)|no (bm|bowel)|hard stool)\b/i},
+    {id:"cramps",        rx:/\b(cramps?|charley horse|muscle spasm)\b/i},
+    {id:"cold",          rx:/\b(chills?|feeling cold|freezing)\b/i},
+    {id:"brain-fog",     rx:/\b(brain[-\s]?fog|foggy|can.?t focus)\b/i},
+    {id:"insomnia",      rx:/\b(can.?t sleep|insomnia|up all night|poor sleep)\b/i}
+  ];
+  function inferMoodFrom(text){
+    let score = 6, t = (text||"").toLowerCase();
+    let neg = 0, pos = 0;
+    [/overwhelm(ed)?|anxious|stressed|down|sad|discouraged|frustrat(ed)?/,
+     /tired|exhaust(ed)?|wiped|drained/,
+     /cried|crying|tear(s|y)/,
+     /pain|hurt(s|ing)?|ache/].forEach(rx=>{ if(rx.test(t)) neg++; });
+    [/proud|strong|good|better|energized|motivated|win|progress|calm/]
+      .forEach(rx=>{ if(rx.test(t)) pos++; });
+    score += pos*1 - neg*2;
+    return Math.max(1, Math.min(10, score));
+  }
+
+  // --- render ---
   return e(React.Fragment, null,
 
     // mast
@@ -787,15 +684,6 @@ function Dashboard({ templates, days, setDays, recipes }) {
       )
     ),
 
-    // phase switcher
-    e("div",{className:"mastRow",style:{margin:"8px 0 0 0"}},
-      e("select",{value:day.phase,onChange:(ev)=>setPhase(ev.target.value),className:"btn"},
-        e("option",{value:"fast"},"Fast"),
-        e("option",{value:"cleanse"},"Cleanse"),
-        e("option",{value:"rebuild"},"Rebuild")
-      )
-    ),
-
     // progress
     e(ProgressBar,{value:progress}),
 
@@ -803,88 +691,12 @@ function Dashboard({ templates, days, setDays, recipes }) {
     e(Checklist,{items, state:checks, onToggle:toggleCheck}),
 
     // Daily Notes + Smart Coach
-    e("div",{className:"card",style:{marginTop:16}},
-      e("h2",null,"Daily Notes"),
-      e("div",{style:{display:"flex",gap:8,margin:"6px 0 10px",flexWrap:"wrap"}},
-        e("button",{className:"btn peach",onClick:analyzeFromNotes},"Coach from notes"),
-        e("button",{className:"btn",onClick:appendToNotes,disabled:!coachText},"Add to notes")
-      ),
-      coachText && e("div",{className:"badge",style:{display:"block",whiteSpace:"pre-wrap",marginBottom:8,padding:10}},
-        coachText
-      ),
-      e("textarea",{
-        value: day.note || "",
-        onChange:(ev)=>{
-          const val = ev.target.value;
-          setDays(prev=>{
-            const next = prev.slice();
-            const d3 = {...next[idx]};
-            d3.note = val;
-            next[idx] = d3;
-            return next;
-          });
-        },
-        rows:4,
-        style:{width:"100%",resize:"vertical",border:"1px solid #f3d0e1",borderRadius:12,padding:"8px",fontSize:16}
-      })
-    ),
+    (() => {
+      const [coachText,setCoachText] = React.useState("");
 
-    // Next-ingredients card
-    e("div",{className:"card",style:{marginTop:16}},
-      e("h2", null, nextLabel),
-      nextItems.length === 0
-        ? e("p",{style:{color:"#64748b"}},"No recipes scheduled soon.")
-        : e("ul",{style:{listStyle:"none",padding:0,marginTop:8}},
-            nextItems.map(item =>
-              e("li",{
-                  key:item.name,
-                  style:{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:"1px solid #f3d0e1"}
-                },
-                e("span", null,
-                  item.name, " ",
-                  e("span",{className:"badge"},
-                    item.days.length === 1
-                      ? ("Day " + item.days[0])
-                      : ("Day " + item.days[0] + "–" + item.days[item.days.length - 1])
-                  )
-                ),
-                e("span",{style:{color:"#64748b",fontSize:12}}, item.qtyList.join(" + ") || "")
-              )
-            )
-          )
-    ),
-
-    // weight card
-    e("div",{className:"card",style:{marginTop:16}},
-      e("h2",null,"Weight"),
-      e("div",{style:{display:"flex",alignItems:"center",gap:8,margin:"8px 0"}},
-        e("label",null,"Today’s weight"),
-        e("input",{
-          type:"number", step:"0.1",
-          value:(day.weight==null?"":day.weight),
-          onChange:(ev)=>{
-            const v = ev.target.value;
-            setDays(prev=>{
-              const next = prev.slice();
-              const d = { ...next[idx] };
-              d.weight = (v==="" ? null : Number(v));
-              if (v !== "" && ((d.checks && "weight" in d.checks) || activeIds.indexOf("weight") !== -1)) {
-                const c = { ...(d.checks || {}) }; c.weight = true; d.checks = c;
-              }
-              next[idx] = d;
-              return next;
-            });
-          },
-          style:{width:120}
-        }),
-        e("span",{className:"badge"},"Day "+day.day)
-      ),
-      e("div",{style:{marginTop:8}}, e(WeightChart,{series:weightSeries}))
-    ),
-
-    // (optional) day editor UI would go here if you want it
-  );
-}
+      function analyzeFromNotes(){
+        const text = (day.note || "").trim();
+        if(!text){ setCoachText("Write a quick note, then
 
 
   /* ---------- App ---------- */
