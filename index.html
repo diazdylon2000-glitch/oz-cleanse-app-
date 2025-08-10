@@ -147,46 +147,286 @@ function defaultDays(){
 }
 
 const PLAN_RECIPES = [
-  { id:"r-melon", name:"Melon Mint Morning", type:"juice", day:4,
-    ingredients:[{key:"melons",name:"Melon",qty:"1"},{key:"mint",name:"Mint",qty:"1/2 cup"},{key:"limes",name:"Lime",qty:"1"}] },
-  { id:"r-peach", name:"Peachy Green Glow", type:"juice", day:5,
-    ingredients:[{key:"peaches",name:"Peaches",qty:"6"},{key:"cucumbers",name:"Cucumbers",qty:"4"},{key:"spinach",name:"Spinach",qty:"8 cups"},{key:"lemons",name:"Lemons",qty:"2"}] },
-  { id:"r-carrot", name:"Carrot Apple Ginger", type:"juice", day:6,
-    ingredients:[{key:"carrots",name:"Carrots",qty:"28"},{key:"apples",name:"Apples",qty:"4"},{key:"ginger",name:"Ginger",qty:'2"'},{key:"lemons",name:"Lemons",qty:"2"}] },
-  { id:"r-grape", name:"Grape Romaine Cooler", type:"juice", day:7,
-    ingredients:[{key:"grapes",name:"Grapes",qty:"6 cups"},{key:"romaine",name:"Romaine",qty:"6 cups"},{key:"cucumbers",name:"Cucumbers",qty:"4"},{key:"lemons",name:"Lemons",qty:"2"}] },
+  { id:"r-melon", name:"Melon Mint Morning", type:"juice", day:4, servings:4,
+    ingredients:[
+      {key:"melons",name:"Melon",qty:"1"},
+      {key:"mint",name:"Mint",qty:"1/2 cup"},
+      {key:"limes",name:"Lime",qty:"1"}
+    ],
+    steps:"Juice melon → mint → lime."
+  },
+
+  { id:"r-peach", name:"Peachy Green Glow", type:"juice", day:5, servings:4,
+    ingredients:[
+      {key:"peaches",name:"Peaches",qty:"6"},
+      {key:"cucumbers",name:"Cucumbers",qty:"4"},
+      {key:"spinach",name:"Spinach",qty:"8 cups"},
+      {key:"lemons",name:"Lemons",qty:"2"}
+    ],
+    steps:"Juice greens first."
+  },
+
+  { id:"r-carrot", name:"Carrot Apple Ginger", type:"juice", day:6, servings:4,
+    ingredients:[
+      {key:"carrots",name:"Carrots",qty:"28"},
+      {key:"apples",name:"Apples",qty:"4"},
+      {key:"ginger",name:"Ginger",qty:'2"'},
+      {key:"lemons",name:"Lemons",qty:"2"}
+    ],
+    steps:"Juice, finish with lemon."
+  },
+
+  { id:"r-grape", name:"Grape Romaine Cooler", type:"juice", day:7, servings:4,
+    ingredients:[
+      {key:"grapes",name:"Grapes",qty:"6 cups"},
+      {key:"romaine",name:"Romaine",qty:"6 cups"},
+      {key:"cucumbers",name:"Cucumbers",qty:"4"},
+      {key:"lemons",name:"Lemons",qty:"2"}
+    ],
+    steps:"Romaine → cukes → grapes → lemon."
+  },
+
   { id:"r-smoothie", name:"Smoothie Breakfast", type:"meal", day:8,
-    ingredients:[{key:"spinach",name:"Spinach",qty:"2 cups"},{key:"almond-milk",name:"Almond milk",qty:"1 cup"},{key:"chia",name:"Chia",qty:"1 tbsp"}] },
+    ingredients:[
+      {key:"spinach",name:"Spinach",qty:"2 cups"},
+      {key:"almond-milk",name:"Almond milk",qty:"1 cup"},
+      {key:"chia",name:"Chia",qty:"1 tbsp"}
+    ],
+    steps:"Blend until smooth."
+  },
+
   { id:"r-lentil", name:"Lentil Soup", type:"meal", day:8,
-    ingredients:[{key:"lentils",name:"Lentils (dry)",qty:"1/2 cup"},{key:"carrots",name:"Carrots",qty:"1/2 cup"},{key:"celery",name:"Celery",qty:"1/2 cup"},{key:"parsley",name:"Parsley",qty:"1/4 cup"},{key:"onions",name:"Onion",qty:"1/4"}] },
-  /* Day 9 (previously empty) */
+    ingredients:[
+      {key:"lentils",name:"Lentils (dry)",qty:"1/2 cup"},
+      {key:"carrots",name:"Carrots",qty:"1/2 cup"},
+      {key:"celery",name:"Celery",qty:"1/2 cup"},
+      {key:"parsley",name:"Parsley",qty:"1/4 cup"},
+      {key:"onions",name:"Onion",qty:"1/4"}
+    ],
+    steps:"Simmer ~25 min."
+  },
+
   { id:"r-broth9", name:"Simple Veg Broth", type:"meal", day:9,
-    ingredients:[{key:"carrots",name:"Carrots",qty:"2"},{key:"celery",name:"Celery",qty:"2 stalks"},{key:"onions",name:"Onion",qty:"1/2"},{key:"parsley",name:"Parsley",qty:"few sprigs"}] },
+    ingredients:[
+      {key:"carrots",name:"Carrots",qty:"2"},
+      {key:"celery",name:"Celery",qty:"2 stalks"},
+      {key:"onions",name:"Onion",qty:"1/2"},
+      {key:"parsley",name:"Parsley",qty:"few sprigs"}
+    ],
+    steps:"Simmer 30–40 min; season lightly."
+  },
+
   { id:"r-sweetpot9", name:"Baked Sweet Potato Bowl", type:"meal", day:9,
-    ingredients:[{key:"sweet-potatoes",name:"Sweet potatoes",qty:"2"},{key:"spinach",name:"Spinach",qty:"2 cups"},{key:"olive-oil",name:"Olive oil",qty:"1 tbsp"}] },
+    ingredients:[
+      {key:"sweet-potatoes",name:"Sweet potatoes",qty:"2"},
+      {key:"spinach",name:"Spinach",qty:"2 cups"},
+      {key:"olive-oil",name:"Olive oil",qty:"1 tbsp"}
+    ],
+    steps:"Bake potato, wilt spinach, drizzle oil."
+  },
+
   { id:"r-oats", name:"Overnight Oats", type:"meal", day:10,
-    ingredients:[{key:"rolled-oats",name:"Rolled oats",qty:"1/2 cup"},{key:"almond-milk",name:"Almond milk",qty:"1 cup"}] },
+    ingredients:[
+      {key:"rolled-oats",name:"Rolled oats",qty:"1/2 cup"},
+      {key:"almond-milk",name:"Almond milk",qty:"1 cup"}
+    ],
+    steps:"Combine and chill."
+  },
+
   { id:"r-quinoa", name:"Quinoa Salad", type:"meal", day:10,
-    ingredients:[{key:"quinoa",name:"Quinoa (dry)",qty:"1/2 cup"},{key:"cucumbers",name:"Cucumber",qty:"1"},{key:"tomatoes",name:"Tomato",qty:"1"},{key:"parsley",name:"Parsley",qty:"1/4 cup"},{key:"olive-oil",name:"Olive oil",qty:"1 tbsp"},{key:"lemons",name:"Lemon",qty:"1"}] },
+    ingredients:[
+      {key:"quinoa",name:"Quinoa (dry)",qty:"1/2 cup"},
+      {key:"cucumbers",name:"Cucumber",qty:"1"},
+      {key:"tomatoes",name:"Tomato",qty:"1"},
+      {key:"parsley",name:"Parsley",qty:"1/4 cup"},
+      {key:"olive-oil",name:"Olive oil",qty:"1 tbsp"},
+      {key:"lemons",name:"Lemon",qty:"1"}
+    ],
+    steps:"Toss; season."
+  },
+
   { id:"r-protein", name:"Protein + Broccoli", type:"meal", day:11,
-    ingredients:[{key:"protein",name:"Salmon/Chicken",qty:"12 oz"},{key:"broccoli",name:"Broccoli",qty:"2 heads"}] }
+    ingredients:[
+      {key:"protein",name:"Salmon/Chicken",qty:"12 oz"},
+      {key:"broccoli",name:"Broccoli",qty:"2 heads"}
+    ],
+    steps:"Cook protein; steam broccoli."
+  }
 ];
 
-function aggregateGroceries(recipes){
-  const map = {};
-  recipes.forEach(r=>{
-    (r.ingredients||[]).forEach(it=>{
-      const id=(it.key||it.name||"").toLowerCase().replace(/\s+/g,'-');
-      if(!map[id]){
-        map[id]={id,name:it.name,qty:it.qty||"",checked:false,estCost:null,days:r.day?[r.day]:[]};
-      }else{
-        const s=new Set(map[id].days||[]); if(r.day) s.add(r.day);
-        map[id].days=Array.from(s).sort((a,b)=>a-b);
-      }
-    });
+
+function parseQty(q){
+  if (q==null || q==="") return { ok:false, n:0, unit:"" };
+  const s = String(q).trim();
+  const m = s.match(/^([\d\s./+-]+)\s*(.*)$/); // number or fraction + optional unit
+  if (!m) return { ok:false, n:0, unit:s };
+  const numPart = m[1].trim();
+  const unit = (m[2]||"").trim();
+
+  // support "1/2", "1 1/2", "2.5", "1+1/2"
+  let total = 0;
+  numPart.split(/\s*\+\s*/).forEach(piece=>{
+    let p = piece.trim();
+    if (!p) return;
+    const frac = p.match(/^(\d+)\s+(\d+)\/(\d+)$/); // "1 1/2"
+    if (frac) {
+      total += parseFloat(frac[1]) + (parseFloat(frac[2])/parseFloat(frac[3]));
+    } else if (p.includes("/")) {
+      const [a,b] = p.split("/");
+      const n = parseFloat(a), d = parseFloat(b);
+      if (!isNaN(n) && !isNaN(d) && d!==0) total += n/d;
+      else total = NaN;
+    } else {
+      const n = parseFloat(p);
+      if (!isNaN(n)) total += n; else total = NaN;
+    }
   });
-  return Object.values(map).sort((a,b)=> (a.name||"").localeCompare(b.name||""));
+
+  return { ok:!isNaN(total), n: total, unit };
 }
+
+function formatQty(n, unit){
+  // round to 2 decimals but drop trailing zeros
+  const s = (Math.round(n*100)/100).toString();
+  return unit ? `${s} ${unit}` : s;
+}
+
+/* ---------- DROP-IN: servings-aware grocery aggregation ---------- */
+function aggregateGroceries(recipes){
+  // Parse a qty string into { amount:number|null, unit:string, raw:string, isInches:boolean }
+  function parseQty(q){
+    var s = (q == null ? "" : String(q)).trim();
+    if(!s) return { amount:null, unit:"", raw:"" };
+
+    // inches like 2" or 1.5"
+    var inchMatch = s.match(/^([0-9]+(?:\.[0-9]+)?)\s*"?$/);
+    if (inchMatch && /"$/.test(s)) {
+      return { amount: parseFloat(inchMatch[1]), unit:'in', raw:s, isInches:true };
+    }
+
+    // fraction like 1/2 or 3 1/2
+    var mixed = s.match(/^(\d+)\s+(\d+)\/(\d+)\s*(.*)$/);
+    if(mixed){
+      var whole = parseFloat(mixed[1]||"0");
+      var num   = parseFloat(mixed[2]||"0");
+      var den   = parseFloat(mixed[3]||"1");
+      var amt = whole + (den? num/den : 0);
+      return { amount: amt, unit:(mixed[4]||"").trim(), raw:s };
+    }
+    var frac = s.match(/^(\d+)\/(\d+)\s*(.*)$/);
+    if(frac){
+      var num2 = parseFloat(frac[1]||"0");
+      var den2 = parseFloat(frac[2]||"1");
+      return { amount: (den2 ? num2/den2 : num2), unit:(frac[3]||"").trim(), raw:s };
+    }
+
+    // simple number + optional unit: 28, 4 cups, 1 tbsp, 1.5 cup
+    var m = s.match(/^([0-9]+(?:\.[0-9]+)?)\s*(.*)$/);
+    if(m){
+      return { amount: parseFloat(m[1]), unit:(m[2]||"").trim(), raw:s };
+    }
+
+    // fallback non-numeric like "few sprigs"
+    return { amount:null, unit:"", raw:s };
+  }
+
+  // Format a number nicely (strip trailing zeros)
+  function fmt(n){
+    if (Math.abs(n - Math.round(n)) < 1e-9) return String(Math.round(n));
+    var x = (Math.round(n*100)/100).toFixed(2);
+    return x.replace(/\.00$/,"").replace(/(\.\d)0$/,"$1");
+  }
+
+  // Combine numeric parts (by unit) + raw text notes
+  function finalizeQty(parts){
+    // parts = { unit -> totalAmount }, notes:[strings]
+    var out = [];
+    var units = Object.keys(parts.units).sort(function(a,b){ return a.localeCompare(b); });
+    for (var i=0;i<units.length;i++){
+      var u = units[i];
+      var amt = parts.units[u];
+      if (amt > 0) {
+        out.push(fmt(amt) + (u ? (" " + u) : ""));
+      }
+    }
+    for (var j=0;j<parts.notes.length;j++) out.push(parts.notes[j]);
+    return out.join(" + ");
+  }
+
+  // Main aggregation
+  var map = {}; // id -> {id,name,units:{unit->amount},notes:[],checked:false,estCost:null,days:Set}
+  (recipes||[]).forEach(function(r){
+    var servings = (r && typeof r.servings === "number" && r.servings > 0) ? r.servings : 1;
+    var ingList = (r && r.ingredients) ? r.ingredients : [];
+    for (var i=0;i<ingList.length;i++){
+      var it = ingList[i] || {};
+      var baseId = (it.key||it.name||"").toLowerCase().replace(/\s+/g,'-');
+      var name = it.name || it.key || "Item";
+      if(!map[baseId]){
+        map[baseId] = {
+          id: baseId,
+          name: name,
+          units: {},      // { unit -> total numeric amount }
+          notes: [],      // non-numeric strings (e.g., "few sprigs ×4")
+          checked: false,
+          estCost: null,
+          days: new Set()
+        };
+      }
+      if (r && r.day) map[baseId].days.add(r.day);
+
+      // parse qty and scale
+      var pq = parseQty(it.qty);
+      if (pq.amount != null && !isNaN(pq.amount)) {
+        var amt = pq.amount * servings;
+        var unit = (pq.isInches && pq.unit==="") ? 'in' : pq.unit;
+        var keyUnit = (unit||"").toLowerCase();
+        if(!map[baseId].units[keyUnit]) map[baseId].units[keyUnit] = 0;
+        map[baseId].units[keyUnit] += amt;
+      } else {
+        // non-numeric qty: replicate note with ×servings if servings>1
+        var note = pq.raw || "";
+        if (servings > 1 && note) note = note + " ×" + servings;
+        if (note) map[baseId].notes.push(note);
+      }
+    }
+  });
+
+  // Convert to UI shape
+  var out = [];
+  var ids = Object.keys(map).sort(function(a,b){
+    var na = map[a].name || "", nb = map[b].name || "";
+    return na.localeCompare(nb);
+  });
+  for (var k=0;k<ids.length;k++){
+    var id = ids[k];
+    var entry = map[id];
+    var qtyStr = finalizeQty({ units: entry.units, notes: entry.notes });
+    out.push({
+      id: id,
+      name: entry.name,
+      qty: qtyStr || "",          // string for your UI
+      checked: false,
+      estCost: null,
+      days: Array.from(entry.days).sort(function(a,b){return a-b;})
+    });
+  }
+  return out;
+}
+
+  // build final qty output
+  const out = Object.values(map).map(g=>{
+    const units = Object.keys(g.numTotals);
+    const numericParts = units
+      .filter(u => g.numTotals[u] > 0)
+      .map(u => formatQty(g.numTotals[u], u));
+    const parts = [].concat(numericParts, g.qtyList);
+    return Object.assign({}, g, { qty: parts.join(" + ") });
+  });
+
+  return out.sort((a,b)=> (a.name||"").localeCompare(b.name||""));
+}
+
 
 /* ---------- small components ---------- */
 const ProgressBar = ({ value }) =>
@@ -279,10 +519,18 @@ const Calendar = ({ days, recipes, settings }) => {
               dd && e("div", { className:"badge", style:{ marginTop:6 } }, dd)
             ),
             e("div", { style:{ display:"flex", gap:6, flexWrap:"wrap", minHeight:24 }},
-              dRecipes.length
-                ? dRecipes.map(r=> e("span", { key:r.id, className:"badge" }, (r.type==="juice"?"🧃 ":"🍽️ "), r.name))
-                : (d.note ? e("span",{className:"badge"},"📝 Note") : e("span", { style:{ fontSize:12, color:"#64748b" } }, "—"))
-            )
+           dRecipes.length
+  ? dRecipes.map(r =>
+      e("span", { key:r.id, className:"badge" },
+        (r.type==="juice" ? "🧃 " : "🍽️ "),
+        r.name,
+        r.servings && r.type==="juice" ? ` (x${r.servings})` : ""
+      )
+    )
+  : (d.note
+      ? e("span",{className:"badge",style:{marginLeft:6}},"📝 Note")
+      : e("span", { style:{ fontSize:12, color:"#64748b" } }, "—")
+    )
           )
         );
       })
@@ -532,7 +780,7 @@ const App = () => {
 
   const [days, setDays] = useLocal("oz.days", defaultDays());
   const [recipes, setRecipes] = useLocal("oz.recipes", PLAN_RECIPES);
-  const [groceries, setGroceries] = useLocal("oz.groceries", aggregateGroceries(PLAN_RECIPES));
+const [groceries, setGroceries] = useLocal("oz.groceries", aggregateGroceries(PLAN_RECIPES));
   const [tab, setTab] = useState("dash");
 
   function importFullPlan(){
