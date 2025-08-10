@@ -494,18 +494,17 @@ var COACH_RULES = window.COACH_RULES;
 // ---- One-time globals (guarded) ----
 if (!window.OZ_COACH_RULES) {
   window.OZ_COACH_RULES = [
-    { id:"headache",  test:function(ctx){return ctx.syms.has("headache");},
+    { id:"headache",  test:ctx=>ctx.syms.has("headache"),
       tips:["Sip 8–12 oz water over 15 min.","Add a pinch of sea salt/electrolyte.","5–10 min screen break."] },
-    { id:"dizziness", test:function(ctx){return ctx.syms.has("dizziness");},
+    { id:"dizziness", test:ctx=>ctx.syms.has("dizziness"),
       tips:["Sit or lie until steady.","Small juice or pinch of salt if fasting.","Breathe 4 in / 6 out."] },
-    { id:"nausea",    test:function(ctx){return ctx.syms.has("nausea");},
+    { id:"nausea",    test:ctx=>ctx.syms.has("nausea"),
       tips:["Sip cool water or peppermint/ginger tea.","Fresh air.","Move slowly."] },
-    { id:"fatigue",   test:function(ctx){return ctx.syms.has("fatigue");},
-      tips:["Take a 15–20 min rest.","Electrolytes + water.","Light stretching to boost circulation."] },
-    { id:"brain-fog", test:function(ctx){return ctx.syms.has("brain-fog");},
-      tips:["Stand and stretch for 2 minutes.","Glass of water.","Get 5 minutes of sunlight."] }
+    { id:"fatigue",   test:ctx=>ctx.syms.has("fatigue"),
+      tips:["Take a 15–20 minute rest.","Drink water or electrolyte drink.","Light stretching."] }
   ];
 }
+
 if (!window.OZ_COACH_AFFIRM) {
   window.OZ_COACH_AFFIRM = [
     "You’ve got this! 💪",
