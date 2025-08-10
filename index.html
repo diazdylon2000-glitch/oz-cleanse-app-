@@ -591,29 +591,35 @@ const Dashboard = ({ GOALS, templates, days, setDays, plan }) => {
       })
     ),
 
-    // Next ingredients
-    e("div",{className:"card",style:{marginTop:16}},
-      e("h2", null, nextLabel),
-      nextItems.length === 0
-        ? e("p",{style:{color:"#64748b"}},"No recipes scheduled soon.")
-        : e("ul",{style:{listStyle:"none",padding:0,marginTop:8}}.
-            concat()
-        ),
-      e("ul",{style:{listStyle:"none",padding:0,marginTop:8}},
+// Next ingredients
+e("div",{className:"card",style:{marginTop:16}},
+  e("h2", null, nextLabel),
+  nextItems.length === 0
+    ? e("p",{style:{color:"#64748b"}},"No recipes scheduled soon.")
+    : e("ul",{style:{listStyle:"none",padding:0,marginTop:8}},
         nextItems.map(item =>
-          e("li",{key:item.name,style:{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:"1px solid #f3d0e1"}},
+          e("li",{
+              key:item.name,
+              style:{
+                display:"flex",
+                justifyContent:"space-between",
+                padding:"6px 0",
+                borderBottom:"1px solid #f3d0e1"
+              }
+            },
             e("span", null,
               item.name, " ",
               e("span",{className:"badge"},
-                item.days.length === 1 ? ("Day " + item.days[0]) : ("Day " + item.days[0] + "–" + item.days[item.days.length - 1])
+                item.days.length === 1
+                  ? ("Day " + item.days[0])
+                  : ("Day " + item.days[0] + "–" + item.days[item.days.length - 1])
               )
             ),
             e("span",{style:{color:"#64748b",fontSize:12}}, item.qtyList.join(" + ") || "")
           )
         )
       )
-    ),
-
+),
     // weight card
     e("div",{className:"card",style:{marginTop:16}},
       e("h2",null,"Weight"),
