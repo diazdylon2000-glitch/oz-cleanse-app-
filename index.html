@@ -70,6 +70,10 @@ body{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bot
 .paw{display:inline-flex;align-items:center;justify-content:center;height:36px;width:36px;border-radius:9999px;border:1px solid #f0cbb0;background:#fff;transition:transform .12s, background .2s;cursor:pointer}
 .paw.on{background:linear-gradient(90deg,#f9d49a,#ffd2c8);transform:scale(1.02)}
 
+        .btn.primary{background:#0f172a;color:#fff;border-color:#0f172a}
+.noteArea{width:100%;resize:vertical;border:1px solid #f3d0e1;border-radius:12px;padding:10px;font-size:16px}
+.coachOut{white-space:pre-wrap}
+
 /* Coach UI */
 .coach{margin-top:16px}
 .coachHead{
@@ -351,15 +355,79 @@ const WeightChart = ({ series }) => {
 };
 
 /* ---------------- Pages ---------------- */
-const GroceryList = ({ groceries, setGroceries, budget, setBudget }) => {
-  const totals = groceries.reduce((acc,g)=>{
-    const price = g.estCost ? Number(g.estCost) : 0;
-    if(g.checked) acc.checked += price; else acc.remaining += price;
-    acc.total += price; return acc;
+const DEFAULT_PRICES = {
+  // rough Alabama farmer’s mkt ballparks — you can overwrite in UI
+  carrots: { unit:"each", price:0.40 },
+  cucumbers: { unit:"each", price:0.75 },
+  lemons: { unit:"each", price:0.60 },
+  limes: { unit:"each", price:0.50 },
+  peaches: { unit:"each", price:0.90 },
+  "green-grapes": { unit:"lb", price:2.50 },
+  romaine: { unit:"head", price:2.00 },
+  spinach: { unit:"lb", price:4.00 },
+  melons: { unit:"each", price:3.50 },
+  apples: { unit:"each", price:0.90 },
+  ginger: { unit:"oz", price:0.25 },
+  parsley: { unit:"bunch", price:1.75 },
+  mint: { unit:"bunch", price:1.50 },
+  "rolled-oats": { unit:"lb", price:1.80 },
+  "almond-milk": { unit:"qt", price:3.50 },
+  lentils: { unit:"lb", price:1.60 },
+  quinoa: { unit:"lb", price:4.50 },
+  "olive-oil": { unit:"fl-oz", price:0.30 },
+  broccoli: { unit:"head", price:2.25 }
+};
+
+const UNITS = ["each","head","lb","cup","oz","fl-oz","bunch","qt"];
+
+function parseQty(q){
+  if(!q) return { n:1, u:"each" };
+  const m = String(q).match(/^(\d+(\.\d+)?)\s*(\w+)?/);
+  return { n: m? +m[1] : 1, u: m && m[3] ? m[3].toLowerCase() : "each" };
+}
+
+// lightweight conversions (best-effort)
+function convert(n, from, to, name=""){
+  if(from===to) return n;
+  const cupToLb = { spinach: 0.0625, romaine: 0.05, grapes: 0.33, parsley:0.06, mint:0.06 };
+  if(from==="cup" && to==="lb"){
+    const k = Object.keys(cupToLb).find(k=> name.toLowerCase().includes(k));
+    return k ? n*cupToLb[k] : n*0.1;
+  }
+  if(from==="oz" && to==="lb") return n/16;
+  if(from==="fl-oz" && to==="qt") return n/32;
+  if(from==="qt" && to==="fl-oz") return n*32;
+  // fall back: no conversion
+  return n;
+}
+
+const GroceryList = ({ groceries, setGroceries }) => {
+  const [budget, setBudget] = useLocal("oz.budget", 0);
+
+  // attach price meta to each item
+  const enriched = groceries.map(g=>{
+    const base = DEFAULT_PRICES[g.id] || {};
+    return {
+      ...g,
+      unit: g.unit || base.unit || "each",
+      price: (g.price!=null ? g.price : base.price || 0)
+    };
+  });
+
+  function update(idx, patch){
+    setGroceries(enriched.map((g,i)=> i===idx ? {...g, ...patch} : g));
+  }
+
+  // money math
+  const totals = enriched.reduce((acc,g)=>{
+    const {n,u} = parseQty(g.qty);
+    // estimate quantity in the item’s price unit
+    const qtyInPriceUnit = convert(n, u, g.unit, g.name);
+    const line = (g.price||0) * (isFinite(qtyInPriceUnit)?qtyInPriceUnit:0);
+    if(g.checked) acc.checked += line; else acc.remaining += line;
+    acc.total += line; return acc;
   }, {checked:0, remaining:0, total:0});
 
-  function toggle(idx){ setGroceries(groceries.map((g,i)=> i===idx? Object.assign({},g,{checked:!g.checked}):g)); }
-  function setPrice(idx,val){ const v = val===""? null: Number(val); setGroceries(groceries.map((g,i)=> i===idx? Object.assign({},g,{estCost:v}):g)); }
   function daysBadge(days){
     if(!days||!days.length) return "📦 Pantry";
     const min = Math.min.apply(null,days), max = Math.max.apply(null,days);
@@ -368,27 +436,44 @@ const GroceryList = ({ groceries, setGroceries, budget, setBudget }) => {
 
   return e("div", { className:"wrap" },
     e("h1", null, "Groceries & Prices"),
-    e("div", { className:"card", style:{marginBottom:12} },
-      e("div", { style:{display:"flex",gap:12,alignItems:"center",flexWrap:"wrap"} },
-        e("div", null, e("b",null,"Budget:"), " "),
-        e("input", { type:"number", step:"0.01", placeholder:"$", value:(budget==null?"":budget),
-          onChange:(ev)=>setBudget(ev.target.value===""? null : Number(ev.target.value)), style:{ width:120, border:"1px solid var(--line)", borderRadius:12, padding:"8px" } }),
-        e("span",{className:"badge"},"Checked $" + totals.checked.toFixed(2)),
-        e("span",{className:"badge"},"Remaining $" + totals.remaining.toFixed(2)),
-        e("span",{className:"badge"},"Total $" + totals.total.toFixed(2)),
-        (budget!=null) && e("span",{className:"badge", style:{background: totals.total>budget?"#fee2e2":"#dcfce7", borderColor: totals.total>budget?"#fecaca":"#bbf7d0"}},
-          totals.total>budget?("Over by $"+(totals.total-budget).toFixed(2)):("Under by $"+(budget-totals.total).toFixed(2)))
+    e("div",{className:"card",style:{margin:"8px 0 12px"}},
+      e("div",{style:{display:"flex",gap:12,flexWrap:"wrap",alignItems:"center"}},
+        e("div",null,"Budget $"),
+        e("input",{type:"number",step:"0.01",value:budget||"",placeholder:"0.00",
+          onChange:(ev)=>setBudget(ev.target.value===""?0:+ev.target.value),style:{width:120}})
+      ),
+      e("div",{style:{marginTop:8,color:"#64748b",fontSize:13}},
+        "Checked $", totals.checked.toFixed(2),
+        " • Remaining $", totals.remaining.toFixed(2),
+        " • Total $", totals.total.toFixed(2),
+        budget? " • Left $"+Math.max(0,(budget - totals.total)).toFixed(2) : ""
       )
     ),
+
     e("ul", { style:{ listStyle:"none", padding:0 }},
-      groceries.map((g,idx)=>
-        e("li", { key:g.id, style:{ display:"flex", alignItems:"center", gap:8, padding:"8px 0", borderBottom:"1px solid #f3d0e1" } },
-          e("button", { className:"paw"+(g.checked?" on":""), onClick:()=>toggle(idx) }, g.checked?"🐾":""),
-          e("div", { style:{ flex:1 } },
+      enriched.map((g,idx)=>
+        e("li", { key:g.id, style:{
+          display:"grid",gridTemplateColumns:"32px 1fr auto auto auto",gap:8,
+          padding:"10px 0", borderBottom:"1px solid #f3d0e1", alignItems:"center"
+        }},
+          e("button", { className:"paw"+(g.checked?" on":""), onClick:()=>update(idx,{checked:!g.checked}) }),
+          e("div", null,
             e("div", null, g.name, " ", e("span", { className:"badge" }, daysBadge(g.days))),
             e("div", { style:{ fontSize:12, color:"#64748b" } }, g.qty||"")
           ),
-          e("input", { type:"number", step:"0.01", placeholder:"$", value:(g.estCost==null?"":g.estCost), onChange:(ev)=>setPrice(idx, ev.target.value), style:{ width:90 } })
+          e("select",{value:g.unit,onChange:(ev)=>update(idx,{unit:ev.target.value})},
+            UNITS.map(u=> e("option",{key:u,value:u},u))),
+          e("input",{
+            type:"number",step:"0.01",value:(g.price==null?"":g.price),
+            onChange:(ev)=>update(idx,{price:(ev.target.value===""?0:+ev.target.value)}),
+            style:{width:80}}),
+          e("div",{style:{textAlign:"right",minWidth:70,fontWeight:600}},
+            "$"+(function(){
+              const {n,u} = parseQty(g.qty);
+              const q = convert(n,u,g.unit,g.name);
+              return ((g.price||0)*(isFinite(q)?q:0)).toFixed(2);
+            })()
+          )
         )
       )
     )
