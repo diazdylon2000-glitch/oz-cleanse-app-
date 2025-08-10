@@ -271,7 +271,7 @@
   };
 
   /* ---------- Smart Coach ---------- */
-  const COACH_RULES = [
+const COACH_RULES = window.OZ_COACH_RULES;
     { id:"headache",  test:ctx=>ctx.syms.has("headache"),
       tips:["Sip 8–12 oz water over 15 min.","Add a pinch of sea salt/electrolyte.","5–10 min screen break."] },
     { id:"dizziness", test:ctx=>ctx.syms.has("dizziness"),
@@ -283,7 +283,7 @@
     { id:"brain-fog", test:ctx=>ctx.syms.has("brain-fog"),
       tips:["2 min stretch/shoulder rolls.","Glass of water.","5 min sunlight."] }
   ];
-  const COACH_AFFIRM = [
+ const COACH_AFFIRM = window.OZ_COACH_AFFIRM;
     "You’ve got this! 💪",
     "Proud of your effort today. 🌟",
     "Oz is wagging his tail for you! 🐶",
@@ -460,7 +460,7 @@
   };
 
 /* ========= Smart Coach knowledge (top-level) ========= */
-const COACH_RULES = [
+const COACH_RULES = window.OZ_COACH_RULES;
   {
     id: "headache",
     test: ctx => ctx.syms.has("headache"),
@@ -508,13 +508,56 @@ const COACH_RULES = [
   }
 ];
 
-const COACH_AFFIRM = [
+const COACH_AFFIRM = window.OZ_COACH_AFFIRM;
   "You’ve got this! 💪",
   "Proud of your effort today. 🌟",
   "Oz is wagging his tail for you! 🐶",
   "One step at a time — you’re doing amazing.",
   "Keep going — future you is grateful."
 ];
+<script>
+// Smart Coach data (guarded for iOS Safari double-exec)
+window.OZ_COACH_RULES = window.OZ_COACH_RULES || [
+  { id:"headache",  test: ctx => ctx.syms.has("headache"),
+    tips:[
+      "Sip 8–12 oz water slowly over the next 15 minutes.",
+      "Add a pinch of sea salt or an electrolyte.",
+      "Take a 5–10 min break from screens; dim the lights."
+    ]},
+  { id:"dizziness", test: ctx => ctx.syms.has("dizziness"),
+    tips:[
+      "Sit or lie down until steady.",
+      "If fasting, have a small juice or pinch of salt.",
+      "Breathe: in 4s, out 6s for 1 minute."
+    ]},
+  { id:"nausea",    test: ctx => ctx.syms.has("nausea"),
+    tips:[
+      "Sip cool water or peppermint/ginger tea.",
+      "Step outside for fresh air.",
+      "Move slowly; avoid sudden posture changes."
+    ]},
+  { id:"fatigue",   test: ctx => ctx.syms.has("fatigue"),
+    tips:[
+      "Take a 15–20 minute rest.",
+      "Hydrate or add electrolytes.",
+      "Try light stretching to boost circulation."
+    ]},
+  { id:"brain-fog", test: ctx => ctx.syms.has("brain-fog"),
+    tips:[
+      "Stand, stretch, and roll shoulders for 2 minutes.",
+      "Have a glass of water.",
+      "Get 5 minutes of sunlight if possible."
+    ]}
+];
+
+window.OZ_COACH_AFFIRM = window.OZ_COACH_AFFIRM || [
+  "You’ve got this! 💪",
+  "Proud of your effort today. 🌟",
+  "Oz is wagging his tail for you! 🐶",
+  "One step at a time — you’re doing amazing.",
+  "Keep going — future you is grateful."
+];
+</script>
 
 /* ===================== Dashboard ===================== */
 function Dashboard({ templates, days, setDays, recipes }) {
