@@ -43,12 +43,12 @@ body{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bot
 .mast{background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px}
 .mastRow{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .mastLeft{display:flex;align-items:center;gap:10px}
-.mastLeft img{height:40px;width:40px;border-radius:50%;object-fit:cover;border:1px solid var(--line)}
+.mastLeft img{height:42px;width:42px;border-radius:50%;object-fit:cover;border:1px solid var(--line)}
 .mastTitle b{font-size:20px;line-height:1}
-.mastTitle small{color:var(--sub)}
-.day-nav{display:flex;align-items:center;gap:8px}
-.day-btn{appearance:none;border:1px solid var(--line);background:#fff;border-radius:11px;padding:8px 10px;cursor:pointer}
-.day-label{font-weight:600;border:1px solid var(--line);background:#fff;border-radius:9999px;padding:6px 12px}
+.mastTitle small{color:#64748b}
+.day-nav{display:flex;align-items:center;gap:10px}
+.day-btn{border:2px solid #f3d0e1;border-radius:12px;background:#fff;padding:6px 10px}
+.day-pill{border:2px solid #f3d0e1;border-radius:9999px;background:#fff;padding:6px 14px;font-weight:600}
 
 /* Progress */
 .prog{height:8px;border-radius:9999px;background:#f1f2f4;overflow:hidden;margin-top:10px}
@@ -243,7 +243,11 @@ const Checklist = ({ items, state, onToggle }) =>
   e("ul", { className:"list" },
     items.map(it =>
       e("li", { key:it.id, className:"item" },
-        e("button", { className:"paw"+(state[it.id]?" on":""), onClick:()=>onToggle(it.id), "aria-pressed":!!state[it.id] }),
+        e("button", {
+          className:"paw"+(state[it.id]?" on":""),
+          onClick:()=>onToggle(it.id),
+          "aria-pressed": !!state[it.id]
+        }, e("span", null, "🐾")),
         e("label", null, it.label)
       )
     )
@@ -255,7 +259,7 @@ const WeightChart = ({ series }) => {
 
   useEffect(() => {
     const ctx = canvasRef.current.getContext("2d");
-    if (chartRef.current) { try { chartRef.current.destroy(); } catch(e){} }
+    if (chartRef.current) try { chartRef.current.destroy(); } catch {}
 
     chartRef.current = new Chart(ctx, {
       type: "line",
@@ -265,39 +269,37 @@ const WeightChart = ({ series }) => {
           data: series,
           borderColor: "#ec4899",
           backgroundColor: "rgba(236,72,153,.15)",
-          tension: 0.35,
+          tension: .35,
           spanGaps: true,
-          pointRadius: 2,
-          pointHitRadius: 8
+          pointRadius: 3,
+          pointHoverRadius: 4
         }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        layout: { padding: { bottom: 28, left: 4, right: 8, top: 8 } }, // room for x labels
         plugins: { legend: { display: false } },
-        layout: { padding: { top: 4, right: 4, bottom: 8, left: 4 } },
         scales: {
           x: {
-            ticks: {
-              color: "#6b7280",        // readable gray
-              font: { size: 11 },
-              maxRotation: 0,
-              autoSkip: true
-            },
+            ticks: { color: "#334155", autoSkip: true, maxRotation: 0 },
             grid: { display: false }
           },
           y: {
-            ticks: {
-              color: "#6b7280",
-              font: { size: 11 },
-              callback: v => (v == null ? "" : v)
-            },
-            grid: { color: "rgba(0,0,0,.06)" }
+            ticks: { color: "#64748b" },
+            grid: { color: "rgba(15,23,42,.06)" }
           }
         },
-        animation: { duration: 200 }
+        animation: { duration: 220 }
       }
     });
+
+    return () => { try { chartRef.current && chartRef.current.destroy(); } catch {} };
+  }, [series]);
+
+  // slightly taller so labels aren't cropped
+  return e("div", { style:{height:170} }, e("canvas", { ref: canvasRef }));
+};
 
     const onOrient = () => chartRef.current && chartRef.current.resize();
     window.addEventListener("orientationchange", onOrient);
@@ -670,31 +672,30 @@ function Dashboard({ templates, days, setDays, recipes }) {
   return e(React.Fragment, null,
 
     // Masthead card (day controls + phase select)
-    e("div",{className:"mast card"},
-      e("div",{className:"mastRow"},
-        e("div",{className:"mastLeft"},
-          e("img",{src:"oz.png",alt:"Oz"}),
-          e("div",{className:"mastTitle"},
-            e("b",null,"Oz Companion"),
-            e("small",null,(day.custom ? "Custom • " : "Template • ")+day.phase.toUpperCase())
-          )
-        ),
-        e("div",null,
-          e("button",{className:"btn",onClick:()=>changeDay(-1)},"◀"),
-          e("span",{className:"badge",style:{margin:"0 8px"}},"Day "+day.day),
-          e("button",{className:"btn",onClick:()=>changeDay(1)},"▶")
-        )
-      ),
-      e("div",{className:"mastRow",style:{marginTop:8}},
-        e("div",null,
-          e("select",{value:day.phase,onChange:(ev)=>setPhase(ev.target.value),className:"btn"},
-            e("option",{value:"fast"},"Fast"),
-            e("option",{value:"cleanse"},"Cleanse"),
-            e("option",{value:"rebuild"},"Rebuild")
-          )
-        )
+// mast
+e("div",{className:"mast card"},
+  e("div",{className:"mastRow"},
+    e("div",{className:"mastLeft"},
+      e("img",{src:"oz.png",alt:"Oz"}),
+      e("div",{className:"mastTitle"},
+        e("b",null,"Oz Companion"),
+        e("small",null, day.phase.toUpperCase())   // ← no “Template”
       )
     ),
+    e("div",{className:"day-nav"},
+      e("button",{className:"day-btn",onClick:()=>changeDay(-1),"aria-label":"Previous day"},"◀"),
+      e("span",{className:"day-pill"},"Day "+day.day),
+      e("button",{className:"day-btn",onClick:()=>changeDay(1),"aria-label":"Next day"},"▶")
+    )
+  ),
+  e("div",{className:"mastRow",style:{marginTop:8}},
+    e("select",{value:day.phase,onChange:(ev)=>setPhase(ev.target.value),className:"btn","aria-label":"Phase"},
+      e("option",{value:"fast"},"Fast"),
+      e("option",{value:"cleanse"},"Cleanse"),
+      e("option",{value:"rebuild"},"Rebuild")
+    )
+  )
+),
 
     // Progress bar
     e("div",{className:"prog"}, e("div",{className:"fill",style:{width:Math.max(0,Math.min(100,progress))+"%"}})),
@@ -710,33 +711,7 @@ function Dashboard({ templates, days, setDays, recipes }) {
     ),
 
     // Daily Notes + Smart Coach (NO preview; does not modify notes)
-    e("div",{className:"card",style:{marginTop:16}},
-      e("h2",null,"Daily Notes"),
-      e("div",{style:{display:"flex",alignItems:"center",gap:10,margin:"6px 0 10px"}},
-        e("span",{className:"badge"},"🧠 Smart Coach"),
-        e("small",null,"Understands your note and suggests relief + motivation")
-      ),
-      e("div",{style:{display:"flex",gap:8,marginBottom:10}},
-        e("button",{className:"btn peach",onClick:coachFromNotes},"Coach")
-      ),
-      coachText && e("div",{className:"coachOut"}, coachText),
-      e("textarea",{
-        value: day.note || "",
-        onChange:(ev)=>{
-          const val = ev.target.value;
-          setDays(prev=>{
-            const next = prev.slice();
-            const d = {...next[idx]};
-            d.note = val;
-            next[idx] = d;
-            return next;
-          });
-        },
-        rows:4,
-        className:"noteArea"
-      })
-    ),
-
+e("div",{className:"card",style
     // Upcoming ingredients
     e("div",{className:"card",style:{marginTop:16}},
       e("h2",null,nextLabel),
