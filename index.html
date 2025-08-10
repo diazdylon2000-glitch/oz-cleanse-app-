@@ -165,6 +165,38 @@ window.addEventListener('error',function(e){
   el.textContent='Error: '+(e.error&&e.error.message?e.error.message:e.message);
   el.style.display='block';
 });
+        
+window.ozParseFreeTextPlan = function(text){
+  const days = defaultDays(); // keeps phases/dates
+  const recipes = [];
+  const lines = text.split(/\r?\n/);
+  let curDay = null;
+  lines.forEach((raw)=>{
+    const line = raw.trim();
+    const mDay = line.match(/^Day\s+(\d+)/i);
+    if(mDay){ curDay = +mDay[1]; return; }
+    const mJuice = line.match(/^Juice\s*\d+\s*[-:]\s*(.+)$/i);
+    if(mJuice && curDay){
+      recipes.push({ id:"r-"+recipes.length, name:mJuice[1].trim(), type:"juice", day:curDay, servings:4, ingredients:[] });
+      return;
+    }
+    const mMeal = line.match(/^(Breakfast|Lunch|Dinner|Meal)\s*[-:]\s*(.+)$/i);
+    if(mMeal && curDay){
+      recipes.push({ id:"m-"+recipes.length, name:mMeal[2].trim(), type:"meal", day:curDay, ingredients:[] });
+      return;
+    }
+    const mIng = line.match(/^[•\-]\s*(.+)$/);
+    if(mIng && recipes.length){
+      const last = recipes[recipes.length-1];
+      last.ingredients = last.ingredients || [];
+      // crude split "qty name"
+      const s = mIng[1].trim();
+      const m = s.match(/^(\d+(\.\d+)?\s*\w+)?\s*(.+)$/);
+      last.ingredients.push({ key:(m?m[3]:s).toLowerCase().replace(/\s+/g,"-"), name:(m?m[3]:s), qty:(m && m[1])?m[1]:"" });
+    }
+  });
+  return { days, recipes };
+};
 
 /* ---------------- Data (Plan) ---------------- */
 const INITIAL_GOALS = {
@@ -265,31 +297,57 @@ const Checklist = ({ items, state, onToggle }) =>
   );
 
 const WeightChart = ({ series }) => {
-  const canvasRef = useRef(null);
-  const chartRef = useRef(null);
-  useEffect(()=>{
+  const canvasRef = React.useRef(null);
+  const chartRef = React.useRef(null);
+
+  React.useEffect(() => {
     const ctx = canvasRef.current.getContext("2d");
-    if(chartRef.current){ try{ chartRef.current.destroy(); }catch(e){} }
+    if (chartRef.current) { try { chartRef.current.destroy(); } catch {} }
+
     chartRef.current = new Chart(ctx, {
-      type:"line",
-      data:{
-        labels: series.map((_,i)=>"Day "+(i+1)),
-        datasets:[{ data:series, borderColor:"#ec4899", backgroundColor:"rgba(236,72,153,.15)", tension:.35, spanGaps:true, pointRadius:2 }]
+      type: "line",
+      data: {
+        labels: series.map((_, i) => "Day " + (i + 1)),
+        datasets: [{
+          data: series,
+          borderColor: "#ec4899",
+          backgroundColor: "rgba(236,72,153,.12)",
+          tension: .35,
+          spanGaps: true,
+          pointRadius: 3,
+          pointHoverRadius: 4
+        }]
       },
-      options:{
-        responsive:true, maintainAspectRatio:false,
-        layout:{padding:{bottom:8}},
-        plugins:{ legend:{ display:false } },
-        scales:{
-          x:{ display:true, ticks:{ autoSkip:false, maxRotation:0, font:{size:11} }, grid:{display:false} },
-          y:{ ticks:{ callback:v=>v||"" }, grid:{color:"rgba(0,0,0,.06)"} }
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: { padding: { bottom: 12, top: 6, left: 6, right: 6 } },
+        plugins: { legend: { display: false } },
+        scales: {
+          x: {
+            display: true,
+            ticks: { color: "#475569", font: { size: 11 } },
+            grid: { color: "rgba(148,163,184,.25)" }
+          },
+          y: {
+            display: true,
+            ticks: { color: "#475569", font: { size: 11 } },
+            grid: { color: "rgba(148,163,184,.18)" }
+          }
         },
-        animation:{ duration:180 }
-      }
+        animation: { duration: 250 }
+      },
+      plugins: [{
+        // ensure crisp lines on high-dpi iPhones
+        id: "retina",
+        beforeInit: (c) => { c.options.devicePixelRatio = window.devicePixelRatio || 2; }
+      }]
     });
-    return ()=>{ try{ chartRef.current && chartRef.current.destroy(); }catch(e){} };
+
+    return () => { try { chartRef.current && chartRef.current.destroy(); } catch {} };
   }, [series]);
-  return e("div",{className:"chartWrap"}, e("canvas", { ref:canvasRef }));
+
+  return e("div", { style:{height: 180}}, e("canvas", { ref: canvasRef }));
 };
 
 /* ---------------- Pages ---------------- */
@@ -545,27 +603,24 @@ const Dashboard = ({ templates, days, setDays, recipes, goals }) => {
 
   return e(React.Fragment, null,
     // Mast
-    e("div",{className:"mast card"},
-      e("div",{className:"mastRow"},
-        e("div",{className:"mastLeft"},
-          e("img",{src:"oz.png",alt:"Oz"}),
-          e("div",{className:"mastTitle"}, e("b",null,"Oz Companion"), e("small",null, day.phase.toUpperCase()))
-        ),
-        e("div",{className:"day-nav"},
-          e("button",{className:"day-btn",onClick:()=>changeDay(-1),"aria-label":"Previous day"},"◀"),
-          e("span",{className:"day-label"},"Day "+day.day),
-          e("button",{className:"day-btn",onClick:()=>changeDay(1),"aria-label":"Next day"},"▶")
-        )
-      ),
-      e("div",{className:"mastRow",style:{marginTop:8}},
-        e("select",{value:day.phase,onChange:(ev)=>setPhase(ev.target.value),className:"btn","aria-label":"Phase"},
-          e("option",{value:"fast"},"Fast"),
-          e("option",{value:"cleanse"},"Cleanse"),
-          e("option",{value:"rebuild"},"Rebuild")
+   e("div",{className:"mast card"},
+  e("div",{className:"mastRow"},
+    e("div",{className:"mastLeft"},
+      e("img",{src:"oz.png",alt:"Oz"}),
+      e("div",null,
+        e("div",{style:{fontSize:24,fontWeight:800,letterSpacing:.2}},"Oz Companion"),
+        e("div",{style:{marginTop:4,color:"#64748b",fontWeight:600,letterSpacing:.6}},
+          day.phase.toUpperCase()   // FAST • CLEANSE • REBUILD lives here
         )
       )
     ),
-
+    e("div",{className:"day-nav"},
+      e("button",{className:"day-btn",onClick:()=>changeDay(-1),"aria-label":"Previous day"},"◀"),
+      e("span",{className:"day-label"},"Day "+day.day),
+      e("button",{className:"day-btn",onClick:()=>changeDay(1),"aria-label":"Next day"},"▶")
+    )
+  )
+)
     // Progress
     e(ProgressBar,{value:progress}),
 
@@ -575,25 +630,43 @@ const Dashboard = ({ templates, days, setDays, recipes, goals }) => {
     ),
 
     // Notes + Coach
-    e("div",{className:"card coach"},
-      e("h2",null,"Daily Notes"),
-      e("textarea",{
-        value: day.note || "",
-        onChange:(ev)=>{
-          const val = ev.target.value;
-          setDays(prev=>{ const next=prev.slice(); const d={...next[idx]}; d.note=val; next[idx]=d; return next; });
-        },
-        rows:4, className:"noteArea"
-      }),
-      e("div",{className:"coachHead"},
-        e("div",{className:"title"},"🧠 Smart Coach"),
-        e("small",null,"Understands your note and suggests relief + motivation")
-      ),
-      e("div",{className:"coachBtns"},
-        e("button",{className:"btn primary",onClick:coach},"Coach")
-      ),
-      coachText && e("div",{className:"coachOut"}, coachText)
+e("div",{className:"card",style:{marginTop:16}},
+  e("div",{
+    style:{
+      display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,
+      padding:"14px 12px",border:"1px solid #f3d0e1",borderRadius:14,
+      background:"linear-gradient(90deg,#ffe4ef,#e9d5ff)"
+    }
+  },
+    e("div",{style:{display:"flex",alignItems:"center",gap:12}},
+      e("div",{style:{
+        borderRadius:14,border:"1px solid #f3d0e1",background:"#fff",padding:"10px 14px",
+        fontWeight:800,fontSize:18
+      }},"🧠 Smart Coach"),
+      e("div",{style:{color:"#475569"}}, "Understands your note and suggests relief + motivation")
     ),
+    e("button",{className:"btn primary",onClick:analyzeFromNotes,style:{whiteSpace:"nowrap"}}, "Coach")
+  ),
+
+  // coach output lives visually here ONLY (not copied to note automatically)
+  coachText && e("div",{
+    className:"coachOut",
+    style:{marginTop:10,background:"#fff",border:"1px solid #f3d0e1",borderRadius:12}
+  }, coachText),
+
+  // your note field stays separate
+  e("textarea",{
+    value: day.note || "",
+    onChange:(ev)=>{
+      const val = ev.target.value;
+      setDays(prev=>{
+        const next = prev.slice();
+        const d = {...next[idx]}; d.note = val; next[idx] = d; return next;
+      });
+    },
+    rows:4, className:"noteArea", style:{marginTop:10}
+  })
+)
 
     // Next ingredients
     e("div",{className:"card",style:{marginTop:16}},
@@ -697,7 +770,10 @@ const Settings = ({ templates, onChange, onImportPlan, goals, setGoals }) => {
       e("p",{style:{color:"#64748b",margin:"6px 0 12px"}},"Reloads all juices/meals and rebuilds the grocery list."),
       e("button",{className:"btn",onClick:onImportPlan},"Import Plan")
     ),
-
+   e("button",{className:"btn peach",style:{marginLeft:8},onClick:importFromChatGPTPrompt},
+  "Import plan from ChatGPT text"
+)        
+           
     // Modal
     e("div",{className:"modal"+(showModal?" show":""), onClick:(ev)=>{ if(ev.target.classList.contains("modal")) setShowModal(false); }},
       e("div",{className:"sheet"},
@@ -744,6 +820,26 @@ const App = () => {
     setGroceries(aggregateGroceries(PLAN_RECIPES));
     alert("Plan imported ✔");
   }
+function importFromChatGPTPrompt(){
+  const txt = prompt("Paste ChatGPT meal-plan text or JSON:");
+  if(!txt) return;
+  try{
+    // Try JSON first
+    const plan = JSON.parse(txt);
+    if(!Array.isArray(plan.recipes) || !Array.isArray(plan.days)) throw new Error("bad");
+    setDays(plan.days); setRecipes(plan.recipes);
+    setGroceries(aggregateGroceries(plan.recipes));
+    alert("Imported ✔");
+  }catch{
+    // Fallback: very simple text parser (looks for 'Day X:' and bullet ingredients)
+    try{
+      const parsed = window.ozParseFreeTextPlan(txt); // see parser below once per file
+      setDays(parsed.days); setRecipes(parsed.recipes);
+      setGroceries(aggregateGroceries(parsed.recipes));
+      alert("Imported ✔");
+    }catch(e){ alert("Couldn’t parse that text. If possible, paste JSON next time."); }
+  }
+}
 
   return e("div", {},
     tab==="dash" && e(Dashboard, { templates: settings.phaseTemplates, days, setDays, recipes, goals }),
