@@ -655,29 +655,133 @@ e(ProgressBar,{value:progress}),
 // checklist
 e(Checklist,{items, state:checks, onToggle:toggleCheck}),
 
-// Daily Notes
-e("div",{className:"card",style:{marginTop:16}},
-  e("h2",null,"Daily Notes"),
-  e("textarea",{
-    value: day.note || "",
-    onChange:(ev)=>{
-      const val = ev.target.value;
-      setDays(prev=>{
-        const next = prev.slice();
-        const d = {...next[idx]};
-        d.note = val;
-        next[idx] = d;
-        return next;
-      });
-    },
-    rows:3,
-    style:{
-      width:"100%", resize:"vertical",
-      border:"1px solid #f3d0e1", borderRadius:12, padding:"8px",
-      fontSize:16
-    }
-  })
-),
+// Daily Notes + Smart Coach (reads the text she writes)
+(() => {
+  const [coachText,setCoachText] = React.useState("");
+
+  // map free-text -> symptom ids that COACH_RULES understands
+  const SYM_MATCHERS = [
+    {id:"headache",      rx:/\b(headache|migraine|head pain)\b/i},
+    {id:"dizziness",     rx:/\b(dizzy|light[-\s]?headed|vertigo)\b/i},
+    {id:"nausea",        rx:/\b(nausea|queasy|sick to (my|the) stomach)\b/i},
+    {id:"fatigue",       rx:/\b(tired|fatigue|exhaust(ed|ion)|wiped|low energy)\b/i},
+    {id:"constipation",  rx:/\b(constipat(ed|ion)|no (bm|bowel)|hard stool)\b/i},
+    {id:"cramps",        rx:/\b(cramps?|charley horse|muscle spasm)\b/i},
+    {id:"cold",          rx:/\b(chills?|feeling cold|freezing)\b/i},
+    {id:"brain-fog",     rx:/\b(brain[-\s]?fog|foggy|can.?t focus)\b/i},
+    {id:"insomnia",      rx:/\b(can.?t sleep|insomnia|up all night|poor sleep)\b/i}
+  ];
+
+  // quick sentiment-ish mood guess from text (1–10)
+  function inferMoodFrom(text){
+    let score = 6; // neutral
+    const lowers = text.toLowerCase();
+
+    // negatives
+    const negHits = [
+      /overwhelm(ed)?|anxious|stressed|down|sad|discouraged|frustrat(ed)?/,
+      /tired|exhaust(ed)?|wiped|drained/,
+      /cried|crying|tear(s|y)/,
+      /pain|hurt(s|ing)?|ache/,
+    ].reduce((n,rx)=> n + (rx.test(lowers)?1:0), 0);
+
+    // positives
+    const posHits = [
+      /proud|strong|good|better|energized|motivated|win|progress|calm/,
+    ].reduce((n,rx)=> n + (rx.test(lowers)?1:0), 0);
+
+    score += (posHits*1) - (negHits*2);
+    return Math.max(1, Math.min(10, score));
+  }
+
+  function analyzeFromNotes(){
+    const text = (day.note || "").trim();
+    if(!text){ setCoachText("Write a quick note, then tap “Coach from notes”."); return; }
+
+    // detect symptoms from text
+    const found = new Set(
+      SYM_MATCHERS.filter(m => m.rx.test(text)).map(m => m.id)
+    );
+
+    // infer mood
+    const mood = inferMoodFrom(text);
+
+    // run rules
+    const ctx = { syms: found, phase: day.phase };
+    const hits = (COACH_RULES||[]).filter(r => {
+      try { return r.test(ctx); } catch { return false; }
+    });
+
+    const tips = hits.flatMap(h => h.tips).slice(0,6);
+
+    const moodBoost = (mood<=4)
+      ? ["You’re not alone — let’s make today gentle and doable.",
+         "Pick one tiny win now (8–10 oz water, 3 deep breaths).",
+         (COACH_AFFIRM||["You’ve got this."])[Math.floor(Math.random()* (COACH_AFFIRM||["You’ve got this."]).length)]]
+      : (mood<=6)
+        ? ["Nice work staying steady. One small upgrade today.",
+           (COACH_AFFIRM||["Keep going."])[Math.floor(Math.random()* (COACH_AFFIRM||["Keep going."]).length)]]
+        : [(COACH_AFFIRM||["Great momentum!"])[Math.floor(Math.random()* (COACH_AFFIRM||["Great momentum!"]).length)]];
+
+    const header = found.size
+      ? `I noticed: ${Array.from(found).join(", ")}.`
+      : "No specific symptoms spotted — here’s a steady plan.";
+
+    const body = tips.length
+      ? ("Try these:\n• " + tips.join("\n• "))
+      : "Hydrate now, take 5 slow breaths, a short walk, and check in later.";
+
+    setCoachText(`${header}\n\n${body}\n\n${moodBoost.join(" ")}`);
+  }
+
+  function appendToNotes(){
+    if(!coachText) return;
+    const divider = (day.note && day.note.trim()? "\n\n" : "");
+    const stamp = new Date().toLocaleString();
+    const toAdd = `${divider}Coach (${stamp}):\n${coachText}`;
+    setDays(prev=>{
+      const next = prev.slice();
+      const d2 = {...next[idx]};
+      d2.note = (d2.note||"") + toAdd;
+      next[idx] = d2;
+      return next;
+    });
+    setCoachText("");
+  }
+
+  return e("div",{className:"card",style:{marginTop:16}},
+    e("h2",null,"Daily Notes"),
+    // actions
+    e("div",{style:{display:"flex",gap:8,margin:"6px 0 10px",flexWrap:"wrap"}},
+      e("button",{className:"btn peach",onClick:analyzeFromNotes},"Coach from notes"),
+      e("button",{className:"btn",onClick:appendToNotes,disabled:!coachText},"Add to notes")
+    ),
+    // preview
+    coachText && e("div",{className:"badge",style:{display:"block",whiteSpace:"pre-wrap",marginBottom:8,padding:10}},
+      coachText
+    ),
+    // the textarea she writes into
+    e("textarea",{
+      value: day.note || "",
+      onChange:(ev)=>{
+        const val = ev.target.value;
+        setDays(prev=>{
+          const next = prev.slice();
+          const d3 = {...next[idx]};
+          d3.note = val;
+          next[idx] = d3;
+          return next;
+        });
+      },
+      rows:4,
+      style:{
+        width:"100%", resize:"vertical",
+        border:"1px solid #f3d0e1", borderRadius:12, padding:"8px",
+        fontSize:16
+      }
+    })
+  );
+})(),
 
 
 // Next-ingredients card
