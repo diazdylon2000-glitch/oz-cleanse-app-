@@ -172,3 +172,49 @@ input[type="number"] {
   padding: 6px 8px;
   background: #fff;
 }
+/* Paw checklist (iOS-style with paw prints) */
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.item:last-child {
+  border-bottom: 0;
+}
+
+.paw {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  width: 36px;
+  border-radius: 9999px;
+  border: 1.5px solid #f0cbb0;
+  background: #fff;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, .03);
+  transition: transform .12s ease, background .2s ease, border-color .2s ease;
+}
+
+.paw > span {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.paw.on {
+  background: linear-gradient(180deg, #ffd8be, #ffe8da);
+  border-color: #f6c8a3;
+  transform: translateY(1px);
+}
+
+.item label {
+  font-size: 17px;
+}
