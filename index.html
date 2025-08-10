@@ -499,86 +499,245 @@ if (!window.OZ_COACH_AFFIRM) {
 }
 
 /* ===================== Dashboard ===================== */
-function Dashboard({ templates, days, setDays, recipes }) {
-  const [idx, setIdx] = React.useState(0);
-  const day = days[idx] || days[0];
+<script>
+function Dashboard(props){
+  // props
+  var templates = props.templates;
+  var days = props.days;
+  var setDays = props.setDays;
+  var recipes = props.recipes;
 
-// Dashboard
-const Dashboard = ({ templates, days, setDays, recipes }) => {
-  const [idx, setIdx] = React.useState(0);
-  const day = days[idx] || days[0];
+  // index state
+  var idxPair = React.useState(0);
+  var idx = idxPair[0];
+  var setIdx = idxPair[1];
 
-  // Coach globals (no re-declare)
-  const COACH_RULES  = window.OZ_COACH_RULES  || [];
-  const COACH_AFFIRM = window.OZ_COACH_AFFIRM || [];
+  // current day
+  var day = (days && days.length ? (days[idx] || days[0]) : { day:1, phase:"fast", checks:{}, weight:null });
 
-  // Build next-ingredients safely (no colon-destructuring)
+  // ---- helper: next-ingredients (today+tomorrow; else first two future recipe days)
   function nextTwoDayIngredients(currentDay){
     function tryDays(d1, d2){
-      var want = new Set([d1, d2]);
+      var want = {};
+      want[d1] = true; want[d2] = true;
       var bag = {};
       (recipes || []).forEach(function(r){
-        if (!r.day || !want.has(r.day)) return;
+        if(!r || !r.day || !want[r.day]) return;
         (r.ingredients || []).forEach(function(it){
-          var key = (it.key || it.name || "").toLowerCase();
-          if (!bag[key]) bag[key] = { name: it.name, qtyList: [], days: new Set() };
-          if (it.qty) bag[key].qtyList.push(it.qty);
-          bag[key].days.add(r.day);
+          var key = String(it && (it.key || it.name) || "").toLowerCase();
+          if(!bag[key]){ bag[key] = { name: it.name, qtyList: [], days: {} }; }
+          if(it.qty){ bag[key].qtyList.push(it.qty); }
+          bag[key].days[r.day] = true;
         });
       });
-      Object.keys(bag).forEach(function(k){
-        bag[k].days = Array.from(bag[k].days).sort(function(a,b){ return a-b; });
+      // flatten/normalize
+      var out = [];
+      for(var k in bag){
+        if(!bag.hasOwnProperty(k)) continue;
+        var entry = bag[k];
+        var dayArr = [];
+        for(var d in entry.days){ if(entry.days.hasOwnProperty(d)) dayArr.push(Number(d)); }
+        dayArr.sort(function(a,b){ return a-b; });
+        out.push({ name: entry.name, qtyList: entry.qtyList, days: dayArr });
+      }
+      out.sort(function(a,b){
+        var A = (a.name||"").toLowerCase(), B=(b.name||"").toLowerCase();
+        if(A<B) return -1; if(A>B) return 1; return 0;
       });
-      return Object.values(bag).sort(function(a,b){
-        return (a.name||"").localeCompare(b.name||"");
-      });
+      return out;
     }
 
-    var strict = tryDays(currentDay.day, currentDay.day + 1);
-    if (strict.length) return { items: strict, label: "Today + Tomorrow — Ingredients" };
+    var strict = tryDays(currentDay.day, currentDay.day+1);
+    if(strict.length){ return { items: strict, label: "Today + Tomorrow — Ingredients" }; }
 
-    var futureDays = Array.from(new Set(
-      (recipes||[]).filter(function(r){ return r.day >= currentDay.day; }).map(function(r){ return r.day; })
-    )).sort(function(a,b){ return a-b; });
+    // fallback: first two future recipe days
+    var futureSet = {};
+    (recipes || []).forEach(function(r){
+      if(r && typeof r.day==="number" && r.day >= currentDay.day){ futureSet[r.day] = true; }
+    });
+    var futureDays = [];
+    for(var k in futureSet){ if(futureSet.hasOwnProperty(k)) futureDays.push(Number(k)); }
+    futureDays.sort(function(a,b){ return a-b; });
 
     var pool = futureDays.slice(0,2);
-    if (pool.length === 0) return { items: [], label: "Upcoming Ingredients" };
+    if(pool.length===0) return { items: [], label: "Upcoming Ingredients" };
 
     var fallback = tryDays(pool[0], pool[1] || pool[0]);
-    var label = (pool.length === 2)
+    var label = (pool.length===2)
       ? ("Upcoming Ingredients — Day " + pool[0] + " & " + pool[1])
       : ("Upcoming Ingredients — Day " + pool[0]);
     return { items: fallback, label: label };
   }
-  var nextObj   = nextTwoDayIngredients(day);
+
+  var nextObj = nextTwoDayIngredients(day);
   var nextItems = nextObj && nextObj.items ? nextObj.items : [];
   var nextLabel = nextObj && nextObj.label ? nextObj.label : "Upcoming Ingredients";
 
-  // template + checklist
-  const templateIds = templates[day.phase] || [];
-  const activeIds = (day.order && day.order.length ? day.order : templateIds);
-  const items = activeIds.map(id => ({ id, label: GOAL_LIBRARY[id] || id }));
-  const checks = day.checks || {};
+  // ---- goals/checklist
+  var templateIds = (templates && templates[day.phase]) ? templates[day.phase] : [];
+  var activeIds = (day.order && day.order.length ? day.order : templateIds);
+  var items = activeIds.map(function(id){ return { id:id, label: (window.GOAL_LIBRARY && window.GOAL_LIBRARY[id]) ? window.GOAL_LIBRARY[id] : id }; });
+  var checks = day.checks || {};
 
-  const doneCount = items.reduce((a, it) => a + (checks[it.id] ? 1 : 0), 0);
-  const totalCount = Math.max(1, items.length);
-  const progress = (doneCount / totalCount) * 100;
-  const weightSeries = days.map(d => (d.weight == null ? null : d.weight));
+  var doneCount = 0;
+  for(var i=0;i<items.length;i++){ doneCount += (checks[items[i].id] ? 1 : 0); }
+  var totalCount = Math.max(1, items.length);
+  var progress = (doneCount/totalCount)*100;
+
+  var weightSeries = days.map(function(d){ return (d && d.weight!=null) ? d.weight : null; });
 
   // celebrate on 100% (mobile-safe confetti)
-  React.useEffect(() => {
-    if (Math.round(progress) === 100) {
-      if (window.safeConfetti) window.safeConfetti({ particleCount: 80, spread: 70, origin: { y: .6 } });
-      else if (window.confetti) window.confetti({ particleCount: 80, spread: 70, origin: { y: .6 } });
+  React.useEffect(function(){
+    if(Math.round(progress)===100){
+      if(window.safeConfetti){ window.safeConfetti({ particleCount:80, spread:70, origin:{y:.6} }); }
+      else if(window.confetti){ window.confetti({ particleCount:80, spread:70, origin:{y:.6} }); }
+      console.log(["Paw-some job! 🐾","You nailed it today! 💪","Oz is proud of you! 🐶","100% — You’re unstoppable! 🌟","Way to crush it! 🎉"][Math.floor(Math.random()*5)]);
     }
   }, [progress]);
 
+  // ---- Smart Coach (unique names to avoid duplicate const errors)
+  var DASH_COACH_RULES = [
+    { id:"headache", test:function(ctx){ return ctx.syms["headache"]; }, tips:[
+      "Sip 8–12 oz water slowly over the next 15 minutes.",
+      "Add a pinch of sea salt or an LMNT-style electrolyte.",
+      "Take a 5–10 min break from screens, dim the lights."
+    ]},
+    { id:"dizziness", test:function(ctx){ return ctx.syms["dizziness"]; }, tips:[
+      "Sit or lie down until steady.",
+      "Have a small serving of juice or a pinch of salt if on a fast.",
+      "Deep breaths — in for 4, out for 6."
+    ]},
+    { id:"nausea", test:function(ctx){ return ctx.syms["nausea"]; }, tips:[
+      "Sip cool water or herbal tea (peppermint, ginger).",
+      "Step outside for fresh air.",
+      "Move slowly and avoid sudden posture changes."
+    ]},
+    { id:"fatigue", test:function(ctx){ return ctx.syms["fatigue"]; }, tips:[
+      "Take a 15–20 minute rest.",
+      "Drink water or electrolyte drink.",
+      "Do light stretching to boost circulation."
+    ]},
+    { id:"brain-fog", test:function(ctx){ return ctx.syms["brain-fog"]; }, tips:[
+      "Stand, stretch, and roll shoulders for 2 minutes.",
+      "Have a glass of water.",
+      "Get 5 minutes of sunlight if possible."
+    ]}
+  ];
+  var DASH_COACH_AFFIRM = [
+    "You’ve got this! 💪",
+    "Proud of your effort today. 🌟",
+    "Oz is wagging his tail for you! 🐶",
+    "One step at a time — you’re doing amazing.",
+    "Keep going, your future self will thank you."
+  ];
+  var coachTextPair = React.useState("");
+  var coachText = coachTextPair[0];
+  var setCoachText = coachTextPair[1];
+
+  var SYM_MATCHERS = [
+    {id:"headache",     rx:/\b(headache|migraine|head pain)\b/i},
+    {id:"dizziness",    rx:/\b(dizzy|light[-\s]?headed|vertigo)\b/i},
+    {id:"nausea",       rx:/\b(nausea|queasy|sick to (my|the) stomach)\b/i},
+    {id:"fatigue",      rx:/\b(tired|fatigue|exhaust(ed|ion)|wiped|low energy)\b/i},
+    {id:"constipation", rx:/\b(constipat(ed|ion)|no (bm|bowel)|hard stool)\b/i},
+    {id:"cramps",       rx:/\b(cramps?|charley horse|muscle spasm)\b/i},
+    {id:"cold",         rx:/\b(chills?|feeling cold|freezing)\b/i},
+    {id:"brain-fog",    rx:/\b(brain[-\s]?fog|foggy|can.?t focus)\b/i},
+    {id:"insomnia",     rx:/\b(can.?t sleep|insomnia|up all night|poor sleep)\b/i}
+  ];
+
+  function inferMoodFrom(text){
+    var score = 6;
+    var lowers = String(text||"").toLowerCase();
+    var negRxs = [
+      /overwhelm(ed)?|anxious|stressed|down|sad|discouraged|frustrat(ed)?/,
+      /tired|exhaust(ed)?|wiped|drained/,
+      /cried|crying|tear(s|y)/,
+      /pain|hurt(s|ing)?|ache/
+    ];
+    var posRxs = [
+      /proud|strong|good|better|energized|motivated|win|progress|calm/
+    ];
+    var negHits = 0; for(var a=0;a<negRxs.length;a++){ if(negRxs[a].test(lowers)) negHits++; }
+    var posHits = 0; for(var b=0;b<posRxs.length;b++){ if(posRxs[b].test(lowers)) posHits++; }
+    score += (posHits*1) - (negHits*2);
+    if(score<1) score=1; if(score>10) score=10;
+    return score;
+  }
+
+  function analyzeFromNotes(){
+    var text = (day.note || "").trim();
+    if(!text){ setCoachText("Write a quick note, then tap “Coach from notes”."); return; }
+
+    var foundSet = {};
+    for(var m=0;m<SYM_MATCHERS.length;m++){
+      if(SYM_MATCHERS[m].rx.test(text)) foundSet[SYM_MATCHERS[m].id] = true;
+    }
+
+    var mood = inferMoodFrom(text);
+
+    var ctx = { syms: foundSet, phase: day.phase };
+    var tips = [];
+    for(var r=0;r<DASH_COACH_RULES.length;r++){
+      try{
+        if(DASH_COACH_RULES[r].test(ctx)){
+          // add up to 6 tips total
+          for(var t=0;t<DASH_COACH_RULES[r].tips.length;t++){
+            if(tips.length>=6) break;
+            tips.push(DASH_COACH_RULES[r].tips[t]);
+          }
+        }
+      }catch(e){}
+      if(tips.length>=6) break;
+    }
+
+    var moodBoost;
+    if(mood<=4){
+      moodBoost = [
+        "You’re not alone — let’s make today gentle and doable.",
+        "Pick one tiny win now (8–10 oz water, 3 deep breaths).",
+        DASH_COACH_AFFIRM[Math.floor(Math.random()*DASH_COACH_AFFIRM.length)]
+      ];
+    }else if(mood<=6){
+      moodBoost = [
+        "Nice work staying steady. One small upgrade today.",
+        DASH_COACH_AFFIRM[Math.floor(Math.random()*DASH_COACH_AFFIRM.length)]
+      ];
+    }else{
+      moodBoost = [
+        DASH_COACH_AFFIRM[Math.floor(Math.random()*DASH_COACH_AFFIRM.length)]
+      ];
+    }
+
+    var foundList = [];
+    for(var k in foundSet){ if(foundSet.hasOwnProperty(k)) foundList.push(k); }
+    var header = foundList.length ? ("I noticed: " + foundList.join(", ") + ".") : "No specific symptoms spotted — here’s a steady plan.";
+    var body = tips.length ? ("Try these:\n• " + tips.join("\n• ")) : "Hydrate now, take 5 slow breaths, a short walk, and check in later.";
+
+    setCoachText(header + "\n\n" + body + "\n\n" + moodBoost.join(" "));
+  }
+
+  function appendCoachToNotes(){
+    if(!coachText) return;
+    var divider = (day.note && String(day.note).trim()? "\n\n" : "");
+    var stamp = new Date().toLocaleString();
+    var toAdd = divider + "Coach (" + stamp + "):\n" + coachText;
+    setDays(function(prev){
+      var next = prev.slice();
+      var d2 = Object.assign({}, next[idx]);
+      d2.note = (d2.note||"") + toAdd;
+      next[idx] = d2;
+      return next;
+    });
+    setCoachText("");
+  }
+
   // interactions
   function toggleCheck(id){
-    setDays(prev => {
-      const next = prev.slice();
-      const d = { ...next[idx] };
-      const c = { ...(d.checks || {}) };
+    setDays(function(prev){
+      var next = prev.slice();
+      var d = Object.assign({}, next[idx]);
+      var c = Object.assign({}, d.checks||{});
       c[id] = !c[id];
       d.checks = c;
       next[idx] = d;
@@ -586,22 +745,32 @@ const Dashboard = ({ templates, days, setDays, recipes }) => {
     });
   }
   function setPhase(p){
-    setDays(prev => {
-      const next = prev.slice();
-      const d = { ...next[idx] };
+    setDays(function(prev){
+      var next = prev.slice();
+      var d = Object.assign({}, next[idx]);
       d.phase = p;
       next[idx] = d;
       return next;
     });
   }
-  const [editing, setEditing] = React.useState(false);
-  const [dragIndex, setDragIndex] = React.useState(null);
-  const [localIds, setLocalIds] = React.useState(activeIds);
-  React.useEffect(() => { setLocalIds(activeIds); }, [idx, day.phase, day.order]);
+  var editPair = React.useState(false);
+  var editing = editPair[0];
+  var setEditing = editPair[1];
+
+  var dragPair = React.useState(null);
+  var dragIndex = dragPair[0];
+  var setDragIndex = dragPair[1];
+
+  var localIdsPair = React.useState(activeIds);
+  var localIds = localIdsPair[0];
+  var setLocalIds = localIdsPair[1];
+
+  React.useEffect(function(){ setLocalIds(activeIds); }, [idx, day.phase, day.order]);
+
   function applyCustom(){
-    setDays(prev => {
-      const next = prev.slice();
-      const d = { ...next[idx] };
+    setDays(function(prev){
+      var next = prev.slice();
+      var d = Object.assign({}, next[idx]);
       d.order = localIds.slice();
       d.custom = true;
       next[idx] = d;
@@ -610,77 +779,65 @@ const Dashboard = ({ templates, days, setDays, recipes }) => {
     setEditing(false);
   }
   function resetToTemplate(){
-    setDays(prev => {
-      const next = prev.slice();
-      const d = { ...next[idx] };
+    setDays(function(prev){
+      var next = prev.slice();
+      var d = Object.assign({}, next[idx]);
       d.order = null; d.custom = false;
-      const allowed = {}; (templates[d.phase] || []).forEach(g => allowed[g] = true);
-      const nc = {};
-      Object.keys(d.checks || {}).forEach(k => { if (allowed[k]) nc[k] = d.checks[k]; });
+      var allowed = {};
+      (templates[d.phase]||[]).forEach(function(g){ allowed[g]=true; });
+      var nc = {};
+      for(var k in (d.checks||{})){ if((d.checks||{}).hasOwnProperty(k) && allowed[k]) nc[k]=d.checks[k]; }
       d.checks = nc;
       next[idx] = d;
       return next;
     });
     setEditing(false);
   }
-  function removeGoal(id){ setLocalIds(prev => prev.filter(x => x !== id)); }
+  function removeGoal(id){ setLocalIds(function(prev){ return prev.filter(function(x){ return x!==id; }); }); }
   function addGoal(){
-    const pool = Object.keys(GOAL_LIBRARY).filter(id => localIds.indexOf(id) === -1);
-    if (pool.length === 0) { alert("All goals already included"); return; }
-    const id = prompt("Add goal by ID:\n"+pool.join(", "));
-    if (!id || pool.indexOf(id) === -1) return;
-    setLocalIds(prev => prev.concat([id]));
+    var pool = Object.keys(window.GOAL_LIBRARY||{}).filter(function(id){ return localIds.indexOf(id)===-1; });
+    if(pool.length===0){ alert("All goals already included"); return; }
+    var id = prompt("Add goal by ID:\n"+pool.join(", "));
+    if(!id || pool.indexOf(id)===-1) return;
+    setLocalIds(function(prev){ return prev.concat([id]); });
   }
   function handleDragStart(i,ev){ setDragIndex(i); try{ ev.dataTransfer.setData("text/plain", String(i)); }catch(e){} }
   function handleDrop(i,ev){
     ev.preventDefault();
-    if (dragIndex === null || dragIndex === i) return;
-    setLocalIds(prev => { const arr = prev.slice(); const mv = arr.splice(dragIndex,1)[0]; arr.splice(i,0,mv); return arr; });
+    if(dragIndex===null || dragIndex===i) return;
+    setLocalIds(function(prev){
+      var arr = prev.slice();
+      var mv = arr.splice(dragIndex,1)[0];
+      arr.splice(i,0,mv);
+      return arr;
+    });
     setDragIndex(null);
   }
-  function changeDay(dir){ setIdx(cur => { let n = cur + dir; if (n < 0) n = days.length - 1; if (n >= days.length) n = 0; return n; }); }
-
-  // --- Smart Coach (inside notes card) helpers ---
-  const SYM_MATCHERS = [
-    {id:"headache",      rx:/\b(headache|migraine|head pain)\b/i},
-    {id:"dizziness",     rx:/\b(dizzy|light[-\s]?headed|vertigo)\b/i},
-    {id:"nausea",        rx:/\b(nausea|queasy|sick to (my|the) stomach)\b/i},
-    {id:"fatigue",       rx:/\b(tired|fatigue|exhaust(ed|ion)|wiped|low energy)\b/i},
-    {id:"constipation",  rx:/\b(constipat(ed|ion)|no (bm|bowel)|hard stool)\b/i},
-    {id:"cramps",        rx:/\b(cramps?|charley horse|muscle spasm)\b/i},
-    {id:"cold",          rx:/\b(chills?|feeling cold|freezing)\b/i},
-    {id:"brain-fog",     rx:/\b(brain[-\s]?fog|foggy|can.?t focus)\b/i},
-    {id:"insomnia",      rx:/\b(can.?t sleep|insomnia|up all night|poor sleep)\b/i}
-  ];
-  function inferMoodFrom(text){
-    let score = 6, t = (text||"").toLowerCase();
-    let neg = 0, pos = 0;
-    [/overwhelm(ed)?|anxious|stressed|down|sad|discouraged|frustrat(ed)?/,
-     /tired|exhaust(ed)?|wiped|drained/,
-     /cried|crying|tear(s|y)/,
-     /pain|hurt(s|ing)?|ache/].forEach(rx=>{ if(rx.test(t)) neg++; });
-    [/proud|strong|good|better|energized|motivated|win|progress|calm/]
-      .forEach(rx=>{ if(rx.test(t)) pos++; });
-    score += pos*1 - neg*2;
-    return Math.max(1, Math.min(10, score));
+  function changeDay(dir){
+    setIdx(function(cur){
+      var n = cur + dir;
+      if(n<0) n = days.length-1;
+      if(n>=days.length) n = 0;
+      return n;
+    });
   }
 
-  // --- render ---
+  // ---- render
   return e(React.Fragment, null,
 
-    // mast
+    // header / day nav
     e("div",{className:"mast card dash-header"},
       e("div",{className:"dash-header-left"},
         e("img",{src:"oz.png",alt:"Oz",className:"oz-icon"}),
         e("div",null,
           e("h2",{className:"dash-title"},"Oz Cleanse Companion"),
-          e("div",{className:"dash-subtitle"}, day.phase.toUpperCase())
+          e("div",{className:"dash-subtitle"}, String(day.phase||"").toUpperCase())
         )
       ),
       e("div",{className:"day-nav"},
-        e("button",{className:"day-btn",onClick:()=>changeDay(-1)},"◀"),
+        e("button",{className:"day-btn",onClick:function(){changeDay(-1);}},"◀"),
         e("div",{className:"day-label"},"Day "+day.day),
-        e("button",{className:"day-btn",onClick:()=>changeDay(1)},"▶")
+        e("button",{className:"day-btn",onClick:function(){changeDay(1);}},"▶")
       )
     ),
 
@@ -688,16 +845,111 @@ const Dashboard = ({ templates, days, setDays, recipes }) => {
     e(ProgressBar,{value:progress}),
 
     // checklist
-    e(Checklist,{items, state:checks, onToggle:toggleCheck}),
+    e(Checklist,{items:items, state:checks, onToggle:toggleCheck}),
 
-    // Daily Notes + Smart Coach
-    (() => {
-      const [coachText,setCoachText] = React.useState("");
+    // notes + smart coach
+    e("div",{className:"card",style:{marginTop:16}},
+      e("h2",null,"Daily Notes"),
+      e("div",{style:{display:"flex",gap:8,margin:"6px 0 10px",flexWrap:"wrap"}},
+        e("button",{className:"btn peach",onClick:analyzeFromNotes},"Coach from notes"),
+        e("button",{className:"btn",onClick:appendCoachToNotes,disabled:!coachText},"Add to notes")
+      ),
+      coachText ? e("div",{className:"badge",style:{display:"block",whiteSpace:"pre-wrap",marginBottom:8,padding:10}}, coachText) : null,
+      e("textarea",{
+        value: day.note || "",
+        onChange:function(ev){
+          var val = ev.target.value;
+          setDays(function(prev){
+            var next = prev.slice();
+            var d3 = Object.assign({}, next[idx]);
+            d3.note = val;
+            next[idx] = d3;
+            return next;
+          });
+        },
+        rows:4,
+        style:{ width:"100%", resize:"vertical", border:"1px solid #f3d0e1", borderRadius:12, padding:"8px", fontSize:16 }
+      })
+    ),
 
-      function analyzeFromNotes(){
-        const text = (day.note || "").trim();
-        if(!text){ setCoachText("Write a quick note, then
+    // next-ingredients
+    e("div",{className:"card",style:{marginTop:16}},
+      e("h2",null,nextLabel),
+      (nextItems && nextItems.length)
+        ? e("ul",{style:{listStyle:"none",padding:0,marginTop:8}},
+            nextItems.map(function(item){
+              var badgeText;
+              if(item.days && item.days.length===1){ badgeText = "Day " + item.days[0]; }
+              else if(item.days && item.days.length>1){ badgeText = "Day " + item.days[0] + "–" + item.days[item.days.length-1]; }
+              else { badgeText = ""; }
+              return e("li",{key:item.name,style:{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:"1px solid #f3d0e1"}},
+                e("span",null, item.name, " ", e("span",{className:"badge"}, badgeText)),
+                e("span",{style:{color:"#64748b",fontSize:12}}, (item.qtyList||[]).join(" + ") || "")
+              );
+            })
+          )
+        : e("p",{style:{color:"#64748b"}},"No recipes scheduled soon.")
+    ),
 
+    // weight
+    e("div",{className:"card",style:{marginTop:16}},
+      e("h2",null,"Weight"),
+      e("div",{style:{display:"flex",alignItems:"center",gap:8,margin:"8px 0"}},
+        e("label",null,"Today’s weight"),
+        e("input",{
+          type:"number",
+          step:"0.1",
+          value:(day.weight==null?"":day.weight),
+          onChange:function(ev){
+            var v = ev.target.value;
+            setDays(function(prev){
+              var next = prev.slice();
+              var d4 = Object.assign({}, next[idx]);
+              d4.weight = (v==="" ? null : Number(v));
+              if(v!=="" && (((d4.checks||{}) && ("weight" in (d4.checks||{}))) || activeIds.indexOf("weight")!==-1)){
+                var cc = Object.assign({}, d4.checks||{});
+                cc.weight = true;
+                d4.checks = cc;
+              }
+              next[idx] = d4;
+              return next;
+            });
+          },
+          style:{width:120}
+        }),
+        e("span",{className:"badge"},"Day "+day.day)
+      ),
+      e("div",{style:{marginTop:8}}, e(WeightChart,{series:weightSeries}))
+    ),
+
+    // editor
+    editing ? e("div",{className:"card",style:{marginTop:16,borderColor:"#f9c2a7"}},
+      e("h2",null,"Customize Day "+day.day),
+      e("p",{style:{color:"#64748b",margin:"6px 0 12px"}},"Drag to reorder; add/remove goals just for this day."),
+      e("ul",{style:{listStyle:"none",padding:0}},
+        localIds.map(function(id,i){
+          return e("li",{
+              key:id,draggable:true,
+              onDragStart:function(ev){ handleDragStart(i,ev); },
+              onDragOver:function(ev){ ev.preventDefault(); },
+              onDrop:function(ev){ handleDrop(i,ev); },
+              style:{display:"flex",alignItems:"center",padding:8,marginBottom:6,border:"1px solid #f3d0e1",borderRadius:12,background:"#fff"}
+            },
+            e("span",{style:{width:18,marginRight:8,opacity:.6}},"⋮⋮"),
+            e("span",{style:{flex:1}}, (window.GOAL_LIBRARY && window.GOAL_LIBRARY[id])?window.GOAL_LIBRARY[id]:id),
+            e("button",{className:"btn",onClick:function(){ removeGoal(id); }},"Remove")
+          );
+        })
+      ),
+      e("div",null,
+        e("button",{className:"btn peach",onClick:addGoal},"Add Goal"),
+        e("button",{className:"btn",style:{marginLeft:8},onClick:function(){ setEditing(false); }},"Cancel"),
+        e("button",{className:"btn",style:{marginLeft:8},onClick:applyCustom},"Save")
+      )
+    ) : null
+  );
+}
+</script>
 
   /* ---------- App ---------- */
   const App = () => {
