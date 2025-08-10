@@ -493,11 +493,10 @@ return e("div", { className:"wrap" },
     );
   };
 
-// Dashboard
 const Dashboard = ({ templates, days, setDays, recipes }) => {
-  const { items: nextItems, label: nextLabel } = nextTwoDayIngredients(day);
   const [idx, setIdx] = React.useState(0);
   const day = days[idx] || days[0];
+
   // helper: build next-ingredients (today+tomorrow, else next recipe days)
   function nextTwoDayIngredients(currentDay){
     const tryDays = (d1, d2) => {
@@ -516,11 +515,9 @@ const Dashboard = ({ templates, days, setDays, recipes }) => {
       return Object.values(bag).sort((a,b)=>(a.name||"").localeCompare(b.name||""));
     };
 
-    // strict: today + tomorrow
     const strict = tryDays(currentDay.day, currentDay.day + 1);
     if (strict.length) return { items: strict, label: "Today + Tomorrow — Ingredients" };
 
-    // fallback: first two future recipe days
     const futureDays = Array.from(new Set(
       (recipes||[]).filter(r => r.day >= currentDay.day).map(r => r.day)
     )).sort((a,b)=>a-b);
@@ -534,6 +531,9 @@ const Dashboard = ({ templates, days, setDays, recipes }) => {
       : `Upcoming Ingredients — Day ${pool[0]}`;
     return { items: fallback, label };
   }
+
+  // ✅ use it AFTER day exists; keep ONLY this one line (no duplicates later)
+  const { items: nextItems, label: nextLabel } = nextTwoDayIngredients(day);
 
   // template + checklist
   const templateIds = templates[day.phase] || [];
